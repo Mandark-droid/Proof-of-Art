@@ -1,0 +1,557 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g7-sidi-saiyyed-jaali-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Gujarat",
+    "tradition_id": "gj_sidi-saiyyed-jaali",
+    "grammar": "jaali_lattice",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:59:33.100357+00:00",
+  "original_prompt": "Create an original Sidi Saiyyed jaali-inspired geometric lattice panel with a clear unbroken frame. Use repeated intersecting stone-like openings, keep a connected structural web at least two pixels thick, preserve D2 symmetry, and keep the open fraction moderate.",
+  "constraint_profile": {
+    "symmetry": "D2",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": 0.12,
+    "max_open_fraction": 0.58,
+    "min_web": 2,
+    "frame": 4
+  },
+  "elapsed_ms": 3783,
+  "telemetry": {
+    "elapsed_ms": 3783,
+    "latency_ms": {
+      "request_elapsed_total": 3676,
+      "provider_reported_total": 3668,
+      "verification_total": 107
+    },
+    "token_usage": {
+      "prompt_tokens": 2102,
+      "cached_prompt_tokens": 384,
+      "completion_tokens": 1279,
+      "total_tokens": 3381,
+      "source": "provider_usage",
+      "calls_with_usage": 2,
+      "call_count": 2
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.00223736,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 2
+    },
+    "provider_attempts": 2,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:59:29.316843+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition gj_sidi-saiyyed-jaali.\nGRAMMAR: jaali_lattice\nART_BRIEF: Create an original Sidi Saiyyed jaali-inspired geometric lattice panel with a clear unbroken frame. Use repeated intersecting stone-like openings, keep a connected structural web at least two pixels thick, preserve D2 symmetry, and keep the open fraction moderate.\nALLOWED_PALETTE: [\"#172F4A\", \"#D2AE74\"]\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"frame\": 4, \"max_colours\": 2, \"max_coverage\": 0.7, \"max_open_fraction\": 0.58, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": 0.12, \"min_web\": 2, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": null}\nTILE_SCHEMA: {\"width\": 64, \"height\": 64, \"wrap_x\": false, \"wrap_y\": false}; tile must be an object, never an array.\nGRAMMAR_RULES: Provide a \"jaali\" block with frame, open_colour_index, and holes. Holes must remain inside the frame; leave the required connected solid web and satisfy the host min_web/open-fraction constraints.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"jaali_lattice\",\"tradition_id\":\"gj_sidi-saiyyed-jaali\",\"title\":\"Original Sidi Saiyyed Jaali Lattice\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#D2AE74\"],\"background_index\":0,\"layers\":[],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"frame\":4,\"max_colours\":2,\"max_coverage\":0.7,\"max_open_fraction\":0.58,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":0.12,\"min_web\":2,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":null},\"jaali\":{\"frame\":4,\"open_colour_index\":1,\"holes\":[{\"center\":[16,16],\"size\":[12,12]},{\"center\":[48,16],\"size\":[12,12]},{\"center\":[16,48],\"size\":[12,12]},{\"center\":[48,48],\"size\":[12,12]}]}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 764,
+          "prompt_tokens": 760,
+          "total_tokens": 1524,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 546,
+            "audio_tokens": 0,
+            "reasoning_tokens": 478,
+            "rejected_prediction_tokens": 980
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2522,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:59:31.839923+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 2523,
+          "provider_reported": 2522
+        },
+        "token_usage": {
+          "prompt_tokens": 760,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 764,
+          "total_tokens": 1524,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.00115168,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    },
+    {
+      "call_index": 2,
+      "phase": "repair",
+      "started_at": "2026-10-29T13:59:31.879921+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Repair the PatternDSL v0.2 candidate for grammar jaali_lattice. Preserve this task brief: Create an original Sidi Saiyyed jaali-inspired geometric lattice panel with a clear unbroken frame. Use repeated intersecting stone-like openings, keep a connected structural web at least two pixels thick, preserve D2 symmetry, and keep the open fraction moderate..\nGRAMMAR_RULES: Provide a \"jaali\" block with frame, open_colour_index, and holes. Holes must remain inside the frame; leave the required connected solid web and satisfy the host min_web/open-fraction constraints.\n\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"frame\": 4, \"max_colours\": 2, \"max_coverage\": 0.7, \"max_open_fraction\": 0.58, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": 0.12, \"min_web\": 2, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": null}\nTILE_SCHEMA: {\"width\": 64, \"height\": 64, \"wrap_x\": false, \"wrap_y\": false}; tile must be an object, never an array.\nPREVIOUS_DESIGN: {\"schema_version\":\"0.2\",\"grammar\":\"jaali_lattice\",\"tradition_id\":\"gj_sidi-saiyyed-jaali\",\"title\":\"Original Sidi Saiyyed Jaali Lattice\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#D2AE74\"],\"background_index\":0,\"layers\":[],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"frame\":4,\"max_colours\":2,\"max_coverage\":0.7,\"max_open_fraction\":0.58,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":0.12,\"min_web\":2,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":null},\"jaali\":{\"frame\":4,\"open_colour_index\":1,\"holes\":[{\"center\":[16,16],\"size\":[12,12]},{\"center\":[48,16],\"size\":[12,12]},{\"center\":[16,48],\"size\":[12,12]},{\"center\":[48,48],\"size\":[12,12]}]}}\nVERIFIER_FAILURES: [{\"assurance\": \"EXACT_DISCRETE\", \"id\": \"candidate_parse\", \"message\": \"5 validation errors for PatternV2\\nlayers\\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\\n    For further information visit https://errors.pydantic.dev/2.14/v/too_short\\njaali.holes.0.kind\\n  Field required [type=missing, input_value={'center': [16, 16], 'size': [12, 12]}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\\njaali.holes.1.kind\\n  Field required [type=missing, input_value={'center': [48, 16], 'size': [12, 12]}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\\njaali.holes.2.kind\\n  Field required [type=missing, input_value={'center': [16, 48], 'size': [12, 12]}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\\njaali.holes.3.kind\\n  Field required [type=missing, input_value={'center': [48, 48], 'size': [12, 12]}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\", \"status\": \"FAIL\"}]\nReturn one complete schema-valid PatternDSL v0.2 JSON object only. The host owns grammar, tradition, palette, background_index, constraints, and the Jaali frame when specified; keep them as given. Do not add prose or fields."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"jaali_lattice\",\"tradition_id\":\"gj_sidi-saiyyed-jaali\",\"title\":\"Original Sidi Saiyyed Jaali Lattice\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#D2AE74\"],\"background_index\":0,\"layers\":[{\"id\":\"web\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"frame\":4,\"max_colours\":2,\"max_coverage\":0.7,\"max_open_fraction\":0.58,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":0.12,\"min_web\":2,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":null},\"jaali\":{\"frame\":4,\"open_colour_index\":1,\"holes\":[{\"kind\":\"rectangle\",\"center\":[16,16],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[48,16],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[16,48],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[48,48],\"size\":[12,12]}]}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 515,
+          "prompt_tokens": 1342,
+          "total_tokens": 1857,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 396,
+            "audio_tokens": 0,
+            "reasoning_tokens": 194,
+            "rejected_prediction_tokens": 437
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 1146,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:59:33.033285+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 1153,
+          "provider_reported": 1146
+        },
+        "token_usage": {
+          "prompt_tokens": 1342,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 515,
+          "total_tokens": 1857,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.0010856800000000001,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:59:31.879921+00:00",
+      "verification_elapsed_ms": 40,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"jaali_lattice\",\"tradition_id\":\"gj_sidi-saiyyed-jaali\",\"title\":\"Original Sidi Saiyyed Jaali Lattice\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#D2AE74\"],\"background_index\":0,\"layers\":[],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"frame\":4,\"max_colours\":2,\"max_coverage\":0.7,\"max_open_fraction\":0.58,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":0.12,\"min_web\":2,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":null},\"jaali\":{\"frame\":4,\"open_colour_index\":1,\"holes\":[{\"center\":[16,16],\"size\":[12,12]},{\"center\":[48,16],\"size\":[12,12]},{\"center\":[16,48],\"size\":[12,12]},{\"center\":[48,48],\"size\":[12,12]}]}}",
+      "candidate": null,
+      "report": {
+        "checks": [
+          {
+            "id": "candidate_parse",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "5 validation errors for PatternV2\nlayers\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/too_short\njaali.holes.0.kind\n  Field required [type=missing, input_value={'center': [16, 16], 'size': [12, 12]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\njaali.holes.1.kind\n  Field required [type=missing, input_value={'center': [48, 16], 'size': [12, 12]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\njaali.holes.2.kind\n  Field required [type=missing, input_value={'center': [16, 48], 'size': [12, 12]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\njaali.holes.3.kind\n  Field required [type=missing, input_value={'center': [48, 48], 'size': [12, 12]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 764,
+          "prompt_tokens": 760,
+          "total_tokens": 1524,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 546,
+            "audio_tokens": 0,
+            "reasoning_tokens": 478,
+            "rejected_prediction_tokens": 980
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2522,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "call_index": 2,
+      "verified_at": "2026-10-29T13:59:33.100357+00:00",
+      "verification_elapsed_ms": 67,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"jaali_lattice\",\"tradition_id\":\"gj_sidi-saiyyed-jaali\",\"title\":\"Original Sidi Saiyyed Jaali Lattice\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#D2AE74\"],\"background_index\":0,\"layers\":[{\"id\":\"web\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"frame\":4,\"max_colours\":2,\"max_coverage\":0.7,\"max_open_fraction\":0.58,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":0.12,\"min_web\":2,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":null},\"jaali\":{\"frame\":4,\"open_colour_index\":1,\"holes\":[{\"kind\":\"rectangle\",\"center\":[16,16],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[48,16],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[16,48],\"size\":[12,12]},{\"kind\":\"rectangle\",\"center\":[48,48],\"size\":[12,12]}]}}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "jaali_lattice",
+        "tradition_id": "gj_sidi-saiyyed-jaali",
+        "title": "Original Sidi Saiyyed Jaali Lattice",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": false,
+          "wrap_y": false
+        },
+        "palette": [
+          "#172F4A",
+          "#D2AE74"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "web",
+            "colour_index": 0,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": []
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 2,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": 0.12,
+          "max_open_fraction": 0.58,
+          "min_web": 2
+        },
+        "kolam": null,
+        "jaali": {
+          "frame": 4,
+          "open_colour_index": 1,
+          "holes": [
+            {
+              "kind": "rectangle",
+              "center": [
+                16,
+                16
+              ],
+              "radius": null,
+              "stroke": null,
+              "size": [
+                12,
+                12
+              ],
+              "points": null
+            },
+            {
+              "kind": "rectangle",
+              "center": [
+                48,
+                16
+              ],
+              "radius": null,
+              "stroke": null,
+              "size": [
+                12,
+                12
+              ],
+              "points": null
+            },
+            {
+              "kind": "rectangle",
+              "center": [
+                16,
+                48
+              ],
+              "radius": null,
+              "stroke": null,
+              "size": [
+                12,
+                12
+              ],
+              "points": null
+            },
+            {
+              "kind": "rectangle",
+              "center": [
+                48,
+                48
+              ],
+              "radius": null,
+              "stroke": null,
+              "size": [
+                12,
+                12
+              ],
+              "points": null
+            }
+          ]
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "0 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 2"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Jaali openness is governed by jaali_open_fraction"
+          },
+          {
+            "id": "jaali_single_solid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Solid panel is one 4-connected component"
+          },
+          {
+            "id": "jaali_holes_interior",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All hole pixels stay at least 4px from the panel edge"
+          },
+          {
+            "id": "jaali_open_fraction",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Open fraction 0.1406; allowed [0.1200, 0.5800]"
+          },
+          {
+            "id": "jaali_min_web",
+            "status": "PASS",
+            "assurance": "APPROXIMATE",
+            "message": "All solid pixels survive the square opening for web radius 2"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 515,
+          "prompt_tokens": 1342,
+          "total_tokens": 1857,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 396,
+            "audio_tokens": 0,
+            "reasoning_tokens": 194,
+            "rejected_prediction_tokens": 437
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 1146,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 1,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "eab4e3c3e681138c426d2d97d1a39a5f6b8b31b90edcf7d4f5918f1e275de716",
+  "certificate_dsl_sha256": "26224dc5cd57d65da868f569b1b0429be469563eef1bf03e63571473837702ff"
+}

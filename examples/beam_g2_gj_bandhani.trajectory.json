@@ -1,0 +1,1045 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g2-bandhani-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Gujarat",
+    "tradition_id": "gj_bandhani",
+    "grammar": "dot_field",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:50:45.168055+00:00",
+  "original_prompt": "Create an original Bandhani-inspired field of small, evenly spaced dots on an indigo ground. Use a balanced four-quadrant composition with D2 symmetry, keep every dot distinct, and leave clear negative space between dots.",
+  "constraint_profile": {
+    "symmetry": "D2",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": 3,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "elapsed_ms": 25095,
+  "telemetry": {
+    "elapsed_ms": 25095,
+    "latency_ms": {
+      "request_elapsed_total": 8543,
+      "provider_reported_total": 8543,
+      "verification_total": 45
+    },
+    "token_usage": {
+      "prompt_tokens": 694,
+      "cached_prompt_tokens": 192,
+      "completion_tokens": 3500,
+      "total_tokens": 4194,
+      "source": "provider_usage",
+      "calls_with_usage": 1,
+      "call_count": 1
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.004408479999999999,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 1
+    },
+    "provider_attempts": 1,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:50:36.579452+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition gj_bandhani.\nGRAMMAR: dot_field\nART_BRIEF: Create an original Bandhani-inspired field of small, evenly spaced dots on an indigo ground. Use a balanced four-quadrant composition with D2 symmetry, keep every dot distinct, and leave clear negative space between dots.\nALLOWED_PALETTE: [\"#172F4A\", \"#A84436\", \"#F4E5C5\"]\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": 3, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": null}\nGRAMMAR_RULES: Use only dot motifs. Put the host minimum clearance in constraints.min_clearance; do not use diamonds, rectangles, lines, or polygons. Do not add a top-level spacing field.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\n  \"schema_version\": \"0.2\",\n  \"grammar\": \"dot_field\",\n  \"tradition_id\": \"gj_bandhani\",\n  \"title\": \"Indigo Bandhani Dot Field\",\n  \"tile\": {\"width\": 64, \"height\": 64},\n  \"palette\": [\"#172F4A\", \"#A84436\", \"#F4E5C5\"],\n  \"background_index\": 0,\n  \"layers\": [\n    {\n      \"id\": \"red_dots\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [4, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 35], \"radius\": 2}\n      ]\n    },\n    {\n      \"id\": \"cream_dots\",\n      \"colour_index\": 2,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [12, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 43], \"radius\": 2}\n      ]\n    }\n  ],\n  \"constraints\": {\"min_clearance\": 3}\n}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 3500,
+          "prompt_tokens": 694,
+          "total_tokens": 4194,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 2632,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1774,
+            "rejected_prediction_tokens": 3444
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 8543,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:50:45.121570+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 8543,
+          "provider_reported": 8543
+        },
+        "token_usage": {
+          "prompt_tokens": 694,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 3500,
+          "total_tokens": 4194,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.004408479999999999,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:50:45.168055+00:00",
+      "verification_elapsed_ms": 45,
+      "raw": "{\n  \"schema_version\": \"0.2\",\n  \"grammar\": \"dot_field\",\n  \"tradition_id\": \"gj_bandhani\",\n  \"title\": \"Indigo Bandhani Dot Field\",\n  \"tile\": {\"width\": 64, \"height\": 64},\n  \"palette\": [\"#172F4A\", \"#A84436\", \"#F4E5C5\"],\n  \"background_index\": 0,\n  \"layers\": [\n    {\n      \"id\": \"red_dots\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [4, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 4], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 28], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [4, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [28, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [59, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 59], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 35], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [35, 35], \"radius\": 2}\n      ]\n    },\n    {\n      \"id\": \"cream_dots\",\n      \"colour_index\": 2,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [12, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 20], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [20, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 43], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [43, 43], \"radius\": 2}\n      ]\n    }\n  ],\n  \"constraints\": {\"min_clearance\": 3}\n}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "dot_field",
+        "tradition_id": "gj_bandhani",
+        "title": "Indigo Bandhani Dot Field",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "red_dots",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  4
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  28
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  4,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  28,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  59,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  59
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  35,
+                  35
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "cream_dots",
+            "colour_index": 2,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  20
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  20,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  43,
+                  43
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 3,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": 3,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "64 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "3 colours used; limit 3"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.3281; allowed [0.0000, 0.7000]"
+          },
+          {
+            "id": "dot_clearance",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Every dot pair meets the declared minimum clearance"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 3500,
+          "prompt_tokens": 694,
+          "total_tokens": 4194,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 2632,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1774,
+            "rejected_prediction_tokens": 3444
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 8543,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 0,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "89c15787063ae63a8d99720f907c9a93a1ef2be34c9f3835135fbcf9fb3f630f",
+  "certificate_dsl_sha256": "d80cb78e4cce186b9db01f7b78743c1272589dd31605741385c6c0e60ac96b6e"
+}

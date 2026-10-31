@@ -1,0 +1,671 @@
+{
+  "record_version": "1",
+  "beam_generated": true,
+  "accepted": true,
+  "repair_count": 1,
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face router"
+  },
+  "created_at": "2026-10-29T05:45:16.068669+00:00",
+  "request_params": {
+    "reasoning_effort": "minimal",
+    "max_tokens": 4096
+  },
+  "constraint_profile": {
+    "symmetry": "D4",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "exclusive_ink_layers": false
+  },
+  "original_prompt": "Draw an original Ajrakh-inspired D4 rosette on the 64 by 64 grid. Use only diamonds and dots. Choose two small seed motifs away from axes, then explicitly list every distinct transformed copy in each complete eight-point D4 orbit using x,y; 63-y,x; 63-x,63-y; y,63-x; 63-x,y; x,63-y; y,x; 63-y,63-x. Keep each orbit identical in kind, size, and colour, do not add unmatched motifs, and remember the center is 31.5,31.5. Use only the two supplied colours.",
+  "attempts": [
+    {
+      "index": 1,
+      "raw": "{\n  \"schema_version\": \"0.1\",\n  \"style\": \"ajrakh_inspired\",\n  \"title\": \"Ajrakh D4 Rosette\",\n  \"tile\": {\n    \"width\": 64,\n    \"height\": 64,\n    \"wrap_x\": true,\n    \"wrap_y\": true\n  },\n  \"palette\": [\n    \"#172F4A\",\n    \"#F4E5C5\"\n  ],\n  \"background_index\": 0,\n  \"layers\": [\n    {\n      \"id\": \"diamonds\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"diamond\", \"center\": [12, 20], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [43, 12], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [51, 43], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [20, 51], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [51, 20], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [12, 43], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [20, 12], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [43, 43], \"radius\": 3}\n      ]\n    },\n    {\n      \"id\": \"dots\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [18, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 18], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [45, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 45], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [45, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [18, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 18], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 45], \"radius\": 2}\n      ]\n    }\n  ],\n  \"constraints\": {\n    \"symmetry\": \"D4\",\n    \"max_colours\": 2,\n    \"max_primitives\": 100,\n    \"min_gap\": 0,\n    \"min_coverage\": 0.0,\n    \"max_coverage\": 0.7\n  }\n}",
+      "candidate": {
+        "schema_version": "0.1",
+        "style": "ajrakh_inspired",
+        "title": "Ajrakh D4 Rosette",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "diamonds",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "diamond",
+                "center": [
+                  12,
+                  20
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  43,
+                  12
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  51,
+                  43
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  20,
+                  51
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  51,
+                  20
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  12,
+                  43
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  20,
+                  12
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  43,
+                  43
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "dots",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  18,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  18
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  45,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  45
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  45,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  18,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  18
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  45
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D4",
+          "max_colours": 2,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": []
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "16 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 2"
+          },
+          {
+            "id": "symmetry_d4",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Colour differs under R180",
+            "counterexample": {
+              "transform": "R180",
+              "original": [
+                20,
+                9
+              ],
+              "transformed": [
+                43,
+                54
+              ],
+              "original_colour_id": 1,
+              "transformed_colour_id": 0
+            }
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.0693; allowed [0.0000, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face router",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1268,
+          "prompt_tokens": 1003,
+          "total_tokens": 2271,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1020,
+            "audio_tokens": 0,
+            "reasoning_tokens": 621,
+            "rejected_prediction_tokens": 709
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 0
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2881
+      }
+    },
+    {
+      "index": 2,
+      "raw": "{\n  \"schema_version\": \"0.1\",\n  \"style\": \"ajrakh_inspired\",\n  \"title\": \"Ajrakh D4 Rosette\",\n  \"tile\": {\"width\": 64, \"height\": 64, \"wrap_x\": true, \"wrap_y\": true},\n  \"palette\": [\"#172F4A\", \"#F4E5C5\"],\n  \"background_index\": 0,\n  \"layers\": [\n    {\n      \"id\": \"diamonds\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"diamond\", \"center\": [12, 20], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [43, 12], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [51, 43], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [20, 51], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [51, 20], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [12, 43], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [20, 12], \"radius\": 3},\n        {\"kind\": \"diamond\", \"center\": [43, 51], \"radius\": 3}\n      ]\n    },\n    {\n      \"id\": \"dots\",\n      \"colour_index\": 1,\n      \"anchor\": [0, 0],\n      \"motifs\": [\n        {\"kind\": \"dot\", \"center\": [18, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 18], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [45, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 45], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [45, 12], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [18, 51], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [12, 18], \"radius\": 2},\n        {\"kind\": \"dot\", \"center\": [51, 45], \"radius\": 2}\n      ]\n    }\n  ],\n  \"constraints\": {\"exclusive_layer_pairs\": [], \"max_colours\": 2, \"max_coverage\": 0.7, \"max_primitives\": 100, \"min_coverage\": 0.0, \"min_gap\": 0, \"symmetry\": \"D4\"}\n}",
+      "candidate": {
+        "schema_version": "0.1",
+        "style": "ajrakh_inspired",
+        "title": "Ajrakh D4 Rosette",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "diamonds",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "diamond",
+                "center": [
+                  12,
+                  20
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  43,
+                  12
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  51,
+                  43
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  20,
+                  51
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  51,
+                  20
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  12,
+                  43
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  20,
+                  12
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  43,
+                  51
+                ],
+                "radius": 3,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "dots",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  18,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  18
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  45,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  45
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  45,
+                  12
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  18,
+                  51
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  12,
+                  18
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  51,
+                  45
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D4",
+          "max_colours": 2,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": []
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "16 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 2"
+          },
+          {
+            "id": "symmetry_d4",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.0664; allowed [0.0000, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face router",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1497,
+          "prompt_tokens": 2145,
+          "total_tokens": 3642,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1220,
+            "audio_tokens": 0,
+            "reasoning_tokens": 864,
+            "rejected_prediction_tokens": 719
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2318
+      }
+    }
+  ],
+  "certificate_mask_sha256": "e96b07fbb6dc1cef77b6150c8c346a9e02ad47b2f74eaaa28df3e2bef63ac90b",
+  "certificate_dsl_sha256": "aa15f24f2096621512e600b772045764cbcd5cb287e4bc611ff2892ef873d149"
+}

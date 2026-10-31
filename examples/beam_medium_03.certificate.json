@@ -1,0 +1,79 @@
+{
+  "certificate_version": "0.1",
+  "type": "auditable_deterministic_verification",
+  "schema_version": "0.1",
+  "dsl_sha256": "57120848b560c71df22f208fef299533784dcfb0d3e7d843cbaa55b65b400aff",
+  "mask_sha256": "238283504983dca71ca20fc2d2f8d5f1833d852b1c3eb509fe5ca190c8e56fa7",
+  "validator_version": "0.3.0",
+  "runtime": {
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "pydantic": "2.14.1"
+  },
+  "grid": [
+    64,
+    64
+  ],
+  "checks": [
+    {
+      "id": "schema_valid",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Check passed"
+    },
+    {
+      "id": "complexity_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "10 primitives; limit 100"
+    },
+    {
+      "id": "palette_limit",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "4 colours used; limit 4"
+    },
+    {
+      "id": "symmetry_d4",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Composited colour grid matches the requested symmetry"
+    },
+    {
+      "id": "periodic_raster",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Translated copies reproduce the canonical 64x64 raster"
+    },
+    {
+      "id": "layer_registration",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "All layers share one coordinate frame"
+    },
+    {
+      "id": "exclusive_ink_collision",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Exclusive ink layers do not overlap"
+    },
+    {
+      "id": "minimum_gap",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+    },
+    {
+      "id": "coverage_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Ink coverage 0.1904; allowed [0.0200, 0.7000]"
+    }
+  ],
+  "all_hard_constraints_pass": true,
+  "exclusions": [
+    "Not a proof of cultural authenticity",
+    "Not a guarantee of physical manufacturing quality",
+    "Raster checks do not prove continuous vector seam geometry"
+  ]
+}

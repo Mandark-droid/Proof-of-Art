@@ -1,0 +1,103 @@
+{
+  "certificate_version": "0.1",
+  "type": "auditable_deterministic_verification",
+  "schema_version": "0.2",
+  "dsl_sha256": "26224dc5cd57d65da868f569b1b0429be469563eef1bf03e63571473837702ff",
+  "mask_sha256": "eab4e3c3e681138c426d2d97d1a39a5f6b8b31b90edcf7d4f5918f1e275de716",
+  "validator_version": "0.3.0",
+  "runtime": {
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "pydantic": "2.14.1"
+  },
+  "grid": [
+    64,
+    64
+  ],
+  "checks": [
+    {
+      "id": "schema_valid",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Check passed"
+    },
+    {
+      "id": "complexity_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "0 primitives; limit 100"
+    },
+    {
+      "id": "palette_limit",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "2 colours used; limit 2"
+    },
+    {
+      "id": "symmetry_d2",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Composited colour grid matches the requested symmetry"
+    },
+    {
+      "id": "periodic_raster",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Translated copies reproduce the canonical 64x64 raster"
+    },
+    {
+      "id": "layer_registration",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "All layers share one coordinate frame"
+    },
+    {
+      "id": "exclusive_ink_collision",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Exclusive ink layers do not overlap"
+    },
+    {
+      "id": "minimum_gap",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+    },
+    {
+      "id": "coverage_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Jaali openness is governed by jaali_open_fraction"
+    },
+    {
+      "id": "jaali_single_solid",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Solid panel is one 4-connected component"
+    },
+    {
+      "id": "jaali_holes_interior",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "All hole pixels stay at least 4px from the panel edge"
+    },
+    {
+      "id": "jaali_open_fraction",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Open fraction 0.1406; allowed [0.1200, 0.5800]"
+    },
+    {
+      "id": "jaali_min_web",
+      "status": "PASS",
+      "assurance": "APPROXIMATE",
+      "message": "All solid pixels survive the square opening for web radius 2"
+    }
+  ],
+  "all_hard_constraints_pass": true,
+  "exclusions": [
+    "Not a proof of cultural authenticity",
+    "Not a guarantee of physical manufacturing quality",
+    "Raster checks do not prove continuous vector seam geometry"
+  ]
+}

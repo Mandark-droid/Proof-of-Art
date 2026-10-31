@@ -1,0 +1,107 @@
+{
+  "schema_version": "0.2",
+  "grammar": "jaali_lattice",
+  "tradition_id": "gj_sidi-saiyyed-jaali",
+  "title": "Original Sidi Saiyyed Jaali Lattice",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": false,
+    "wrap_y": false
+  },
+  "palette": [
+    "#172F4A",
+    "#D2AE74"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "web",
+      "colour_index": 0,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": []
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": 0.12,
+    "max_open_fraction": 0.58,
+    "min_web": 2
+  },
+  "kolam": null,
+  "jaali": {
+    "frame": 4,
+    "open_colour_index": 1,
+    "holes": [
+      {
+        "kind": "rectangle",
+        "center": [
+          16,
+          16
+        ],
+        "radius": null,
+        "stroke": null,
+        "size": [
+          12,
+          12
+        ],
+        "points": null
+      },
+      {
+        "kind": "rectangle",
+        "center": [
+          48,
+          16
+        ],
+        "radius": null,
+        "stroke": null,
+        "size": [
+          12,
+          12
+        ],
+        "points": null
+      },
+      {
+        "kind": "rectangle",
+        "center": [
+          16,
+          48
+        ],
+        "radius": null,
+        "stroke": null,
+        "size": [
+          12,
+          12
+        ],
+        "points": null
+      },
+      {
+        "kind": "rectangle",
+        "center": [
+          48,
+          48
+        ],
+        "radius": null,
+        "stroke": null,
+        "size": [
+          12,
+          12
+        ],
+        "points": null
+      }
+    ]
+  }
+}

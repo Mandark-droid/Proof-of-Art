@@ -1,0 +1,762 @@
+{
+  "schema_version": "0.2",
+  "grammar": "dot_field",
+  "tradition_id": "gj_bandhani",
+  "title": "Indigo Bandhani Dot Field",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#172F4A",
+    "#A84436",
+    "#F4E5C5"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "red_dots",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            4
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            28
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            4,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            28,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            59,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            59
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            35,
+            35
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    },
+    {
+      "id": "cream_dots",
+      "colour_index": 2,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            20
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            43
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": 3,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "kolam": null,
+  "jaali": null
+}

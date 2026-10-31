@@ -1,0 +1,744 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g5-aripana-rotational-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Bihar",
+    "tradition_id": "br_aripana",
+    "grammar": "rotational_field",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:59:07.372140+00:00",
+  "original_prompt": "Create an original Aripana-inspired geometric floor diagram on a bounded square field. Arrange a central floral or diamond motif with balanced surrounding marks, preserve exact fourfold rotational symmetry, and use the supplied rice-white, madder, and indigo palette sparingly.",
+  "constraint_profile": {
+    "symmetry": "C4",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "elapsed_ms": 6021,
+  "telemetry": {
+    "elapsed_ms": 6021,
+    "latency_ms": {
+      "request_elapsed_total": 6016,
+      "provider_reported_total": 6015,
+      "verification_total": 4
+    },
+    "token_usage": {
+      "prompt_tokens": 2312,
+      "cached_prompt_tokens": 384,
+      "completion_tokens": 2872,
+      "total_tokens": 5184,
+      "source": "provider_usage",
+      "calls_with_usage": 2,
+      "call_count": 2
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.00423296,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 2
+    },
+    "provider_attempts": 2,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:59:01.351330+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition br_aripana.\nGRAMMAR: rotational_field\nART_BRIEF: Create an original Aripana-inspired geometric floor diagram on a bounded square field. Arrange a central floral or diamond motif with balanced surrounding marks, preserve exact fourfold rotational symmetry, and use the supplied rice-white, madder, and indigo palette sparingly.\nALLOWED_PALETTE: [\"#F4E5C5\", \"#A84436\", \"#172F4A\"]\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"C4\", \"translation_period\": null}\nTILE_SCHEMA: {\"width\": 64, \"height\": 64, \"wrap_x\": false, \"wrap_y\": false}; tile must be an object, never an array.\nGRAMMAR_RULES: Use a bounded 64x64 field (wrap_x and wrap_y are false) and satisfy the exact host symmetry (C2 or C4 when specified).\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"rotational_field\",\"tradition_id\":\"br_aripana\",\"title\":\"Original Aripana Rotational Field\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#F4E5C5\",\"#A84436\",\"#172F4A\"],\"background_index\":0,\"layers\":[{\"id\":\"central\",\"colour_index\":1,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"diamond\",\"center\":[32,32],\"radius\":10}]},{\"id\":\"surrounding_marks\",\"colour_index\":2,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"diamond\",\"center\":[32,14],\"radius\":4},{\"kind\":\"diamond\",\"center\":[50,32],\"radius\":4},{\"kind\":\"diamond\",\"center\":[32,50],\"radius\":4},{\"kind\":\"diamond\",\"center\":[14,32],\"radius\":4}]}],\"constraints\":{\"symmetry\":\"C4\"}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 877,
+          "prompt_tokens": 738,
+          "total_tokens": 1615,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 666,
+            "audio_tokens": 0,
+            "reasoning_tokens": 646,
+            "rejected_prediction_tokens": 811
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2458,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:59:03.808890+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 2458,
+          "provider_reported": 2458
+        },
+        "token_usage": {
+          "prompt_tokens": 738,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 877,
+          "total_tokens": 1615,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.0012784799999999998,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    },
+    {
+      "call_index": 2,
+      "phase": "repair",
+      "started_at": "2026-10-29T13:59:03.811977+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Repair the PatternDSL v0.2 candidate for grammar rotational_field. Preserve this task brief: Create an original Aripana-inspired geometric floor diagram on a bounded square field. Arrange a central floral or diamond motif with balanced surrounding marks, preserve exact fourfold rotational symmetry, and use the supplied rice-white, madder, and indigo palette sparingly..\nGRAMMAR_RULES: Use a bounded 64x64 field (wrap_x and wrap_y are false) and satisfy the exact host symmetry (C2 or C4 when specified).\n\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"C4\", \"translation_period\": null}\nTILE_SCHEMA: {\"width\": 64, \"height\": 64, \"wrap_x\": false, \"wrap_y\": false}; tile must be an object, never an array.\nPREVIOUS_DESIGN: {\"background_index\": 0, \"constraints\": {\"cell_size\": null, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"C4\", \"translation_period\": null}, \"grammar\": \"rotational_field\", \"jaali\": null, \"kolam\": null, \"layers\": [{\"anchor\": [32, 32], \"colour_index\": 1, \"id\": \"central\", \"motifs\": [{\"center\": [32, 32], \"kind\": \"diamond\", \"points\": null, \"radius\": 10, \"size\": null, \"stroke\": null}]}, {\"anchor\": [32, 32], \"colour_index\": 2, \"id\": \"surrounding_marks\", \"motifs\": [{\"center\": [32, 14], \"kind\": \"diamond\", \"points\": null, \"radius\": 4, \"size\": null, \"stroke\": null}, {\"center\": [50, 32], \"kind\": \"diamond\", \"points\": null, \"radius\": 4, \"size\": null, \"stroke\": null}, {\"center\": [32, 50], \"kind\": \"diamond\", \"points\": null, \"radius\": 4, \"size\": null, \"stroke\": null}, {\"center\": [14, 32], \"kind\": \"diamond\", \"points\": null, \"radius\": 4, \"size\": null, \"stroke\": null}]}], \"palette\": [\"#F4E5C5\", \"#A84436\", \"#172F4A\"], \"schema_version\": \"0.2\", \"tile\": {\"height\": 64, \"width\": 64, \"wrap_x\": false, \"wrap_y\": false}, \"title\": \"Original Aripana Rotational Field\", \"tradition_id\": \"br_aripana\"}\nVERIFIER_FAILURES: [{\"assurance\": \"EXACT_DISCRETE\", \"id\": \"schema_valid\", \"message\": \"Check passed\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"complexity_bound\", \"message\": \"5 primitives; limit 100\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"palette_limit\", \"message\": \"3 colours used; limit 3\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"counterexample\": {\"original\": [9, 0], \"original_colour_id\": 1, \"transform\": \"R180\", \"transformed\": [54, 63], \"transformed_colour_id\": 0}, \"id\": \"symmetry_c4\", \"message\": \"Colour differs under R180\", \"status\": \"FAIL\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"periodic_raster\", \"message\": \"Translated copies reproduce the canonical 64x64 raster\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"layer_registration\", \"message\": \"All layers share one coordinate frame\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"exclusive_ink_collision\", \"message\": \"Exclusive ink layers do not overlap\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"minimum_gap\", \"message\": \"Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"coverage_bound\", \"message\": \"Ink coverage 0.0940; allowed [0.0000, 0.7000]\", \"status\": \"PASS\"}]\nReturn one complete schema-valid PatternDSL v0.2 JSON object only. The host owns grammar, tradition, palette, background_index, constraints, and the Jaali frame when specified; keep them as given. Do not add prose or fields."
+        }
+      ],
+      "raw_response": "{\"background_index\": 0, \"constraints\": {\"cell_size\": null, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"C4\", \"translation_period\": null}, \"grammar\": \"rotational_field\", \"jaali\": null, \"kolam\": null, \"layers\": [{\"anchor\": [32, 32], \"colour_index\": 1, \"id\": \"central\", \"motifs\": [{\"center\": [31, 31], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [32, 31], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [31, 32], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [32, 32], \"kind\": \"dot\", \"radius\": 2}]}, {\"anchor\": [32, 32], \"colour_index\": 2, \"id\": \"surrounding_marks\", \"motifs\": [{\"center\": [32, 14], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [49, 32], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [31, 49], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [14, 31], \"kind\": \"diamond\", \"radius\": 4}]}], \"palette\": [\"#F4E5C5\", \"#A84436\", \"#172F4A\"], \"schema_version\": \"0.2\", \"tile\": {\"height\": 64, \"width\": 64, \"wrap_x\": false, \"wrap_y\": false}, \"title\": \"Original Aripana Rotational Field\", \"tradition_id\": \"br_aripana\"}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1995,
+          "prompt_tokens": 1574,
+          "total_tokens": 3569,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1507,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1514,
+            "rejected_prediction_tokens": 1902
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3557,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:59:07.370593+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 3558,
+          "provider_reported": 3557
+        },
+        "token_usage": {
+          "prompt_tokens": 1574,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 1995,
+          "total_tokens": 3569,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.00295448,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:59:03.811977+00:00",
+      "verification_elapsed_ms": 3,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"rotational_field\",\"tradition_id\":\"br_aripana\",\"title\":\"Original Aripana Rotational Field\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#F4E5C5\",\"#A84436\",\"#172F4A\"],\"background_index\":0,\"layers\":[{\"id\":\"central\",\"colour_index\":1,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"diamond\",\"center\":[32,32],\"radius\":10}]},{\"id\":\"surrounding_marks\",\"colour_index\":2,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"diamond\",\"center\":[32,14],\"radius\":4},{\"kind\":\"diamond\",\"center\":[50,32],\"radius\":4},{\"kind\":\"diamond\",\"center\":[32,50],\"radius\":4},{\"kind\":\"diamond\",\"center\":[14,32],\"radius\":4}]}],\"constraints\":{\"symmetry\":\"C4\"}}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "rotational_field",
+        "tradition_id": "br_aripana",
+        "title": "Original Aripana Rotational Field",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": false,
+          "wrap_y": false
+        },
+        "palette": [
+          "#F4E5C5",
+          "#A84436",
+          "#172F4A"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "central",
+            "colour_index": 1,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "diamond",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": 10,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "surrounding_marks",
+            "colour_index": 2,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "diamond",
+                "center": [
+                  32,
+                  14
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  50,
+                  32
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  32,
+                  50
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  14,
+                  32
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "C4",
+          "max_colours": 3,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "5 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "3 colours used; limit 3"
+          },
+          {
+            "id": "symmetry_c4",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Colour differs under R180",
+            "counterexample": {
+              "transform": "R180",
+              "original": [
+                9,
+                0
+              ],
+              "transformed": [
+                54,
+                63
+              ],
+              "original_colour_id": 1,
+              "transformed_colour_id": 0
+            }
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.0940; allowed [0.0000, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 877,
+          "prompt_tokens": 738,
+          "total_tokens": 1615,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 666,
+            "audio_tokens": 0,
+            "reasoning_tokens": 646,
+            "rejected_prediction_tokens": 811
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 2458,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "call_index": 2,
+      "verified_at": "2026-10-29T13:59:07.372140+00:00",
+      "verification_elapsed_ms": 1,
+      "raw": "{\"background_index\": 0, \"constraints\": {\"cell_size\": null, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"C4\", \"translation_period\": null}, \"grammar\": \"rotational_field\", \"jaali\": null, \"kolam\": null, \"layers\": [{\"anchor\": [32, 32], \"colour_index\": 1, \"id\": \"central\", \"motifs\": [{\"center\": [31, 31], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [32, 31], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [31, 32], \"kind\": \"dot\", \"radius\": 2}, {\"center\": [32, 32], \"kind\": \"dot\", \"radius\": 2}]}, {\"anchor\": [32, 32], \"colour_index\": 2, \"id\": \"surrounding_marks\", \"motifs\": [{\"center\": [32, 14], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [49, 32], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [31, 49], \"kind\": \"diamond\", \"radius\": 4}, {\"center\": [14, 31], \"kind\": \"diamond\", \"radius\": 4}]}], \"palette\": [\"#F4E5C5\", \"#A84436\", \"#172F4A\"], \"schema_version\": \"0.2\", \"tile\": {\"height\": 64, \"width\": 64, \"wrap_x\": false, \"wrap_y\": false}, \"title\": \"Original Aripana Rotational Field\", \"tradition_id\": \"br_aripana\"}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "rotational_field",
+        "tradition_id": "br_aripana",
+        "title": "Original Aripana Rotational Field",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": false,
+          "wrap_y": false
+        },
+        "palette": [
+          "#F4E5C5",
+          "#A84436",
+          "#172F4A"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "central",
+            "colour_index": 1,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  31,
+                  31
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  31
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  31,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "surrounding_marks",
+            "colour_index": 2,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "diamond",
+                "center": [
+                  32,
+                  14
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  49,
+                  32
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  31,
+                  49
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "diamond",
+                "center": [
+                  14,
+                  31
+                ],
+                "radius": 4,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "C4",
+          "max_colours": 3,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "8 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "3 colours used; limit 3"
+          },
+          {
+            "id": "symmetry_c4",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.0479; allowed [0.0000, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1995,
+          "prompt_tokens": 1574,
+          "total_tokens": 3569,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1507,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1514,
+            "rejected_prediction_tokens": 1902
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3557,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 1,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "aa60173e4a88fc4e0e2fd7232de3709e7dc041f001e70e0cec3062d56855fd5f",
+  "certificate_dsl_sha256": "238b5aad26ac858156dd797239a713174d3ec1ed85377ff49e271e0fbcf36c68"
+}

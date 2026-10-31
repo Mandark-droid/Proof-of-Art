@@ -1,0 +1,85 @@
+{
+  "certificate_version": "0.1",
+  "type": "auditable_deterministic_verification",
+  "schema_version": "0.2",
+  "dsl_sha256": "c86ea4005cede41ff6318dc55d102003b4bd53ac136c55b563b439bdf044017b",
+  "mask_sha256": "15b3d171e17c6cd2fd52091d0561fcce4e8e6736848dac5667509c4ef09943f4",
+  "validator_version": "0.3.0",
+  "runtime": {
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "pydantic": "2.14.1"
+  },
+  "grid": [
+    64,
+    64
+  ],
+  "checks": [
+    {
+      "id": "schema_valid",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Check passed"
+    },
+    {
+      "id": "complexity_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "6 primitives; limit 100"
+    },
+    {
+      "id": "palette_limit",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "2 colours used; limit 2"
+    },
+    {
+      "id": "symmetry_d2",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Composited colour grid matches the requested symmetry"
+    },
+    {
+      "id": "periodic_raster",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Translated copies reproduce the canonical 64x64 raster"
+    },
+    {
+      "id": "layer_registration",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "All layers share one coordinate frame"
+    },
+    {
+      "id": "exclusive_ink_collision",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Exclusive ink layers do not overlap"
+    },
+    {
+      "id": "minimum_gap",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+    },
+    {
+      "id": "coverage_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Ink coverage 0.4062; allowed [0.0000, 0.7000]"
+    },
+    {
+      "id": "cell_quantization",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Every layer mask is uniform within 4x4 cells"
+    }
+  ],
+  "all_hard_constraints_pass": true,
+  "exclusions": [
+    "Not a proof of cultural authenticity",
+    "Not a guarantee of physical manufacturing quality",
+    "Raster checks do not prove continuous vector seam geometry"
+  ]
+}

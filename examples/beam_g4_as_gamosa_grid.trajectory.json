@@ -1,0 +1,414 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g4-gamosa-grid-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Assam",
+    "tradition_id": "as_gamosa-red-on-white-border-and-motif-band",
+    "grammar": "counted_grid",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:58:40.140689+00:00",
+  "original_prompt": "Create an original Gamosa-inspired red-on-white motif band built from a counted 4-pixel cell grid. Align every mark to the grid, use D2 symmetry, and keep a clear central motif with a regular border.",
+  "constraint_profile": {
+    "symmetry": "D2",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": 4,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "elapsed_ms": 3345,
+  "telemetry": {
+    "elapsed_ms": 3345,
+    "latency_ms": {
+      "request_elapsed_total": 3325,
+      "provider_reported_total": 3324,
+      "verification_total": 20
+    },
+    "token_usage": {
+      "prompt_tokens": 758,
+      "cached_prompt_tokens": 192,
+      "completion_tokens": 1064,
+      "total_tokens": 1822,
+      "source": "provider_usage",
+      "calls_with_usage": 1,
+      "call_count": 1
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.0015108799999999998,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 1
+    },
+    "provider_attempts": 1,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:58:36.795599+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition as_gamosa-red-on-white-border-and-motif-band.\nGRAMMAR: counted_grid\nART_BRIEF: Create an original Gamosa-inspired red-on-white motif band built from a counted 4-pixel cell grid. Align every mark to the grid, use D2 symmetry, and keep a clear central motif with a regular border.\nALLOWED_PALETTE: [\"#F4E5C5\", \"#A84436\"]\nHOST_CONSTRAINTS: {\"cell_size\": 4, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 2, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": null}\nTILE_SCHEMA: {\"width\": 64, \"height\": 64, \"wrap_x\": true, \"wrap_y\": true}; tile must be an object, never an array.\nGRAMMAR_RULES: Quantize every mark to the host cell grid. Set constraints.cell_size to the host value. Use full host-sized cells only, with each filled cell uniform within every layer. Do not use dots, diamonds, or diagonal motifs; use axis-aligned rectangles whose edges align exactly to cell boundaries.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"counted_grid\",\"tradition_id\":\"as_gamosa-red-on-white-border-and-motif-band\",\"title\":\"Gamosa Red Border and Motif Band\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":true,\"wrap_y\":true},\"palette\":[\"#F4E5C5\",\"#A84436\"],\"background_index\":0,\"layers\":[{\"id\":\"red_motifs\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[2,32],\"size\":[4,64]},{\"kind\":\"rectangle\",\"center\":[62,32],\"size\":[4,64]},{\"kind\":\"rectangle\",\"center\":[32,32],\"size\":[48,8]},{\"kind\":\"rectangle\",\"center\":[32,32],\"size\":[8,48]}]}],\"constraints\":{\"cell_size\":4}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1064,
+          "prompt_tokens": 758,
+          "total_tokens": 1822,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 735,
+            "audio_tokens": 0,
+            "reasoning_tokens": 818,
+            "rejected_prediction_tokens": 1568
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3324,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:58:40.120282+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 3325,
+          "provider_reported": 3324
+        },
+        "token_usage": {
+          "prompt_tokens": 758,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 1064,
+          "total_tokens": 1822,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.0015108799999999998,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:58:40.140689+00:00",
+      "verification_elapsed_ms": 20,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"counted_grid\",\"tradition_id\":\"as_gamosa-red-on-white-border-and-motif-band\",\"title\":\"Gamosa Red Border and Motif Band\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":true,\"wrap_y\":true},\"palette\":[\"#F4E5C5\",\"#A84436\"],\"background_index\":0,\"layers\":[{\"id\":\"red_motifs\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[2,32],\"size\":[4,64]},{\"kind\":\"rectangle\",\"center\":[62,32],\"size\":[4,64]},{\"kind\":\"rectangle\",\"center\":[32,32],\"size\":[48,8]},{\"kind\":\"rectangle\",\"center\":[32,32],\"size\":[8,48]}]}],\"constraints\":{\"cell_size\":4}}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "counted_grid",
+        "tradition_id": "as_gamosa-red-on-white-border-and-motif-band",
+        "title": "Gamosa Red Border and Motif Band",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#F4E5C5",
+          "#A84436"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "red_motifs",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  2
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  62
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  2,
+                  32
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  4,
+                  64
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  62,
+                  32
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  4,
+                  64
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  48,
+                  8
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  8,
+                  48
+                ],
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 2,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": 4,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "6 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 2"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.4062; allowed [0.0000, 0.7000]"
+          },
+          {
+            "id": "cell_quantization",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Every layer mask is uniform within 4x4 cells"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1064,
+          "prompt_tokens": 758,
+          "total_tokens": 1822,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 735,
+            "audio_tokens": 0,
+            "reasoning_tokens": 818,
+            "rejected_prediction_tokens": 1568
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3324,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 0,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "15b3d171e17c6cd2fd52091d0561fcce4e8e6736848dac5667509c4ef09943f4",
+  "certificate_dsl_sha256": "c86ea4005cede41ff6318dc55d102003b4bd53ac136c55b563b439bdf044017b"
+}

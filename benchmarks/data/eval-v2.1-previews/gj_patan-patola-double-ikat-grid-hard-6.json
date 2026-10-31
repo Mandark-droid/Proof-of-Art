@@ -1,0 +1,7 @@
+{
+  "prompt_id": "gj_patan-patola-double-ikat-grid-hard-6",
+  "state": "Gujarat",
+  "tradition_id": "gj_patan-patola-double-ikat-grid",
+  "brief": "A 64x64 counted-grid tile on 4-pixel cells: a 4x4 lattice of stepped diamonds alternating yellow/green on a red ground with a 1-cell black-and-white chequer border, D4 symmetric, no more than 5 colours, every colour boundary on a cell edge.",
+  "mask_sha256": "ea9c787d53a204d840774ea9def52d038ed0283b6552a7100e44632903f84fe9"
+}

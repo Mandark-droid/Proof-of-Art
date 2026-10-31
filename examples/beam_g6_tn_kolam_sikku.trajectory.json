@@ -1,0 +1,1010 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g6-kolam-3x3-d2-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Tamil Nadu",
+    "tradition_id": "tn_sikku_kolam",
+    "grammar": "kolam_loop",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:33:55.347369+00:00",
+  "original_prompt": "Create an original Sikku Kolam-inspired design on exactly a 3-by-3 dot array with spacing 8. Use ivory dots over indigo and madder geometry and a balanced weave-like path. Use legal doubled-coordinate mirror points only, use exactly four mirrors arranged with D2 symmetry, and form exactly one continuous closed loop.",
+  "constraint_profile": {
+    "symmetry": "D2",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": 1,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "elapsed_ms": 10638,
+  "telemetry": {
+    "elapsed_ms": 10638,
+    "latency_ms": {
+      "request_elapsed_total": 7262,
+      "provider_reported_total": 7262,
+      "verification_total": 59
+    },
+    "token_usage": {
+      "prompt_tokens": 3013,
+      "cached_prompt_tokens": 384,
+      "completion_tokens": 2650,
+      "total_tokens": 5663,
+      "source": "provider_usage",
+      "calls_with_usage": 2,
+      "call_count": 2
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.00424696,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 2
+    },
+    "provider_attempts": 2,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:33:48.025199+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition tn_sikku_kolam.\nGRAMMAR: kolam_loop\nART_BRIEF: Create an original Sikku Kolam-inspired design on exactly a 3-by-3 dot array with spacing 8. Use ivory dots over indigo and madder geometry and a balanced weave-like path. Use legal doubled-coordinate mirror points only, use exactly four mirrors arranged with D2 symmetry, and form exactly one continuous closed loop.\nALLOWED_PALETTE: [\"#172F4A\", \"#A84436\", \"#F4E5C5\"]\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": 1, \"symmetry\": \"D2\", \"translation_period\": null}\nGRAMMAR_RULES: Provide a \"kolam\" block with rows, cols, spacing, mirrors, stroke, and dot_radius. Mirrors are placed at doubled-coordinate edge midpoints between neighboring dots; coordinates must be interior, unique, and for each [x,y] exactly one coordinate is odd and the other is even; never choose both odd or both even. Coordinates must be within 0..2*cols-2 for x and 0..2*rows-2 for y. and the reflected curves must close into the host required_loops count. Set tile to exactly {\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false}; use a bounded canvas.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"kolam_loop\",\"tradition_id\":\"tn_sikku_kolam\",\"title\":\"Original Sikku Kolam Weave\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#A84436\",\"#F4E5C5\"],\"background_index\":0,\"layers\":[{\"id\":\"dots\",\"colour_index\":2,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"dot\",\"center\":[24,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[24,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[24,40],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,40],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,40],\"radius\":2}]},{\"id\":\"geometry\",\"colour_index\":0,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"line\",\"points\":[[24,32],[32,24]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[32,24],[40,32]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[40,32],[32,40]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[32,40],[24,32]],\"stroke\":2}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":3,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":1,\"symmetry\":\"D2\",\"translation_period\":null},\"kolam\":{\"rows\":3,\"cols\":3,\"spacing\":8,\"mirrors\":[[1,2],[3,2],[2,1],[2,3]],\"stroke\":2,\"dot_radius\":2}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1792,
+          "prompt_tokens": 823,
+          "total_tokens": 2615,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1299,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1273,
+            "rejected_prediction_tokens": 2145
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 5796,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:33:53.821599+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 5796,
+          "provider_reported": 5796
+        },
+        "token_usage": {
+          "prompt_tokens": 823,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 1792,
+          "total_tokens": 2615,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.00241048,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    },
+    {
+      "call_index": 2,
+      "phase": "repair",
+      "started_at": "2026-10-29T13:33:53.872969+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Repair the PatternDSL v0.2 candidate for grammar kolam_loop. Preserve this task brief: Create an original Sikku Kolam-inspired design on exactly a 3-by-3 dot array with spacing 8. Use ivory dots over indigo and madder geometry and a balanced weave-like path. Use legal doubled-coordinate mirror points only, use exactly four mirrors arranged with D2 symmetry, and form exactly one continuous closed loop..\nGRAMMAR_RULES: Provide a \"kolam\" block with rows, cols, spacing, mirrors, stroke, and dot_radius. Mirrors are placed at doubled-coordinate edge midpoints between neighboring dots; coordinates must be interior, unique, and for each [x,y] exactly one coordinate is odd and the other is even; never choose both odd or both even. Coordinates must be within 0..2*cols-2 for x and 0..2*rows-2 for y. and the reflected curves must close into the host required_loops count. Set tile to exactly {\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false}; use a bounded canvas.\n KOLAM_REPAIR: When verifier feedback includes valid_midpoints, replace the invalid mirror list using only those listed coordinates; do not copy an invalid mirror. Recompute the mirror set so the traced loop count equals required_loops and preserve the requested symmetry.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": 1, \"symmetry\": \"D2\", \"translation_period\": null}\nPREVIOUS_DESIGN: {\"background_index\": 0, \"constraints\": {\"cell_size\": null, \"exclusive_layer_pairs\": [], \"max_colours\": 3, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": 1, \"symmetry\": \"D2\", \"translation_period\": null}, \"grammar\": \"kolam_loop\", \"jaali\": null, \"kolam\": {\"cols\": 3, \"dot_radius\": 2, \"mirrors\": [[1, 2], [3, 2], [2, 1], [2, 3]], \"rows\": 3, \"spacing\": 8, \"stroke\": 2}, \"layers\": [{\"anchor\": [32, 32], \"colour_index\": 2, \"id\": \"dots\", \"motifs\": [{\"center\": [24, 24], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [32, 24], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [40, 24], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [24, 32], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [32, 32], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [40, 32], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [24, 40], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [32, 40], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}, {\"center\": [40, 40], \"kind\": \"dot\", \"points\": null, \"radius\": 2, \"size\": null, \"stroke\": null}]}, {\"anchor\": [32, 32], \"colour_index\": 0, \"id\": \"geometry\", \"motifs\": [{\"center\": null, \"kind\": \"line\", \"points\": [[24, 32], [32, 24]], \"radius\": null, \"size\": null, \"stroke\": 2}, {\"center\": null, \"kind\": \"line\", \"points\": [[32, 24], [40, 32]], \"radius\": null, \"size\": null, \"stroke\": 2}, {\"center\": null, \"kind\": \"line\", \"points\": [[40, 32], [32, 40]], \"radius\": null, \"size\": null, \"stroke\": 2}, {\"center\": null, \"kind\": \"line\", \"points\": [[32, 40], [24, 32]], \"radius\": null, \"size\": null, \"stroke\": 2}]}], \"palette\": [\"#172F4A\", \"#A84436\", \"#F4E5C5\"], \"schema_version\": \"0.2\", \"tile\": {\"height\": 64, \"width\": 64, \"wrap_x\": false, \"wrap_y\": false}, \"title\": \"Original Sikku Kolam Weave\", \"tradition_id\": \"tn_sikku_kolam\"}\nVERIFIER_FAILURES: [{\"assurance\": \"EXACT_DISCRETE\", \"id\": \"schema_valid\", \"message\": \"Check passed\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"complexity_bound\", \"message\": \"13 primitives; limit 100\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"palette_limit\", \"message\": \"2 colours used; limit 3\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"symmetry_d2\", \"message\": \"Composited colour grid matches the requested symmetry\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"periodic_raster\", \"message\": \"Translated copies reproduce the canonical 64x64 raster\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"layer_registration\", \"message\": \"All layers share one coordinate frame\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"exclusive_ink_collision\", \"message\": \"Exclusive ink layers do not overlap\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"minimum_gap\", \"message\": \"Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"coverage_bound\", \"message\": \"Ink coverage 0.1201; allowed [0.0000, 0.7000]\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"kolam_mirrors_valid\", \"message\": \"All mirrors occupy interior gap midpoints\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"counterexample\": {\"loops\": 5, \"required\": 1}, \"id\": \"kolam_loop_count\", \"message\": \"Traced 5 closed loops; required 1\", \"status\": \"FAIL\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"kolam_mirror_symmetry\", \"message\": \"Mirror set is invariant under D2\", \"status\": \"PASS\"}]\nReturn one complete schema-valid PatternDSL v0.2 JSON object only. The host owns grammar, tradition, palette, background_index, constraints, and the Jaali frame when specified; keep them as given. Do not add prose or fields."
+        }
+      ],
+      "raw_response": "{\"background_index\":0,\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":3,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":1,\"symmetry\":\"D2\",\"translation_period\":null},\"grammar\":\"kolam_loop\",\"jaali\":null,\"kolam\":{\"cols\":3,\"dot_radius\":2,\"mirrors\":[[1,0],[3,0],[1,4],[3,4]],\"rows\":3,\"spacing\":8,\"stroke\":2},\"layers\":[{\"anchor\":[32,32],\"colour_index\":2,\"id\":\"dots\",\"motifs\":[{\"center\":[24,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[24,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[24,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null}]},{\"anchor\":[32,32],\"colour_index\":0,\"id\":\"geometry\",\"motifs\":[{\"center\":null,\"kind\":\"line\",\"points\":[[24,32],[32,24]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[32,24],[40,32]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[40,32],[32,40]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[32,40],[24,32]],\"radius\":null,\"size\":null,\"stroke\":2}]}],\"palette\":[\"#172F4A\",\"#A84436\",\"#F4E5C5\"],\"schema_version\":\"0.2\",\"tile\":{\"height\":64,\"width\":64,\"wrap_x\":false,\"wrap_y\":false},\"title\":\"Original Sikku Kolam Weave\",\"tradition_id\":\"tn_sikku_kolam\"}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 858,
+          "prompt_tokens": 2190,
+          "total_tokens": 3048,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 716,
+            "audio_tokens": 0,
+            "reasoning_tokens": 178,
+            "rejected_prediction_tokens": 278
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 1466,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:33:55.339164+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 1466,
+          "provider_reported": 1466
+        },
+        "token_usage": {
+          "prompt_tokens": 2190,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 858,
+          "total_tokens": 3048,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.00183648,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:33:53.872414+00:00",
+      "verification_elapsed_ms": 51,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"kolam_loop\",\"tradition_id\":\"tn_sikku_kolam\",\"title\":\"Original Sikku Kolam Weave\",\"tile\":{\"width\":64,\"height\":64,\"wrap_x\":false,\"wrap_y\":false},\"palette\":[\"#172F4A\",\"#A84436\",\"#F4E5C5\"],\"background_index\":0,\"layers\":[{\"id\":\"dots\",\"colour_index\":2,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"dot\",\"center\":[24,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,24],\"radius\":2},{\"kind\":\"dot\",\"center\":[24,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,32],\"radius\":2},{\"kind\":\"dot\",\"center\":[24,40],\"radius\":2},{\"kind\":\"dot\",\"center\":[32,40],\"radius\":2},{\"kind\":\"dot\",\"center\":[40,40],\"radius\":2}]},{\"id\":\"geometry\",\"colour_index\":0,\"anchor\":[32,32],\"motifs\":[{\"kind\":\"line\",\"points\":[[24,32],[32,24]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[32,24],[40,32]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[40,32],[32,40]],\"stroke\":2},{\"kind\":\"line\",\"points\":[[32,40],[24,32]],\"stroke\":2}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":3,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":1,\"symmetry\":\"D2\",\"translation_period\":null},\"kolam\":{\"rows\":3,\"cols\":3,\"spacing\":8,\"mirrors\":[[1,2],[3,2],[2,1],[2,3]],\"stroke\":2,\"dot_radius\":2}}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "kolam_loop",
+        "tradition_id": "tn_sikku_kolam",
+        "title": "Original Sikku Kolam Weave",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": false,
+          "wrap_y": false
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "dots",
+            "colour_index": 2,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "geometry",
+            "colour_index": 0,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    24,
+                    32
+                  ],
+                  [
+                    32,
+                    24
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    32,
+                    24
+                  ],
+                  [
+                    40,
+                    32
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    40,
+                    32
+                  ],
+                  [
+                    32,
+                    40
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    32,
+                    40
+                  ],
+                  [
+                    24,
+                    32
+                  ]
+                ]
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 3,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": 1,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": {
+          "rows": 3,
+          "cols": 3,
+          "spacing": 8,
+          "mirrors": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              2
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          "stroke": 2,
+          "dot_radius": 2
+        },
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "13 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 3"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.1201; allowed [0.0000, 0.7000]"
+          },
+          {
+            "id": "kolam_mirrors_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All mirrors occupy interior gap midpoints"
+          },
+          {
+            "id": "kolam_loop_count",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Traced 5 closed loops; required 1",
+            "counterexample": {
+              "loops": 5,
+              "required": 1
+            }
+          },
+          {
+            "id": "kolam_mirror_symmetry",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Mirror set is invariant under D2"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1792,
+          "prompt_tokens": 823,
+          "total_tokens": 2615,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1299,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1273,
+            "rejected_prediction_tokens": 2145
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 5796,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "call_index": 2,
+      "verified_at": "2026-10-29T13:33:55.347369+00:00",
+      "verification_elapsed_ms": 8,
+      "raw": "{\"background_index\":0,\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":3,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":1,\"symmetry\":\"D2\",\"translation_period\":null},\"grammar\":\"kolam_loop\",\"jaali\":null,\"kolam\":{\"cols\":3,\"dot_radius\":2,\"mirrors\":[[1,0],[3,0],[1,4],[3,4]],\"rows\":3,\"spacing\":8,\"stroke\":2},\"layers\":[{\"anchor\":[32,32],\"colour_index\":2,\"id\":\"dots\",\"motifs\":[{\"center\":[24,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,24],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[24,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,32],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[24,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[32,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null},{\"center\":[40,40],\"kind\":\"dot\",\"points\":null,\"radius\":2,\"size\":null,\"stroke\":null}]},{\"anchor\":[32,32],\"colour_index\":0,\"id\":\"geometry\",\"motifs\":[{\"center\":null,\"kind\":\"line\",\"points\":[[24,32],[32,24]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[32,24],[40,32]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[40,32],[32,40]],\"radius\":null,\"size\":null,\"stroke\":2},{\"center\":null,\"kind\":\"line\",\"points\":[[32,40],[24,32]],\"radius\":null,\"size\":null,\"stroke\":2}]}],\"palette\":[\"#172F4A\",\"#A84436\",\"#F4E5C5\"],\"schema_version\":\"0.2\",\"tile\":{\"height\":64,\"width\":64,\"wrap_x\":false,\"wrap_y\":false},\"title\":\"Original Sikku Kolam Weave\",\"tradition_id\":\"tn_sikku_kolam\"}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "kolam_loop",
+        "tradition_id": "tn_sikku_kolam",
+        "title": "Original Sikku Kolam Weave",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": false,
+          "wrap_y": false
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "dots",
+            "colour_index": 2,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  24
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  32
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  24,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  32,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  40,
+                  40
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "geometry",
+            "colour_index": 0,
+            "anchor": [
+              32,
+              32
+            ],
+            "motifs": [
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    24,
+                    32
+                  ],
+                  [
+                    32,
+                    24
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    32,
+                    24
+                  ],
+                  [
+                    40,
+                    32
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    40,
+                    32
+                  ],
+                  [
+                    32,
+                    40
+                  ]
+                ]
+              },
+              {
+                "kind": "line",
+                "center": null,
+                "radius": null,
+                "stroke": 2,
+                "size": null,
+                "points": [
+                  [
+                    32,
+                    40
+                  ],
+                  [
+                    24,
+                    32
+                  ]
+                ]
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 3,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": null,
+          "cell_size": null,
+          "required_loops": 1,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": {
+          "rows": 3,
+          "cols": 3,
+          "spacing": 8,
+          "mirrors": [
+            [
+              1,
+              0
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              3,
+              4
+            ]
+          ],
+          "stroke": 2,
+          "dot_radius": 2
+        },
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "13 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 3"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.1201; allowed [0.0000, 0.7000]"
+          },
+          {
+            "id": "kolam_mirrors_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All mirrors occupy interior gap midpoints"
+          },
+          {
+            "id": "kolam_loop_count",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Traced 1 closed loops; required 1"
+          },
+          {
+            "id": "kolam_mirror_symmetry",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Mirror set is invariant under D2"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 858,
+          "prompt_tokens": 2190,
+          "total_tokens": 3048,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 716,
+            "audio_tokens": 0,
+            "reasoning_tokens": 178,
+            "rejected_prediction_tokens": 278
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 1466,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 1,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "8e17cf0258560eb1af69be8a961fe1d1baee7ada153914696a2994e1999c57f8",
+  "certificate_dsl_sha256": "1b3ac23a1616e532a41ef22d284b94486e0ca68e64eb890eb82e690b88395aed"
+}

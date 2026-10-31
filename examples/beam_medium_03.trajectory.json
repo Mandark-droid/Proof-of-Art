@@ -1,0 +1,956 @@
+{
+  "schema_version": 1,
+  "source": "sanitized_model_benchmark_record",
+  "beam_generated": true,
+  "model_key": "beam-hf",
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T06:02:04.544387+00:00",
+  "original_prompt": "A geometric rosette with nested diamonds and cream accents, avoiding a crowded center.",
+  "prompt_id": "medium-03",
+  "prompt_suite_sha256": "7b03ccb6309ca5a09a610077c427c8463a448481cf5d343f2a1959e255031e20",
+  "benchmark_version": "pramaan-paired-shared-first-v2",
+  "validator_version": "0.2.0",
+  "attempt_count": 3,
+  "repair_count": 2,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "constraint_profile": {
+    "symmetry": "D4",
+    "max_colours": 4,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.02,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": []
+  },
+  "attempts": [
+    {
+      "index": 1,
+      "candidate": {
+        "schema_version": "0.1",
+        "style": "ajrakh_inspired",
+        "title": "Nested Diamond Rosette",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5",
+          "#262321"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "outer_diamond",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    15,
+                    31
+                  ],
+                  [
+                    31,
+                    15
+                  ],
+                  [
+                    47,
+                    31
+                  ],
+                  [
+                    31,
+                    47
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "inner_diamond",
+            "colour_index": 2,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    23,
+                    31
+                  ],
+                  [
+                    31,
+                    23
+                  ],
+                  [
+                    39,
+                    31
+                  ],
+                  [
+                    31,
+                    39
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "cream_accents",
+            "colour_index": 3,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  31,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  31
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  31,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  31
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D4",
+          "max_colours": 4,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.02,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": []
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "10 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "4 colours used; limit 4"
+          },
+          {
+            "id": "symmetry_d4",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Colour differs under R180",
+            "counterexample": {
+              "transform": "R180",
+              "original": [
+                30,
+                5
+              ],
+              "transformed": [
+                33,
+                58
+              ],
+              "original_colour_id": 3,
+              "transformed_colour_id": 0
+            }
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.1741; allowed [0.0200, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 938,
+          "prompt_tokens": 894,
+          "total_tokens": 1832,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 676,
+            "audio_tokens": 0,
+            "reasoning_tokens": 546,
+            "rejected_prediction_tokens": 1158
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 0
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3062
+      }
+    },
+    {
+      "index": 2,
+      "candidate": {
+        "schema_version": "0.1",
+        "style": "ajrakh_inspired",
+        "title": "Nested Diamond Rosette",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5",
+          "#262321"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "outer_diamond",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    15,
+                    31
+                  ],
+                  [
+                    31,
+                    15
+                  ],
+                  [
+                    47,
+                    31
+                  ],
+                  [
+                    31,
+                    47
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "inner_diamond",
+            "colour_index": 2,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    23,
+                    31
+                  ],
+                  [
+                    31,
+                    23
+                  ],
+                  [
+                    39,
+                    31
+                  ],
+                  [
+                    31,
+                    39
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "cream_accents",
+            "colour_index": 3,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  15
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  48,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  48
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  15,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  15
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  48,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  48
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  15,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D4",
+          "max_colours": 4,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.02,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": []
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "10 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "4 colours used; limit 4"
+          },
+          {
+            "id": "symmetry_d4",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Colour differs under R180",
+            "counterexample": {
+              "transform": "R180",
+              "original": [
+                31,
+                15
+              ],
+              "transformed": [
+                32,
+                48
+              ],
+              "original_colour_id": 1,
+              "transformed_colour_id": 0
+            }
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.1741; allowed [0.0200, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 837,
+          "prompt_tokens": 1878,
+          "total_tokens": 2715,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 647,
+            "audio_tokens": 0,
+            "reasoning_tokens": 443,
+            "rejected_prediction_tokens": 683
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 640
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 1602
+      }
+    },
+    {
+      "index": 3,
+      "candidate": {
+        "schema_version": "0.1",
+        "style": "ajrakh_inspired",
+        "title": "Nested Diamond Rosette",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#172F4A",
+          "#A84436",
+          "#F4E5C5",
+          "#262321"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "outer_diamond",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    31,
+                    15
+                  ],
+                  [
+                    32,
+                    15
+                  ],
+                  [
+                    48,
+                    31
+                  ],
+                  [
+                    48,
+                    32
+                  ],
+                  [
+                    32,
+                    48
+                  ],
+                  [
+                    31,
+                    48
+                  ],
+                  [
+                    15,
+                    32
+                  ],
+                  [
+                    15,
+                    31
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "inner_diamond",
+            "colour_index": 2,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "polygon",
+                "center": null,
+                "radius": null,
+                "stroke": null,
+                "size": null,
+                "points": [
+                  [
+                    31,
+                    23
+                  ],
+                  [
+                    32,
+                    23
+                  ],
+                  [
+                    40,
+                    31
+                  ],
+                  [
+                    40,
+                    32
+                  ],
+                  [
+                    32,
+                    40
+                  ],
+                  [
+                    31,
+                    40
+                  ],
+                  [
+                    23,
+                    32
+                  ],
+                  [
+                    23,
+                    31
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "id": "cream_accents",
+            "colour_index": 3,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  15
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  48,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  48
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  15,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  56,
+                  15
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  48,
+                  56
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  7,
+                  48
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              },
+              {
+                "kind": "dot",
+                "center": [
+                  15,
+                  7
+                ],
+                "radius": 2,
+                "stroke": null,
+                "size": null,
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D4",
+          "max_colours": 4,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.02,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": []
+        }
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "10 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "4 colours used; limit 4"
+          },
+          {
+            "id": "symmetry_d4",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.1904; allowed [0.0200, 0.7000]"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 2287,
+          "prompt_tokens": 1881,
+          "total_tokens": 4168,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1765,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1846,
+            "rejected_prediction_tokens": 1889
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 448
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 3813
+      }
+    }
+  ],
+  "accepted": true,
+  "certificate_mask_sha256": "238283504983dca71ca20fc2d2f8d5f1833d852b1c3eb509fe5ca190c8e56fa7",
+  "certificate_dsl_sha256": "57120848b560c71df22f208fef299533784dcfb0d3e7d843cbaa55b65b400aff"
+}

@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "description": "Only claims backed by a fetched public source are listed. Secondary sources are explicitly marked; unverified search summaries remain excluded.",
+  "accessed": "2026-10-30",
+  "claims": [
+    {
+      "id": "c_etym_rangavalli",
+      "status": "sourced",
+      "text": "Google Arts & Culture derives rangoli from Sanskrit rangavalli and translates it as rows of colours.",
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en",
+          "title": "Rangoli for Diwali",
+          "publisher": "Google Arts & Culture",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_etym_deepavali",
+      "status": "sourced",
+      "text": "The Asian Art Museum translates Deepavali as a row of lights.",
+      "sources": [
+        {
+          "url": "https://education.asianart.org/resources/diwali-festival-and-threshold-art",
+          "title": "Diwali Festival and Threshold Art",
+          "publisher": "Asian Art Museum",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_when_where",
+      "status": "sourced",
+      "text": "Google Arts & Culture describes rangoli as made during Diwali and other festivals, in homes, courtyards, and sometimes on walls.",
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en",
+          "title": "Rangoli for Diwali",
+          "publisher": "Google Arts & Culture",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_who",
+      "status": "sourced",
+      "text": "The cited museum resources describe women making rangoli and passing designs across generations.",
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en",
+          "title": "Rangoli for Diwali",
+          "publisher": "Google Arts & Culture",
+          "tier": "institutional"
+        },
+        {
+          "url": "https://education.asianart.org/resources/diwali-festival-and-threshold-art",
+          "title": "Diwali Festival and Threshold Art",
+          "publisher": "Asian Art Museum",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_materials",
+      "status": "sourced",
+      "text": "Google Arts & Culture lists rice powder, brick powder, chalk powder, flower petals, and coloured sand among rangoli materials.",
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en",
+          "title": "Rangoli for Diwali",
+          "publisher": "Google Arts & Culture",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_belief",
+      "status": "sourced",
+      "text": "The Asian Art Museum describes the belief that rangoli invites divine blessings and says some designs invite Lakshmi at the threshold; attribute this as a belief, not a universal fact.",
+      "usage_note": "Always phrase as belief attributed to the source.",
+      "sources": [
+        {
+          "url": "https://education.asianart.org/resources/diwali-festival-and-threshold-art",
+          "title": "Diwali Festival and Threshold Art",
+          "publisher": "Asian Art Museum",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_kolam_grid",
+      "status": "sourced",
+      "text": "Google Arts & Culture describes kolam as symmetric lines and loops around a dot grid, with festive designs larger and more elaborate.",
+      "sources": [
+        {
+          "url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en",
+          "title": "Rangoli for Diwali",
+          "publisher": "Google Arts & Culture",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_regional_names",
+      "status": "sourced",
+      "text": "The Asian Art Museum lists regional threshold-art names including kolam, muggu, rangoli, chowk purana, mandana, alpana, chita, and aipan.",
+      "sources": [
+        {
+          "url": "https://education.asianart.org/resources/diwali-festival-and-threshold-art",
+          "title": "Diwali Festival and Threshold Art",
+          "publisher": "Asian Art Museum",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_ephemeral",
+      "status": "sourced",
+      "text": "The Asian Art Museum describes rangoli as temporary and reflects on its disappearance remaining in the maker's memory.",
+      "usage_note": "Paraphrased; do not use a longer quotation without attribution and review.",
+      "sources": [
+        {
+          "url": "https://education.asianart.org/resources/diwali-festival-and-threshold-art",
+          "title": "Diwali Festival and Threshold Art",
+          "publisher": "Asian Art Museum",
+          "tier": "institutional"
+        }
+      ]
+    },
+    {
+      "id": "c_chowk_structure",
+      "status": "sourced",
+      "text": "Wikipedia's secondary overview describes chowk purana as beginning with a square, then adding circles or triangles inside.",
+      "sources": [
+        {
+          "url": "https://en.wikipedia.org/wiki/Chowk_poorana",
+          "title": "Chowk poorana",
+          "publisher": "Wikipedia",
+          "tier": "secondary"
+        }
+      ]
+    },
+    {
+      "id": "c_sohrai_diwali",
+      "status": "sourced",
+      "text": "Asia InCH describes Sohrai as a post-harvest festival observed the day after Diwali and identifies domestic wall murals as its primary visual expression.",
+      "usage_note": "Attribute this as one documented account; dates and local practice can vary.",
+      "sources": [
+        {
+          "url": "https://www.asiainch.org/craft/sohrai-painting-of-jharkhand/",
+          "title": "Sohrai Wall and Floor Painting of Jharkhand",
+          "publisher": "Asia InCH",
+          "tier": "secondary"
+        },
+        {
+          "url": "https://utsav.gov.in/public/view-event/sohrai-festival-1",
+          "title": "Sohrai Festival",
+          "publisher": "Ministry of Tourism, Government of India",
+          "tier": "institutional"
+        }
+      ]
+    }
+  ],
+  "public_copy": [
+    {
+      "id": "festival_context",
+      "text": "In some communities, homes are illuminated and rangoli is made at doorways for Diwali.",
+      "claim_ids": [
+        "c_when_where"
+      ],
+      "target": "pramaan/app.py"
+    }
+  ]
+}

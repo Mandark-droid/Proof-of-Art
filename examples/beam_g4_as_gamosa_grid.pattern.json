@@ -1,0 +1,131 @@
+{
+  "schema_version": "0.2",
+  "grammar": "counted_grid",
+  "tradition_id": "as_gamosa-red-on-white-border-and-motif-band",
+  "title": "Gamosa Red Border and Motif Band",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#F4E5C5",
+    "#A84436"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "red_motifs",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            2
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            4
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            62
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            4
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            2,
+            32
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            4,
+            64
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            62,
+            32
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            4,
+            64
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            32
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            48,
+            8
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            32
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            8,
+            48
+          ],
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": 4,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "kolam": null,
+  "jaali": null
+}

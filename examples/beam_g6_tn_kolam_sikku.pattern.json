@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.2",
+  "grammar": "kolam_loop",
+  "tradition_id": "tn_sikku_kolam",
+  "title": "Original Sikku Kolam Weave",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": false,
+    "wrap_y": false
+  },
+  "palette": [
+    "#172F4A",
+    "#A84436",
+    "#F4E5C5"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "dots",
+      "colour_index": 2,
+      "anchor": [
+        32,
+        32
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            24,
+            24
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            32,
+            24
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            40,
+            24
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            24,
+            32
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            32,
+            32
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            40,
+            32
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            24,
+            40
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            32,
+            40
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            40,
+            40
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    },
+    {
+      "id": "geometry",
+      "colour_index": 0,
+      "anchor": [
+        32,
+        32
+      ],
+      "motifs": [
+        {
+          "kind": "line",
+          "center": null,
+          "radius": null,
+          "stroke": 2,
+          "size": null,
+          "points": [
+            [
+              24,
+              32
+            ],
+            [
+              32,
+              24
+            ]
+          ]
+        },
+        {
+          "kind": "line",
+          "center": null,
+          "radius": null,
+          "stroke": 2,
+          "size": null,
+          "points": [
+            [
+              32,
+              24
+            ],
+            [
+              40,
+              32
+            ]
+          ]
+        },
+        {
+          "kind": "line",
+          "center": null,
+          "radius": null,
+          "stroke": 2,
+          "size": null,
+          "points": [
+            [
+              40,
+              32
+            ],
+            [
+              32,
+              40
+            ]
+          ]
+        },
+        {
+          "kind": "line",
+          "center": null,
+          "radius": null,
+          "stroke": 2,
+          "size": null,
+          "points": [
+            [
+              32,
+              40
+            ],
+            [
+              24,
+              32
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": 1,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "kolam": {
+    "rows": 3,
+    "cols": 3,
+    "spacing": 8,
+    "mirrors": [
+      [
+        1,
+        0
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "stroke": 2,
+    "dot_radius": 2
+  },
+  "jaali": null
+}

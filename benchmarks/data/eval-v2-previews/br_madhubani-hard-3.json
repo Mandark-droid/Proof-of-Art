@@ -1,0 +1,7 @@
+{
+  "prompt_id": "br_madhubani-hard-3",
+  "state": "Bihar",
+  "tradition_id": "br_madhubani",
+  "brief": "A D2-symmetric 64x64 border tile with period 16 along the horizontal axis: a saw-tooth outer edge, a row of double-outlined fish-eye circles, and all enclosed regions filled with parallel hatching at 3 px pitch; four inks (black, turmeric, vermilion, indigo) on a rice-paper ground.",
+  "mask_sha256": "da4e3169db242ac42d30f078d22b2e6e3fa733310f988d36d6d2d727e8732fb8"
+}

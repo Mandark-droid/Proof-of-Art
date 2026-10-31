@@ -1,0 +1,5 @@
+model_key,level,n,scored_n,valid_schema_at_1,validity_at_1,validity_at_3,initial_failures,repair_requested,repair_rescued,repair_rescue_rate,provider_error_count,mean_elapsed_ms,mean_request_elapsed_ms_per_prompt,mean_verification_elapsed_ms_per_prompt,median_provider_elapsed_ms,provider_retries,reported_cost_totals_by_currency,reported_cost_observations,estimated_cost_totals_by_currency,estimated_cost_observations,mean_failures_per_candidate,mean_tokens_when_available,mean_cached_prompt_tokens_when_available,token_observations,accepted_designs,unique_accepted_masks
+beam-hf,all,24,24,1.0,0.625,0.9166666666666666,9,9,7,0.7777777777777778,0,4215.25,,,2615.5,0,{},0,{'USD': 0.07920688},24,0.42105263157894735,4297.416666666667,648.0,24,22,22
+beam-hf,easy,8,8,1.0,0.625,0.875,3,3,2,0.6666666666666666,0,3803.25,,,2371.0,0,{},0,{'USD': 0.02257136},8,0.4166666666666667,3756.75,608.0,8,7,7
+beam-hf,hard,8,8,1.0,0.5,0.875,4,4,3,0.75,0,4615.0,,,2615.5,0,{},0,{'USD': 0.029411359999999998},8,0.5,4936.5,808.0,8,7,7
+beam-hf,medium,8,8,1.0,0.75,1.0,2,2,2,1.0,0,4227.5,,,2727.5,0,{},0,{'USD': 0.027224159999999997},8,0.3333333333333333,4199.0,528.0,8,8,8

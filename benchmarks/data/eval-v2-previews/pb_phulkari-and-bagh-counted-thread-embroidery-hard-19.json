@@ -1,0 +1,7 @@
+{
+  "prompt_id": "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+  "state": "Punjab",
+  "tradition_id": "pb_phulkari-and-bagh-counted-thread-embroidery",
+  "brief": "A Bawan-bagh-inspired counted-thread tile: a 64x64 field split into a 4x4 grid of 16-px squares, each square holding a D2-symmetric geometric fill from a set of at least four distinct patterns (nested lozenges, chevrons, zig-zag lines, dots), every mark on a 2-px stitch cell, square borders in yellow, ground visible only as 1-px outlines, maximum five colours including ground.",
+  "mask_sha256": "485210363cb5a59ab8b9a1b7e90da07a4bdbe5dff2ede702e52d55d569bb971d"
+}

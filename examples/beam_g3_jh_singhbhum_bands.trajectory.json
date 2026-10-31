@@ -1,0 +1,1214 @@
+{
+  "trajectory_schema_version": "1.0",
+  "source": "independent_gallery_generation",
+  "data_role": "gallery_only_not_dataset",
+  "beam_generated": true,
+  "accepted": true,
+  "task": {
+    "task_id": "gallery-independent-g3-singhbhum-bands-20261029",
+    "suite_id": "gallery-independent-v1",
+    "state": "Jharkhand",
+    "tradition_id": "jh_singhbhum-banded-house-murals",
+    "grammar": "stripe_band",
+    "level": "gallery"
+  },
+  "model": {
+    "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+    "provider": "Hugging Face Inference Providers"
+  },
+  "created_at": "2026-10-29T13:53:47.252162+00:00",
+  "original_prompt": "Create an original Singhbhum banded-house-mural-inspired composition of horizontal colour bands. Repeat the band unit every 8 pixels vertically, use D2 symmetry, and keep the bands ordered and visually balanced.",
+  "constraint_profile": {
+    "symmetry": "D2",
+    "max_colours": 4,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": {
+      "axis": "y",
+      "period": 8
+    },
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "elapsed_ms": 10220,
+  "telemetry": {
+    "elapsed_ms": 10220,
+    "latency_ms": {
+      "request_elapsed_total": 10087,
+      "provider_reported_total": 10036,
+      "verification_total": 127
+    },
+    "token_usage": {
+      "prompt_tokens": 4114,
+      "cached_prompt_tokens": 1472,
+      "completion_tokens": 4007,
+      "total_tokens": 8121,
+      "source": "provider_usage",
+      "calls_with_usage": 3,
+      "call_count": 3
+    },
+    "cost": {
+      "amount": null,
+      "currency": null,
+      "source": "not_reported",
+      "reported_calls": 0,
+      "reported_subtotal": null,
+      "estimated_amount": 0.00592408,
+      "estimated_currency": "USD",
+      "estimate_source": "published_rate_card_estimate",
+      "estimated_calls": 3
+    },
+    "provider_attempts": 3,
+    "provider_retries": 0
+  },
+  "provider_error": null,
+  "model_calls": [
+    {
+      "call_index": 1,
+      "phase": "proposal",
+      "started_at": "2026-10-29T13:53:37.032490+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Create one original pattern for tradition jh_singhbhum-banded-house-murals.\nGRAMMAR: stripe_band\nART_BRIEF: Create an original Singhbhum banded-house-mural-inspired composition of horizontal colour bands. Repeat the band unit every 8 pixels vertically, use D2 symmetry, and keep the bands ordered and visually balanced.\nALLOWED_PALETTE: [\"#342A26\", \"#A84436\", \"#D2AE74\", \"#F4E5C5\"]\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 4, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": {\"axis\": \"y\", \"period\": 8}}\nGRAMMAR_RULES: Use repeated horizontal or vertical bands and set constraints.translation_period to the exact {\"axis\": \"x\" or \"y\" or \"xy\", \"period\": integer} supplied by the host.\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nReturn a complete PatternDSL v0.2 JSON object with schema_version, grammar, tradition_id, title, tile, palette, background_index, layers, and constraints. Use the grammar block required by the grammar; do not include a block for another grammar. The host overwrites constraints, palette, background_index, and the Jaali frame when specified. No additional keys or prose."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"stripe_band\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\",\"title\":\"Singhbhum Banded Mural Bands\",\"tile\":{\"width\":64,\"height\":64},\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"background_index\":3,\"layers\":[{\"id\":\"dark_bands\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,10],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,18],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,26],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,38],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,46],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,54],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]}]},{\"id\":\"red_bands\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,6],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,14],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,22],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,30],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,34],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,42],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,50],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,58],\"size\":[64,4]}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}},\"bands\":[{\"axis\":\"y\",\"period\":8}]}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1256,
+          "prompt_tokens": 717,
+          "total_tokens": 1973,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 952,
+            "audio_tokens": 0,
+            "reasoning_tokens": 687,
+            "rejected_prediction_tokens": 1176
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 704
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 4678,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:53:41.721309+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 4688,
+          "provider_reported": 4678
+        },
+        "token_usage": {
+          "prompt_tokens": 717,
+          "cached_prompt_tokens": 704,
+          "completion_tokens": 1256,
+          "total_tokens": 1973,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.0015405599999999998,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    },
+    {
+      "call_index": 2,
+      "phase": "repair",
+      "started_at": "2026-10-29T13:53:41.728198+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Repair the PatternDSL v0.2 candidate for grammar stripe_band. Preserve this task brief: Create an original Singhbhum banded-house-mural-inspired composition of horizontal colour bands. Repeat the band unit every 8 pixels vertically, use D2 symmetry, and keep the bands ordered and visually balanced..\nGRAMMAR_RULES: Use repeated horizontal or vertical bands and set constraints.translation_period to the exact {\"axis\": \"x\" or \"y\" or \"xy\", \"period\": integer} supplied by the host.\n\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 4, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": {\"axis\": \"y\", \"period\": 8}}\nPREVIOUS_DESIGN: {\"schema_version\":\"0.2\",\"grammar\":\"stripe_band\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\",\"title\":\"Singhbhum Banded Mural Bands\",\"tile\":{\"width\":64,\"height\":64},\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"background_index\":3,\"layers\":[{\"id\":\"dark_bands\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,10],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,18],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,26],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,38],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,46],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,54],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]}]},{\"id\":\"red_bands\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,6],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,14],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,22],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,30],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,34],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,42],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,50],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,58],\"size\":[64,4]}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}},\"bands\":[{\"axis\":\"y\",\"period\":8}]}\nVERIFIER_FAILURES: [{\"assurance\": \"EXACT_DISCRETE\", \"id\": \"candidate_parse\", \"message\": \"1 validation error for PatternV2\\nbands\\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'axis': 'y', 'period': 8}], input_type=list]\\n    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden\", \"status\": \"FAIL\"}]\nReturn one complete schema-valid PatternDSL v0.2 JSON object only. The host owns grammar, tradition, palette, background_index, constraints, and the Jaali frame when specified; keep them as given. Do not add prose or fields."
+        }
+      ],
+      "raw_response": "{\"schema_version\":\"0.2\",\"grammar\":\"stripe_band\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\",\"title\":\"Singhbhum Banded Mural Bands\",\"tile\":{\"width\":64,\"height\":64},\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"background_index\":3,\"layers\":[{\"id\":\"dark_bands\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,10],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,18],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,26],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,38],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,46],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,54],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]}]},{\"id\":\"red_bands\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,6],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,14],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,22],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,30],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,34],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,42],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,50],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,58],\"size\":[64,4]}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}}}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 580,
+          "prompt_tokens": 1305,
+          "total_tokens": 1885,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 499,
+            "audio_tokens": 0,
+            "reasoning_tokens": 23,
+            "rejected_prediction_tokens": 68
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 992,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:53:42.743041+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 1015,
+          "provider_reported": 992
+        },
+        "token_usage": {
+          "prompt_tokens": 1305,
+          "cached_prompt_tokens": 192,
+          "completion_tokens": 580,
+          "total_tokens": 1885,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.0011488800000000001,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    },
+    {
+      "call_index": 3,
+      "phase": "repair",
+      "started_at": "2026-10-29T13:53:42.827299+00:00",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are PRAMAAN's computational geometric ornament designer.\nGenerate original art informed by the selected craft tradition without claiming it is an authentic artisan product.\nReturn exactly one PatternDSL v0.2 JSON object. Follow the grammar and schema in the user message. Do not return SVG, HTML, Python, markdown, URLs, or explanations.\nUse a 64x64 tile, valid integer coordinates, at most 4 layers and 100 total primitives. Use only the provided palette.\nThe host owns the grammar, tradition, palette, background, and all constraints. Preserve them exactly as supplied; never weaken or remove a constraint.\nA deterministic verifier decides whether the pattern passes. Include every required grammar block and no block for another grammar."
+        },
+        {
+          "role": "user",
+          "content": "Repair the PatternDSL v0.2 candidate for grammar stripe_band. Preserve this task brief: Create an original Singhbhum banded-house-mural-inspired composition of horizontal colour bands. Repeat the band unit every 8 pixels vertically, use D2 symmetry, and keep the bands ordered and visually balanced..\nGRAMMAR_RULES: Use repeated horizontal or vertical bands and set constraints.translation_period to the exact {\"axis\": \"x\" or \"y\" or \"xy\", \"period\": integer} supplied by the host.\n\nLAYER_AND_MOTIF_SCHEMA: Layers use the exact keys \"id\", \"colour_index\", \"anchor\", \"motifs\". A dot motif is {\"kind\": \"dot\", \"center\": [x, y], \"radius\": r}; diamond uses the same fields, rectangle uses {\"kind\": \"rectangle\", \"center\": [x, y], \"size\": [w, h]}, line uses {\"kind\": \"line\", \"points\": [[x1, y1], [x2, y2]], \"stroke\": n}, and polygon uses {\"kind\": \"polygon\", \"points\": [[x1, y1], [x2, y2], [x3, y3]]}. Never use name, dots, type, cx, or centre as field names.\nHOST_CONSTRAINTS: {\"cell_size\": null, \"exclusive_ink_layers\": false, \"exclusive_layer_pairs\": [], \"max_colours\": 4, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": {\"axis\": \"y\", \"period\": 8}}\nPREVIOUS_DESIGN: {\"background_index\": 0, \"constraints\": {\"cell_size\": null, \"exclusive_layer_pairs\": [], \"max_colours\": 4, \"max_coverage\": 0.7, \"max_open_fraction\": null, \"max_primitives\": 100, \"min_clearance\": null, \"min_coverage\": 0.0, \"min_gap\": 0, \"min_open_fraction\": null, \"min_web\": null, \"required_loops\": null, \"symmetry\": \"D2\", \"translation_period\": {\"axis\": \"y\", \"period\": 8}}, \"grammar\": \"stripe_band\", \"jaali\": null, \"kolam\": null, \"layers\": [{\"anchor\": [0, 0], \"colour_index\": 0, \"id\": \"dark_bands\", \"motifs\": [{\"center\": [32, 2], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 10], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 18], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 26], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 38], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 46], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 54], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 62], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}]}, {\"anchor\": [0, 0], \"colour_index\": 1, \"id\": \"red_bands\", \"motifs\": [{\"center\": [32, 6], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 14], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 22], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 30], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 34], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 42], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 50], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}, {\"center\": [32, 58], \"kind\": \"rectangle\", \"points\": null, \"radius\": null, \"size\": [64, 4], \"stroke\": null}]}], \"palette\": [\"#342A26\", \"#A84436\", \"#D2AE74\", \"#F4E5C5\"], \"schema_version\": \"0.2\", \"tile\": {\"height\": 64, \"width\": 64, \"wrap_x\": true, \"wrap_y\": true}, \"title\": \"Singhbhum Banded Mural Bands\", \"tradition_id\": \"jh_singhbhum-banded-house-murals\"}\nVERIFIER_FAILURES: [{\"assurance\": \"EXACT_DISCRETE\", \"id\": \"schema_valid\", \"message\": \"Check passed\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"complexity_bound\", \"message\": \"16 primitives; limit 100\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"palette_limit\", \"message\": \"2 colours used; limit 4\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"symmetry_d2\", \"message\": \"Composited colour grid matches the requested symmetry\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"periodic_raster\", \"message\": \"Translated copies reproduce the canonical 64x64 raster\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"layer_registration\", \"message\": \"All layers share one coordinate frame\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"exclusive_ink_collision\", \"message\": \"Exclusive ink layers do not overlap\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"id\": \"minimum_gap\", \"message\": \"Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold\", \"status\": \"PASS\"}, {\"assurance\": \"EXACT_DISCRETE\", \"counterexample\": {\"allowed\": [0.0, 0.7], \"coverage\": 1.0}, \"id\": \"coverage_bound\", \"message\": \"Ink coverage 1.0000; allowed [0.0000, 0.7000]\", \"status\": \"FAIL\"}, {\"assurance\": \"EXACT_DISCRETE\", \"counterexample\": {\"axis\": \"y\", \"original_colour\": 0, \"period\": 8, \"pixel\": [0, 0], \"translated_colour\": 1}, \"id\": \"translation_period\", \"message\": \"Grid differs after translation by 8 on y\", \"status\": \"FAIL\"}]\nReturn one complete schema-valid PatternDSL v0.2 JSON object only. The host owns grammar, tradition, palette, background_index, constraints, and the Jaali frame when specified; keep them as given. Do not add prose or fields."
+        }
+      ],
+      "raw_response": "{\"background_index\":0,\"constraints\":{\"cell_size\":null,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}},\"grammar\":\"stripe_band\",\"jaali\":null,\"kolam\":null,\"layers\":[{\"anchor\":[0,0],\"colour_index\":1,\"id\":\"bands\",\"motifs\":[{\"center\":[32,2],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,6],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,10],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,14],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,18],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,22],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,26],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,30],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,34],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,38],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,42],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,46],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,50],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,54],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,58],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,62],\"kind\":\"rectangle\",\"size\":[64,2]}]}],\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"schema_version\":\"0.2\",\"tile\":{\"height\":64,\"width\":64,\"wrap_x\":true,\"wrap_y\":true},\"title\":\"Singhbhum Banded Mural Bands\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\"}",
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 2171,
+          "prompt_tokens": 2092,
+          "total_tokens": 4263,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1545,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1623,
+            "rejected_prediction_tokens": 2837
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 576
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 4366,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      },
+      "error": null,
+      "completed_at": "2026-10-29T13:53:47.210637+00:00",
+      "telemetry": {
+        "latency_ms": {
+          "request_elapsed": 4384,
+          "provider_reported": 4366
+        },
+        "token_usage": {
+          "prompt_tokens": 2092,
+          "cached_prompt_tokens": 576,
+          "completion_tokens": 2171,
+          "total_tokens": 4263,
+          "source": "provider_usage"
+        },
+        "cost": {
+          "amount": null,
+          "currency": null,
+          "source": "not_reported",
+          "estimated_amount": 0.00323464,
+          "estimated_currency": "USD",
+          "estimate_source": "published_rate_card_estimate",
+          "rate_card": {
+            "currency": "USD",
+            "per_million_tokens": {
+              "input": 0.4,
+              "cached_input": 0.04,
+              "output": 1.2
+            },
+            "source": "Baseten Model APIs pricing",
+            "source_url": "https://www.baseten.co/pricing/",
+            "observed_at": "2026-10-29"
+          }
+        },
+        "provider_attempts": 1
+      }
+    }
+  ],
+  "attempts": [
+    {
+      "index": 1,
+      "call_index": 1,
+      "verified_at": "2026-10-29T13:53:41.728198+00:00",
+      "verification_elapsed_ms": 6,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"stripe_band\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\",\"title\":\"Singhbhum Banded Mural Bands\",\"tile\":{\"width\":64,\"height\":64},\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"background_index\":3,\"layers\":[{\"id\":\"dark_bands\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,10],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,18],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,26],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,38],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,46],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,54],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]}]},{\"id\":\"red_bands\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,6],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,14],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,22],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,30],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,34],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,42],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,50],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,58],\"size\":[64,4]}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}},\"bands\":[{\"axis\":\"y\",\"period\":8}]}",
+      "candidate": null,
+      "report": {
+        "checks": [
+          {
+            "id": "candidate_parse",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "1 validation error for PatternV2\nbands\n  Extra inputs are not permitted [type=extra_forbidden, input_value=[{'axis': 'y', 'period': 8}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/extra_forbidden"
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 1256,
+          "prompt_tokens": 717,
+          "total_tokens": 1973,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 952,
+            "audio_tokens": 0,
+            "reasoning_tokens": 687,
+            "rejected_prediction_tokens": 1176
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 704
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 4678,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "call_index": 2,
+      "verified_at": "2026-10-29T13:53:42.823164+00:00",
+      "verification_elapsed_ms": 80,
+      "raw": "{\"schema_version\":\"0.2\",\"grammar\":\"stripe_band\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\",\"title\":\"Singhbhum Banded Mural Bands\",\"tile\":{\"width\":64,\"height\":64},\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"background_index\":3,\"layers\":[{\"id\":\"dark_bands\",\"colour_index\":0,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,2],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,10],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,18],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,26],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,38],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,46],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,54],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,62],\"size\":[64,4]}]},{\"id\":\"red_bands\",\"colour_index\":1,\"anchor\":[0,0],\"motifs\":[{\"kind\":\"rectangle\",\"center\":[32,6],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,14],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,22],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,30],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,34],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,42],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,50],\"size\":[64,4]},{\"kind\":\"rectangle\",\"center\":[32,58],\"size\":[64,4]}]}],\"constraints\":{\"cell_size\":null,\"exclusive_ink_layers\":false,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}}}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "stripe_band",
+        "tradition_id": "jh_singhbhum-banded-house-murals",
+        "title": "Singhbhum Banded Mural Bands",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#342A26",
+          "#A84436",
+          "#D2AE74",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "dark_bands",
+            "colour_index": 0,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  2
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  10
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  18
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  26
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  38
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  46
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  54
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  62
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              }
+            ]
+          },
+          {
+            "id": "red_bands",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  6
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  14
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  22
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  30
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  34
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  42
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  50
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  58
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  4
+                ],
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 4,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": {
+            "axis": "y",
+            "period": 8
+          },
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "16 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 4"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 1.0000; allowed [0.0000, 0.7000]",
+            "counterexample": {
+              "coverage": 1.0,
+              "allowed": [
+                0.0,
+                0.7
+              ]
+            }
+          },
+          {
+            "id": "translation_period",
+            "status": "FAIL",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Grid differs after translation by 8 on y",
+            "counterexample": {
+              "axis": "y",
+              "period": 8,
+              "pixel": [
+                0,
+                0
+              ],
+              "original_colour": 0,
+              "translated_colour": 1
+            }
+          }
+        ],
+        "all_hard_constraints_pass": false
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 580,
+          "prompt_tokens": 1305,
+          "total_tokens": 1885,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 499,
+            "audio_tokens": 0,
+            "reasoning_tokens": 23,
+            "rejected_prediction_tokens": 68
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 192
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 992,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "call_index": 3,
+      "verified_at": "2026-10-29T13:53:47.252162+00:00",
+      "verification_elapsed_ms": 41,
+      "raw": "{\"background_index\":0,\"constraints\":{\"cell_size\":null,\"exclusive_layer_pairs\":[],\"max_colours\":4,\"max_coverage\":0.7,\"max_open_fraction\":null,\"max_primitives\":100,\"min_clearance\":null,\"min_coverage\":0.0,\"min_gap\":0,\"min_open_fraction\":null,\"min_web\":null,\"required_loops\":null,\"symmetry\":\"D2\",\"translation_period\":{\"axis\":\"y\",\"period\":8}},\"grammar\":\"stripe_band\",\"jaali\":null,\"kolam\":null,\"layers\":[{\"anchor\":[0,0],\"colour_index\":1,\"id\":\"bands\",\"motifs\":[{\"center\":[32,2],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,6],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,10],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,14],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,18],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,22],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,26],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,30],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,34],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,38],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,42],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,46],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,50],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,54],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,58],\"kind\":\"rectangle\",\"size\":[64,2]},{\"center\":[32,62],\"kind\":\"rectangle\",\"size\":[64,2]}]}],\"palette\":[\"#342A26\",\"#A84436\",\"#D2AE74\",\"#F4E5C5\"],\"schema_version\":\"0.2\",\"tile\":{\"height\":64,\"width\":64,\"wrap_x\":true,\"wrap_y\":true},\"title\":\"Singhbhum Banded Mural Bands\",\"tradition_id\":\"jh_singhbhum-banded-house-murals\"}",
+      "candidate": {
+        "schema_version": "0.2",
+        "grammar": "stripe_band",
+        "tradition_id": "jh_singhbhum-banded-house-murals",
+        "title": "Singhbhum Banded Mural Bands",
+        "tile": {
+          "width": 64,
+          "height": 64,
+          "wrap_x": true,
+          "wrap_y": true
+        },
+        "palette": [
+          "#342A26",
+          "#A84436",
+          "#D2AE74",
+          "#F4E5C5"
+        ],
+        "background_index": 0,
+        "layers": [
+          {
+            "id": "bands",
+            "colour_index": 1,
+            "anchor": [
+              0,
+              0
+            ],
+            "motifs": [
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  2
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  6
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  10
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  14
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  18
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  22
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  26
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  30
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  34
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  38
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  42
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  46
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  50
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  54
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  58
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              },
+              {
+                "kind": "rectangle",
+                "center": [
+                  32,
+                  62
+                ],
+                "radius": null,
+                "stroke": null,
+                "size": [
+                  64,
+                  2
+                ],
+                "points": null
+              }
+            ]
+          }
+        ],
+        "constraints": {
+          "symmetry": "D2",
+          "max_colours": 4,
+          "max_primitives": 100,
+          "min_gap": 0,
+          "min_coverage": 0.0,
+          "max_coverage": 0.7,
+          "exclusive_layer_pairs": [],
+          "min_clearance": null,
+          "translation_period": {
+            "axis": "y",
+            "period": 8
+          },
+          "cell_size": null,
+          "required_loops": null,
+          "min_open_fraction": null,
+          "max_open_fraction": null,
+          "min_web": null
+        },
+        "kolam": null,
+        "jaali": null
+      },
+      "report": {
+        "checks": [
+          {
+            "id": "schema_valid",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Check passed"
+          },
+          {
+            "id": "complexity_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "16 primitives; limit 100"
+          },
+          {
+            "id": "palette_limit",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "2 colours used; limit 4"
+          },
+          {
+            "id": "symmetry_d2",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Composited colour grid matches the requested symmetry"
+          },
+          {
+            "id": "periodic_raster",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Translated copies reproduce the canonical 64x64 raster"
+          },
+          {
+            "id": "layer_registration",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "All layers share one coordinate frame"
+          },
+          {
+            "id": "exclusive_ink_collision",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Exclusive ink layers do not overlap"
+          },
+          {
+            "id": "minimum_gap",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+          },
+          {
+            "id": "coverage_bound",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Ink coverage 0.5000; allowed [0.0000, 0.7000]"
+          },
+          {
+            "id": "translation_period",
+            "status": "PASS",
+            "assurance": "EXACT_DISCRETE",
+            "message": "Grid repeats after translation on y"
+          }
+        ],
+        "all_hard_constraints_pass": true
+      },
+      "metadata": {
+        "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+        "provider": "Hugging Face Inference Providers",
+        "request_params": {
+          "temperature": 0.4,
+          "max_tokens": 4096,
+          "reasoning_effort": "minimal"
+        },
+        "usage": {
+          "completion_tokens": 2171,
+          "prompt_tokens": 2092,
+          "total_tokens": 4263,
+          "completion_tokens_details": {
+            "accepted_prediction_tokens": 1545,
+            "audio_tokens": 0,
+            "reasoning_tokens": 1623,
+            "rejected_prediction_tokens": 2837
+          },
+          "prompt_tokens_details": {
+            "audio_tokens": 0,
+            "cache_write_tokens": null,
+            "cached_tokens": 576
+          }
+        },
+        "finish_reason": "stop",
+        "provider_attempts": 1,
+        "provider_elapsed_ms": 4366,
+        "pricing": {
+          "currency": "USD",
+          "per_million_tokens": {
+            "input": 0.4,
+            "cached_input": 0.04,
+            "output": 1.2
+          },
+          "source": "Baseten Model APIs pricing",
+          "source_url": "https://www.baseten.co/pricing/",
+          "observed_at": "2026-10-29"
+        }
+      }
+    }
+  ],
+  "record_version": "1",
+  "repair_count": 2,
+  "request_params": {
+    "temperature": 0.4,
+    "max_tokens": 4096,
+    "reasoning_effort": "minimal"
+  },
+  "certificate_mask_sha256": "beac76b5dfbfb08428c323ceec0f6edf69e822579562b0c2477b1d1dc249f2c5",
+  "certificate_dsl_sha256": "a6d43b612bbdb65bd897c80ebe95a69d6472c5bc08e11733c3011b56380520cc"
+}

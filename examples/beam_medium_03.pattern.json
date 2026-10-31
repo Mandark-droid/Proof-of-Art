@@ -1,0 +1,229 @@
+{
+  "schema_version": "0.1",
+  "style": "ajrakh_inspired",
+  "title": "Nested Diamond Rosette",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#172F4A",
+    "#A84436",
+    "#F4E5C5",
+    "#262321"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "outer_diamond",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "polygon",
+          "center": null,
+          "radius": null,
+          "stroke": null,
+          "size": null,
+          "points": [
+            [
+              31,
+              15
+            ],
+            [
+              32,
+              15
+            ],
+            [
+              48,
+              31
+            ],
+            [
+              48,
+              32
+            ],
+            [
+              32,
+              48
+            ],
+            [
+              31,
+              48
+            ],
+            [
+              15,
+              32
+            ],
+            [
+              15,
+              31
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inner_diamond",
+      "colour_index": 2,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "polygon",
+          "center": null,
+          "radius": null,
+          "stroke": null,
+          "size": null,
+          "points": [
+            [
+              31,
+              23
+            ],
+            [
+              32,
+              23
+            ],
+            [
+              40,
+              31
+            ],
+            [
+              40,
+              32
+            ],
+            [
+              32,
+              40
+            ],
+            [
+              31,
+              40
+            ],
+            [
+              23,
+              32
+            ],
+            [
+              23,
+              31
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cream_accents",
+      "colour_index": 3,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            7,
+            15
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            48,
+            7
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            56,
+            48
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            15,
+            56
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            56,
+            15
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            48,
+            56
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            7,
+            48
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            15,
+            7
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D4",
+    "max_colours": 4,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.02,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": []
+  }
+}

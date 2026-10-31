@@ -1,0 +1,24 @@
+{"id":"easy-01","level":"easy","symmetry":"D4","brief":"A sparse indigo tile with four small corner diamonds and a centered dot."}
+{"id":"easy-02","level":"easy","symmetry":"D2","brief":"A balanced madder and cream tile with two mirrored horizontal bands."}
+{"id":"easy-03","level":"easy","symmetry":"D4","brief":"A small central star made from diamonds, with generous empty space."}
+{"id":"easy-04","level":"easy","symmetry":"D2","brief":"An earthy geometric tile with a pair of opposing medallions."}
+{"id":"easy-05","level":"easy","symmetry":"D4","brief":"Four cream dots around a central indigo diamond, using no more than three colours."}
+{"id":"easy-06","level":"easy","symmetry":"D2","brief":"A restrained border-like tile with equal top and bottom motifs."}
+{"id":"easy-07","level":"easy","symmetry":"D4","brief":"A contemporary two-colour tile with a centered diamond and four satellites."}
+{"id":"easy-08","level":"easy","symmetry":"D2","brief":"A sparse charcoal and rust pattern with balanced left-right and half-turn symmetry."}
+{"id":"medium-01","level":"medium","symmetry":"D4","brief":"A layered indigo and madder medallion with four colours maximum and 8–20 geometric marks."}
+{"id":"medium-02","level":"medium","symmetry":"D2","brief":"A tiled arrangement of paired diamonds and dots with moderate ink coverage."}
+{"id":"medium-03","level":"medium","symmetry":"D4","brief":"A geometric rosette with nested diamonds and cream accents, avoiding a crowded center."}
+{"id":"medium-04","level":"medium","symmetry":"D2","brief":"A two-axis balanced motif with a horizontal emphasis and three ink colours maximum."}
+{"id":"medium-05","level":"medium","symmetry":"D4","brief":"A compact starfield motif with repeated small marks near the tile edges."}
+{"id":"medium-06","level":"medium","symmetry":"D2","brief":"A warm earth-tone repeat with separate rust and cream marks and a clear central opening."}
+{"id":"medium-07","level":"medium","symmetry":"D4","brief":"An interleaved diamond-and-dot composition with a limited palette and less than half the tile inked."}
+{"id":"medium-08","level":"medium","symmetry":"D2","brief":"A mirrored pair of geometric floral abstractions made only from allowed primitive shapes."}
+{"id":"hard-01","level":"hard","symmetry":"D4","brief":"Create a detailed but readable four-colour medallion with many repeated motifs, bounded complexity, and visible edge-crossing marks."}
+{"id":"hard-02","level":"hard","symmetry":"D2","brief":"Build an asymmetric-looking but exactly D2-balanced composition with two visual zones and moderate coverage."}
+{"id":"hard-03","level":"hard","symmetry":"D4","brief":"Use a dense outer ring and a sparse center while keeping all four rotations and reflections exact."}
+{"id":"hard-04","level":"hard","symmetry":"D2","brief":"Arrange multiple ink layers in a balanced stripe-and-medallion composition with a restrained three-colour palette."}
+{"id":"hard-05","level":"hard","symmetry":"D4","brief":"Design a richly structured repeating tile near the upper coverage limit without exceeding 100 primitives."}
+{"id":"hard-06","level":"hard","symmetry":"D2","brief":"Create separated decorative zones on a shared registration grid and use both horizontal and vertical reflection symmetry."}
+{"id":"hard-07","level":"hard","symmetry":"D4","brief":"Make an edge-aware repeating geometric pattern with nested diamond clusters, balanced density, and no unsupported shapes."}
+{"id":"hard-08","level":"hard","symmetry":"D2","brief":"Balance a complex two-colour composition across half-turn and mirror transforms while leaving a clear negative-space channel."}

@@ -1,0 +1,223 @@
+{
+  "schema_version": "0.1",
+  "style": "ajrakh_inspired",
+  "title": "Ajrakh D4 Rosette",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#172F4A",
+    "#F4E5C5"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "diamonds",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "diamond",
+          "center": [
+            12,
+            20
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            43,
+            12
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            51,
+            43
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            20,
+            51
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            51,
+            20
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            12,
+            43
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            20,
+            12
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            43,
+            51
+          ],
+          "radius": 3,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    },
+    {
+      "id": "dots",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            18,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            18
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            45,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            45
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            45,
+            12
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            18,
+            51
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            12,
+            18
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            51,
+            45
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D4",
+    "max_colours": 2,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": []
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "prompt_id": "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+  "state": "Rajasthan",
+  "tradition_id": "rj_leheriya-diagonal-stripe-tie-dye",
+  "brief": "A 64x64 tile of 45-degree diagonal bands cycling through exactly five colours in the fixed order yellow, green, magenta, blue, white with widths 6,4,6,4,4 pixels, the pattern repeating with period 24 perpendicular to the bands and tiling seamlessly.",
+  "mask_sha256": "2abdf6aaa9cad76f293770120c1e153abf9ba366bf7a82a0f6de94c70dd8f78b"
+}

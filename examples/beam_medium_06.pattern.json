@@ -1,0 +1,137 @@
+{
+  "schema_version": "0.1",
+  "style": "ajrakh_inspired",
+  "title": "Warm Earth Repeat",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#172F4A",
+    "#A84436",
+    "#F4E5C5",
+    "#262321"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "rust_marks",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            20
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            20
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            20,
+            43
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            43,
+            43
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    },
+    {
+      "id": "cream_marks",
+      "colour_index": 2,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            10,
+            10
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            53,
+            10
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            10,
+            53
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            53,
+            53
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 4,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.02,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": []
+  }
+}

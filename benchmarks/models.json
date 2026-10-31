@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "description": "Model-neutral benchmark registry. Credentials are read from each api_key_env variable and are never stored here.",
+  "models": [
+    {
+      "key": "beam-hf",
+      "provider": "Hugging Face Inference Providers",
+      "api_style": "openai-compatible-chat-completions",
+      "model_id": "reflection/Beam-1.0-501B-A23B:baseten",
+      "base_url": "https://router.huggingface.co/v1",
+      "api_key_env": "HF_TOKEN",
+      "request_params": {
+        "temperature": 0.4,
+        "max_tokens": 4096,
+        "reasoning_effort": "minimal"
+      },
+      "pricing": {
+        "currency": "USD",
+        "per_million_tokens": {
+          "input": 0.4,
+          "cached_input": 0.04,
+          "output": 1.2
+        },
+        "source": "Baseten Model APIs pricing",
+        "source_url": "https://www.baseten.co/pricing/",
+        "observed_at": "2026-10-29"
+      }
+    }
+  ]
+}

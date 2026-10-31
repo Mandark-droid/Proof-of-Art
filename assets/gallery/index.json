@@ -1,0 +1,1393 @@
+{
+  "suite_id": "eval-v2.1",
+  "suite_sha256": "b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a",
+  "validator_version": "0.3.0",
+  "generated_at": "2026-10-30T02:09:10+00:00",
+  "states": [
+    {
+      "state": "Andhra Pradesh",
+      "state_type": "state",
+      "grid": [
+        5,
+        6
+      ],
+      "tradition_id": "ap_mangalagiri-sarees-and-fabrics",
+      "tradition": "Mangalagiri sarees and fabrics (Nizam border with inverted checks and dots; checked body)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "The 'Nizam border' name references Hyderabad's Nizam patronage and the gopuram points reference the Narasimha temples of Mangalagiri (guntur.ap.gov.in); keep framing as 'inspired by Mangalagiri handloom' and avoid using the GI name on outputs.",
+      "sources": [
+        {
+          "title": "GI Application 198 - Mangalagiri Sarees and Fabrics",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/198"
+        },
+        {
+          "title": "Andhra Pradesh GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/Andhra%20Pradesh.html"
+        },
+        {
+          "title": "Mangalagiri sarees and fabrics (ODOP)",
+          "url": "https://guntur.ap.gov.in/?p=33196"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Arunachal Pradesh",
+      "state_type": "state",
+      "grid": [
+        9,
+        2
+      ],
+      "tradition_id": "ar_apatani-textiles",
+      "tradition": "Apatani textiles (banded shawls, three-band skirts, lozenge-row jackets)",
+      "grammar": "stripe_band",
+      "tier": "B",
+      "caution": "The jilan/jilang pulye and jig-jiro are priestly ceremonial shawls said to carry supernatural power and worn at Myoko, Murung and Subu rituals; the jikhe tarii and certain skirts mark social position and ceremonial status. Frame any design as 'inspired by Apatani band and lozenge weaving', never as a reproduction of a named priestly shawl. The GI is held by a producer company (Zeet Zeero), not the community as a whole.",
+      "sources": [
+        {
+          "title": "GI Application 808 - Arunachal Pradesh Apatani Textile Product",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/808"
+        },
+        {
+          "title": "Textiles of Arunachal Pradesh",
+          "url": "https://ignca.gov.in/?p=50853"
+        },
+        {
+          "title": "The Style and Motifs in the Art of Arunachal Pradesh (D. K. Durah)",
+          "url": "https://ignca.gov.in/?p=20995"
+        },
+        {
+          "title": "Arunachal Pradesh GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/arunachal_pradesh.html"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Assam",
+      "state_type": "state",
+      "grid": [
+        8,
+        3
+      ],
+      "tradition_id": "as_gamosa-red-on-white-border-and-motif-band",
+      "tradition": "Gamosa red-on-white border and motif band",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "The gamosa is a strong symbol of Assamese identity, used in Bihu, as a mark of respect, and in religious/satra contexts (Gossain gamosa); treat with respect, say 'inspired by gamosa borders', and do not sell or label outputs as GI 'Asomiya Gamosa'. The 2019-2023 GI process involved disputes between applicant bodies; cite the Directorate of Handloom & Textiles as proprietor.",
+      "sources": [
+        {
+          "title": "Press Release No. 64/2023: CM Dr. Sarma receives GI Registration Certification for Assamese Gamosa",
+          "url": "https://dipr.assam.gov.in/sites/default/files/swf_utility_folder/departments/dipr_webcomindia_org_oid_4/menu/document/cm_dr._sarma_receives_gi_registration_certification_for_assamese_gamosa_13.04.2023.pdf"
+        },
+        {
+          "title": "Gamosa: Unique symbol of Assamese culture (Indian Journal of Traditional Knowledge 24(2), 2025)",
+          "url": "https://or.niscpr.res.in/index.php/IJTK/article/view/17210"
+        },
+        {
+          "title": "Gamocha from Assam",
+          "url": "https://gaatha.com/gamocha-weaving-assam/"
+        },
+        {
+          "title": "Cotton and Silk Weaving of Assam",
+          "url": "https://globalinch.org/?p=158789"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Bihar",
+      "state_type": "state",
+      "grid": [
+        6,
+        3
+      ],
+      "tradition_id": "br_madhubani",
+      "tradition": "Madhubani (Mithila) painting - double-line borders and hatched fills",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Kohbar (nuptial chamber) and tantric imagery are ritual; godna-style is specific to the Dusadh community; deities and epics dominate figurative work. Keep to abstract borders and fills 'inspired by Mithila line work'; do not reproduce kohbar diagrams or deity figures; avoid implying caste-style attribution.",
+      "sources": [
+        {
+          "title": "GI Application 37 - Madhubani Paintings",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/37"
+        },
+        {
+          "title": "Mithila Painting (Sananda Dasgupta)",
+          "url": "https://www.sahapedia.org/mithila-painting-0"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Chhattisgarh",
+      "state_type": "state",
+      "grid": [
+        4,
+        4
+      ],
+      "tradition_id": "cg_bastar-wooden-craft",
+      "tradition": "Bastar wooden craft (incised and fire-branded geometric ornament on doors, combs and panels)",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Memorial pillars (Madia khamb) and ghotul doors have ritual/funerary meaning; use 'inspired by Bastar incised ornament' and do not reproduce ancestor-pillar iconography or ghotul-specific symbols. Attribute to Bastar Adivasi communities generically rather than to a named clan.",
+      "sources": [
+        {
+          "title": "GI Application 84 - Bastar Wooden Craft",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/84"
+        },
+        {
+          "title": "From combs to icons: The trajectory of wood crafts in Bastar (Hindi)",
+          "url": "https://www.sahapedia.org/%E0%A4%AC%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A4%B0-%E0%A4%95%E0%A5%87-%E0%A4%AA%E0%A4%BE%E0%A4%B0%E0%A4%AE%E0%A5%8D%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%95-%E0%A4%95%E0%A4%BE%E0%A4%B7%E0%A5%8D%E0%A4%A0%E0%A4%B6%E0%A4%BF%E0%A4%B2%E0%A5%8D%E0%A4%AA"
+        },
+        {
+          "title": "Wood craft tradition of Bastar (module overview, Hindi)",
+          "url": "https://www.sahapedia.org/%E0%A4%AC%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A4%B0-%E0%A4%95%E0%A5%80-%E0%A4%95%E0%A4%BE%E0%A4%B7%E0%A5%8D%E0%A4%A0%E0%A4%B6%E0%A4%BF%E0%A4%B2%E0%A5%8D%E0%A4%AA-%E0%A4%AA%E0%A4%B0%E0%A4%AE%E0%A5%8D%E0%A4%AA%E0%A4%B0%E0%A4%BE"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Goa",
+      "state_type": "state",
+      "grid": [
+        2,
+        6
+      ],
+      "tradition_id": "ga_kunbi-check-sari",
+      "tradition": "Kunbi check sari (Kunbi kapod)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Garment of a historically marginalised tribal community; The Better India documents caste stigma attached to wearing it. Colours carried social meaning (blue/lilac for widows). Attribute to the Kunbi/Gawda communities of Goa and use 'inspired by Kunbi check'; do not use 'Kunbi' as a brand name.",
+      "sources": [
+        {
+          "title": "Orientation programme on revival of Kunbi handloom weaving held (press release, 3 April 2023)",
+          "url": "https://www.goa.gov.in/wp-content/uploads/2023/04/Orientation-programme-on-revival-of-Kunbi-handloom-weaving-held.pdf"
+        },
+        {
+          "title": "Kunbi Sari Weaving of Goa",
+          "url": "https://www.globalinch.org/craft/the-kunbu-saris-of-goa/"
+        },
+        {
+          "title": "In a Tucked-Away Goa Village, Women Are Restoring Pride to a Saree That Carried Generations of Stigma",
+          "url": "https://thebetterindia.com/culture/kunbi-saree-revival-goa-heritage-first-festival-weavers-empowerment-10798820"
+        },
+        {
+          "title": "Wrapped in cotton: the sarees Goa wears",
+          "url": "https://www.heraldgoa.in/cafe/wrapped-in-cotton-the-sarees-goa-wears/491106/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Gujarat",
+      "state_type": "state",
+      "grid": [
+        1,
+        4
+      ],
+      "tradition_id": "gj_bandhani",
+      "tradition": "Bandhani (bandhej) tie-dye dot fields",
+      "grammar": "dot_field",
+      "tier": "B",
+      "caution": "Strong ritual/wedding associations (gharchola is the Hindu/Jain wedding sari; Bishnoi yellow-with-red-dot mantles mark motherhood of sons). Technique is shared with Rajasthan, MP, Tamil Nadu and Sindh; two separate GIs name Jamnagar and Kutch. Say 'inspired by bandhani dot fields'; do not claim either GI name.",
+      "sources": [
+        {
+          "title": "GI Application 221 - Jamnagari Bandhani",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/221"
+        },
+        {
+          "title": "GI Application 756 - Kutch Bandhani of Gujarat",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/756"
+        },
+        {
+          "title": "GI Application 751 - Jodhpur Bandhej Craft",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/751"
+        },
+        {
+          "title": "Bandhej / Shibori / Tie-Resist-Dyeing of Gujarat",
+          "url": "https://asiainch.org/craft/bandhej-of-gujarat/"
+        },
+        {
+          "title": "Gharchola Craft of Gujarat",
+          "url": "https://asiainch.org/craft/gharchola-craft-of-gujarat/"
+        },
+        {
+          "title": "Gharcholu (Wedding Sari), CSMVS Mumbai acc. 99.1/2",
+          "url": "https://artsandculture.google.com/asset/gharcholu-wedding-sari/iwEddBJhkRbyRw"
+        },
+        {
+          "title": "Jamnagari Bandhani",
+          "url": "https://www.incredibleindia.gov.in/en/gujarat/dwarka/jamnagari-bandhani"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Haryana",
+      "state_type": "state",
+      "grid": [
+        3,
+        2
+      ],
+      "tradition_id": "hr_phulkari-and-bagh-counted-thread-embroidery",
+      "tradition": "Phulkari and Bagh counted-thread embroidery (Haryana practice: Rohtak, Hisar, Hansi, Ambala)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Dowry/bridal textiles made by grandmothers and mothers (chope, vari-da-bagh); darshan dwar pieces are made for Sikh gurdwaras. Shared across Punjab, Haryana, Rajasthan and Pakistani Punjab; do not claim a Haryana-only origin. GI-protected name: label output 'inspired by phulkari/bagh geometry'. Note the GSA Archives record of a deliberate 'purple stripe to spoil symmetry' (humility convention): perfect symmetry is a verifier convenience, not a cultural requirement.",
+      "sources": [
+        {
+          "title": "GI Application 27: Phulkari - Registered",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/27"
+        },
+        {
+          "title": "GI Journal No. 12 (01-01-2006), Phulkari specification (POST form, DocumentPath '27/27 - GI - Journal Copy - 01-01-2006.pdf')",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/ViewDocument"
+        },
+        {
+          "title": "Phulkari (woman's head-cover), Rohtak, Haryana, c.1881-2",
+          "url": "https://collections.vam.ac.uk/item/O65811/phulkari-unknown"
+        },
+        {
+          "title": "Phulkari (Bagh), early 20th century, NDS/F/35",
+          "url": "https://catalogue.gsaarchives.net/index.php/nds-f-35"
+        },
+        {
+          "title": "Phulkari",
+          "url": "https://www.trc-leiden.nl/trc-needles/regional-traditions/indian-subcontinent/phulkari"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Himachal Pradesh",
+      "state_type": "state",
+      "grid": [
+        4,
+        1
+      ],
+      "tradition_id": "hp_kinnauri-shawl-geometric-border",
+      "tradition": "Kinnauri shawl geometric border",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Border motifs include stylised Buddhist symbols and the five colours carry element symbolism (water, earth, fire, ether, air) in the GI description; use 'inspired by Kinnauri shawl borders' and avoid claiming religious meaning for generated tiles. Kinnauri borders are also woven onto Kullu shawls, so attribute to Kinnaur, not Kullu, when the geometric border is the subject.",
+      "sources": [
+        {
+          "title": "GIs of H.P. (HP Patent Information Centre, HIMCOSTE)",
+          "url": "https://himcoste.hp.gov.in/Patent%20Information%20Centre/Pdf/GIs%20of%20H.P.pdf"
+        },
+        {
+          "title": "GI Handloom Products - Himachal Pradesh",
+          "url": "https://hepcindia.com/gihandloom_products/himachal_pradesh.html"
+        },
+        {
+          "title": "Kinnauri Shawl - Geographical Index in the Public Domain",
+          "url": "https://www.globalinch.org/collection/kinnauri-shawl/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Jharkhand",
+      "state_type": "state",
+      "grid": [
+        6,
+        4
+      ],
+      "tradition_id": "jh_sohrai-khovar-wall-painting",
+      "tradition": "Sohrai-Khovar wall painting (Kamalban intersecting-circle lotus forest, comb-cut and glyptic styles)",
+      "grammar": "rotational_field",
+      "tier": "B",
+      "caution": "Ritual art: Sohrai protects cattle and home from evil spirits; Khovar decorates the nuptial chamber; Pashupati, Mother Goddess and ancestor (Purkha) figures are sacred. Use only the abstract compass-circle, triple-line and dot-row vocabulary; never render Pashupati, ancestor figures or Shadi Chowk itself. Credit the women painters of Hazaribagh (GI holder is a women's cooperative) and name communities collectively.",
+      "sources": [
+        {
+          "title": "GI Application 658 - Sohrai-Khovar Painting (record and 'GI - Journal Copy - 10-01-2020' = GI Journal No. 129, pp. 28-33)",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/658"
+        },
+        {
+          "title": "Mural Traditions of Jharkhand",
+          "url": "https://www.sahapedia.org/mural-traditions-of-jharkhand-0"
+        },
+        {
+          "title": "Sohrai - The Wall Art Of Jharkhand",
+          "url": "https://artsandculture.google.com/story/mAVRReelMH9XQg"
+        }
+      ],
+      "diwali_tie": {
+        "claim": "Asia InCH describes Sohrai as a post-harvest festival observed the day after Diwali and identifies domestic wall murals as its primary visual expression.",
+        "source_url": "https://www.asiainch.org/craft/sohrai-painting-of-jharkhand/"
+      }
+    },
+    {
+      "state": "Karnataka",
+      "state_type": "state",
+      "grid": [
+        3,
+        7
+      ],
+      "tradition_id": "ka_kasuti-embroidery",
+      "tradition": "Kasuti embroidery (counted-thread geometric embroidery)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Many motifs are temple/ritual objects (gopura, tulsi vrindavan, palanquin); the craft is a women's domestic tradition and a GI held by a state corporation with individual women as authorised users. Prefer abstract lattice/zigzag motifs and label outputs 'inspired by Kasuti'.",
+      "sources": [
+        {
+          "title": "GI Application 31 - Kasuti Embroidery",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/31"
+        },
+        {
+          "title": "World Embroidery Day: Discovering Kasuti, A Hidden Gem From Karnataka",
+          "url": "https://www.outlooktraveller.com/explore/culture/kasuti-the-gi-tagged-geometric-embroidery-from-karnataka"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Kerala",
+      "state_type": "state",
+      "grid": [
+        3,
+        8
+      ],
+      "tradition_id": "kl_pookalam",
+      "tradition": "Pookalam (Athapookalam, Onam floral carpet)",
+      "grammar": "rotational_field",
+      "tier": "B",
+      "caution": "Onam ritual welcoming King Mahabali; the rings are popularly linked to deities (Kerala Tourism: 'believed to represent ten deities'); only natural flowers are traditionally allowed. Keep outputs abstract (rings and sectors), avoid deity figures, and say 'inspired by Onam pookalam'.",
+      "sources": [
+        {
+          "title": "Pookkalam - Onam (Kerala Tourism newsletter)",
+          "url": "https://keralatourism.org/kerala-article/2021/pookkalam-onam/1104"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Madhya Pradesh",
+      "state_type": "state",
+      "grid": [
+        3,
+        4
+      ],
+      "tradition_id": "mp_bagh-hand-block-print",
+      "tradition": "Bagh hand block print",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Family craft of specific Khatri households (Bagh Printers Association); women of the family traditionally do not print; labour is Bhil Adivasi. GI name protected. Say 'inspired by Bagh print geometry'. Avoid claiming links to Bagh cave paintings as fact (tourism-sourced claim).",
+      "sources": [
+        {
+          "title": "GI Application 98 - Bagh Prints of Madhya Pradesh",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/98"
+        },
+        {
+          "title": "Hand Block Printing of Bagh, Madhya Pradesh",
+          "url": "https://asiainch.org/craft/hand-block-printing-of-bagh-madhya-pradesh/"
+        },
+        {
+          "title": "Bagh Prints from Madhya Pradesh (Dastkari Haat Samiti)",
+          "url": "https://artsandculture.google.com/story/AAUBckxcEI9kIQ"
+        },
+        {
+          "title": "The heritage weave of Maheshwar and the prints of Bagh",
+          "url": "https://www.mptourism.com/the-heritage-weave-of-maheshwar-and-the-prints-of-bagh.html"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Maharashtra",
+      "state_type": "state",
+      "grid": [
+        3,
+        5
+      ],
+      "tradition_id": "mh_warli-painting",
+      "tradition": "Warli painting",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Ritual art: the chauk/Devchauk and Lagnachauk are sacred marriage paintings (dnh.gov.in: 'The painting is sacred and without it, the marriage cannot take place'); the goddess figure is painted in white as sacred. Use 'inspired by Warli geometry' and avoid rendering deity figures (Palghat) or calling output 'Warli art'. GI-protected name held by the Adivasi Yuva Seva Sangh; attribute to the Warli community, and note the tradition is shared with Gujarat and Dadra & Nagar Haveli.",
+      "sources": [
+        {
+          "title": "GI Application 239 - Warli Painting",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/239"
+        },
+        {
+          "title": "Warli Painting (Mushtak Khan)",
+          "url": "http://www.sahapedia.org/warli-painting"
+        },
+        {
+          "title": "Warli Tribal Art of Maharashtra",
+          "url": "https://asiainch.org/craft/warli-painting/"
+        },
+        {
+          "title": "The enduring tribal artistry of Maharashtra: Warli paintings",
+          "url": "https://www.incredibleindia.gov.in/en/maharashtra/the-enduring-tribal-artistry-of-maharashtra-warli-paintings"
+        },
+        {
+          "title": "Warli artists from the community painting the museum exterior (MTDC Palghar Lok Itihas Sangrahalaya)",
+          "url": "https://artsandculture.google.com/asset/warli-artists-from-the-community-painting-the-museum-exterior/TQGDmfZRhfSB7A"
+        },
+        {
+          "title": "The Art of Warli",
+          "url": "https://artsandculture.google.com/asset/the-art-of-warli/NQHgRIMVSS1_hw"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Manipur",
+      "state_type": "state",
+      "grid": [
+        9,
+        4
+      ],
+      "tradition_id": "mn_moirang-phee-moirang-pheejin-stepped-triangle-border",
+      "tradition": "Moirang Phee / Moirang Pheejin stepped-triangle border",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "The motif derives from Pakhangba, a Meitei deity, and the cloth was royal tribute and is worn at Lai Haraoba and weddings; present it as 'inspired by the Moirang Pheejin stepped-triangle border' and avoid claiming religious meaning. Historically tied to the Thongkapam family lineage of weavers.",
+      "sources": [
+        {
+          "title": "GI Application 373 - Moirang Pheejin",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/373"
+        },
+        {
+          "title": "GI application 373 Moirang Pheejin (scan)",
+          "url": "https://www.origin-gi.com/wp-content/uploads/2017/01/185-moirang-phee.pdf"
+        },
+        {
+          "title": "Manipur GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/manipur.html"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Meghalaya",
+      "state_type": "state",
+      "grid": [
+        8,
+        4
+      ],
+      "tradition_id": "ml_garo-dakmanda",
+      "tradition": "Garo Dakmanda (concentric-diamond muikron border)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "GI held by Bethany Society, Tura, facilitated by the Meghalaya Department of Handloom & Textiles; the muikron 'eye' is an auspicious symbol. Garo society is matrilineal and the Dakmanda is formal women's wear. Frame as 'inspired by the Garo muikron nested-diamond border'. GI journal states the textile is woven in acrylic today; HEPC mentions cotton, so avoid fibre claims.",
+      "sources": [
+        {
+          "title": "GI Application 1094 - Meghalaya Garo Textile",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1094"
+        },
+        {
+          "title": "Meghalaya GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/meghalaya.php"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Mizoram",
+      "state_type": "state",
+      "grid": [
+        9,
+        5
+      ],
+      "tradition_id": "mz_mizo-puanchei",
+      "tradition": "Mizo Puanchei (striped three-panel festive puan)",
+      "grammar": "stripe_band",
+      "tier": "B",
+      "caution": "GI held by the Government of Mizoram on behalf of weavers. Worn at Chapchar Kut, Cheraw dance and weddings, where it signals close kinship to the bride. Use 'inspired by Mizo Puanchei stripe order'; do not sell or label output as Puanchei.",
+      "sources": [
+        {
+          "title": "GI Application 583 - Mizo Puanchei",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/583"
+        },
+        {
+          "title": "GI application 583 Mizo Puanchei (Form GI-1 and Statement of Case)",
+          "url": "https://www.origin-gi.com/wp-content/uploads/2022/02/583-mizo-puanchei.pdf"
+        },
+        {
+          "title": "Mizo Puanchei",
+          "url": "https://www.incredibleindia.gov.in/en/mizoram/mizo-puanchei"
+        },
+        {
+          "title": "5 Mizo traditional shawls get GI tag",
+          "url": "https://www.eastmojo.com/mizoram/2019/08/17/breaking-5-mizo-traditional-shawls-get-gi-tag"
+        },
+        {
+          "title": "Mizoram GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/Mizoram.html"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Nagaland",
+      "state_type": "state",
+      "grid": [
+        9,
+        3
+      ],
+      "tradition_id": "nl_chakhesang-shawls",
+      "tradition": "Chakhesang shawls (banded Naga shawls with square-row centres)",
+      "grammar": "stripe_band",
+      "tier": "B",
+      "caution": "Strong caution. Chakhesang shawls are GI-protected and community-owned; the Chakhesang Women Welfare Society sued a designer and TRIFED in 2020 over misuse. Many shawls encode earned status (Thupikhu/Hapidasa for Feast-of-Merit couples), are gendered (Rira men, Rura women), and some are reserved for funerals; wearing an unearned shawl is taboo. Never reproduce a named shawl's identity or its figurative motifs (mithun, elephant, spear, shield); generate only abstract band-and-square compositions 'inspired by Chakhesang band geometry'. Red dyeing is traditionally restricted to elder women.",
+      "sources": [
+        {
+          "title": "GI Application 542 - Chakhesang Shawls",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/542"
+        },
+        {
+          "title": "How the Chakhesang Naga community weaves a world of meaning into a shawl",
+          "url": "https://scroll.in/magazine/1055223/how-the-chakhesang-naga-community-weaves-a-world-of-meaning-into-a-shawl"
+        },
+        {
+          "title": "In Nagaland, women weave through challenges",
+          "url": "https://ruralindiaonline.org/en/articles/in-nagaland-women-weave-through-challenges/"
+        },
+        {
+          "title": "Nagaland GI Handloom Products - Chakhesang Shawls",
+          "url": "https://hepcindia.com/gihandloom_products/Nagaland.html"
+        },
+        {
+          "title": "Tribal textiles of Nagaland",
+          "url": "https://globalinch.org/craft/tribal-textiles-of-nagaland/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Odisha",
+      "state_type": "state",
+      "grid": [
+        5,
+        5
+      ],
+      "tradition_id": "od_sambalpuri-bandha",
+      "tradition": "Sambalpuri Bandha (ikat) - saktapar chequerboard body and rudraksha border",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Gitagovinda cloths have ritual use at the Jagannath temple; avoid scripts/verses. Conch, chakra and lotus are sacred motifs; keep generated patterns to checks, diamonds, stars, waves and dots. Shared ikat family across India and Asia; say 'inspired by Sambalpuri saktapar checks', not 'Sambalpuri'.",
+      "sources": [
+        {
+          "title": "GI Application 208 - Sambalpuri Bandha Saree & Fabrics (record and 'GI - Journal Copy - 11-01-2012' = GI Journal No. 44)",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/208"
+        },
+        {
+          "title": "GI Application 22 - Orissa Ikat",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/22"
+        },
+        {
+          "title": "The Sambalpuri Ikat of Odisha: History, Symbolism and Contemporary Trends",
+          "url": "https://www.sahapedia.org/the-sambalpuri-ikat-of-odisha-history-symbolism-and-contemporary-trends"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Punjab",
+      "state_type": "state",
+      "grid": [
+        3,
+        1
+      ],
+      "tradition_id": "pb_phulkari-and-bagh-counted-thread-embroidery",
+      "tradition": "Phulkari and Bagh counted-thread embroidery",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Bridal and ritual textiles (chope from the grandmother, vari-da-bagh for the daughter-in-law, darshan dwar for gurdwaras); shared across Indian and Pakistani Punjab, Haryana and Rajasthan. GI-protected: label output 'inspired by phulkari/bagh'. Credit women artisans; the craft was disrupted by Partition and is being revived by self-help groups and the Punjab government. Some makers deliberately break symmetry (GSA record), so perfect symmetry is a verifier choice.",
+      "sources": [
+        {
+          "title": "GI Application 27: Phulkari - Registered",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/27"
+        },
+        {
+          "title": "GI Journal No. 12 (01-01-2006), Phulkari specification (POST form, DocumentPath '27/27 - GI - Journal Copy - 01-01-2006.pdf')",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/ViewDocument"
+        },
+        {
+          "title": "Phulkari",
+          "url": "https://www.trc-leiden.nl/trc-needles/regional-traditions/indian-subcontinent/phulkari"
+        },
+        {
+          "title": "Phulkari, c.1881-2 (V&A)",
+          "url": "https://collections.vam.ac.uk/item/O65811/phulkari-unknown"
+        },
+        {
+          "title": "Phulkari (Bagh), early 20th century",
+          "url": "https://catalogue.gsaarchives.net/index.php/nds-f-35"
+        },
+        {
+          "title": "Craft of India - Chandigarh: Phulkari",
+          "url": "https://www.youngintach.org/public/maps_craft_chandigarh"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Rajasthan",
+      "state_type": "state",
+      "grid": [
+        2,
+        3
+      ],
+      "tradition_id": "rj_bagru-hand-block-print",
+      "tradition": "Bagru hand block print (dabu resist)",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "Craft identity of the Chhipa community; printed cloth historically signalled marital status and ethnic identity of wearer communities. Closely related to Sanganeri (separate GI) and to Ajrakh/dabu across Rajasthan-Gujarat-Sindh. Use 'inspired by Bagru block printing'; do not use the GI name on outputs.",
+      "sources": [
+        {
+          "title": "GI Application 183 - Bagru Hand Block Print",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/183"
+        },
+        {
+          "title": "Hand Block Printing of Bagru, Rajasthan",
+          "url": "https://asiainch.org/craft/hand-block-printing-of-bagru-rajasthan/"
+        },
+        {
+          "title": "Bagru Hand Block Print (GI product details)",
+          "url": "https://www.nabard.org/GI/GIProductDetails.aspx?Id=18"
+        },
+        {
+          "title": "Bagru Hand Block Print (Geographical Index in the Public Domain)",
+          "url": "https://www.globalinch.org/collection/bagru-hand-block-print/"
+        },
+        {
+          "title": "GI Application 147 - Sanganeri Hand Block Printing",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/147"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Sikkim",
+      "state_type": "state",
+      "grid": [
+        6,
+        2
+      ],
+      "tradition_id": "sk_lepcha-thara-weave-stripes",
+      "tradition": "Lepcha thara weave stripes (dumpra)",
+      "grammar": "stripe_band",
+      "tier": "B",
+      "caution": "The dumpra is Lepcha men's identity dress and the sumok triangle refers to the Lepcha hat; attribute to the Lepcha (Rong) community, use 'inspired by Lepcha thara stripes', and do not present outputs as authentic Lepcha cloth. Also practised across the border in Darjeeling and Nepal.",
+      "sources": [
+        {
+          "title": "Patterns of the Hills: Rong Weaving Identity",
+          "url": "https://www.sahapedia.org/patterns-hills-rong-weaving-identity"
+        },
+        {
+          "title": "Lepcha Weaving of Sikkim",
+          "url": "https://globalinch.org/?p=815"
+        },
+        {
+          "title": "Craft of India - Sikkim",
+          "url": "https://youngintach.org/maps_craft_sikkim"
+        },
+        {
+          "title": "Directorate of Handicrafts & Handloom, Gangtok (ICH archive entry)",
+          "url": "https://icharchive.intach.org/Detail/collections/232"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Tamil Nadu",
+      "state_type": "state",
+      "grid": [
+        4,
+        8
+      ],
+      "tradition_id": "tn_kolam",
+      "tradition": "Kolam (pulli / sikku kolam)",
+      "grammar": "kolam_loop",
+      "tier": "B",
+      "caution": "Kolam is a daily ritual offering (to Bhudevi / threshold deities) and is strongly gendered (women's practice); it is shared across Tamil-speaking regions and diaspora, so attribute it to the Tamil tradition rather than a single state. Avoid presenting generated outputs as ritual kolams; use 'inspired by the Tamil kolam tradition'. Do not combine with deity imagery.",
+      "sources": [
+        {
+          "title": "Significance of Kolam in Tamil Culture (Anni Kumari)",
+          "url": "https://www.sahapedia.org/significance-of-kolam-tamil-culture"
+        },
+        {
+          "title": "Kolam: Floor Art of Tamil Nadu (module)",
+          "url": "https://www.sahapedia.org/kolam-floor-art-of-tamil-nadu"
+        },
+        {
+          "title": "Symmetry Classification and Enumeration of Square-Tile Sikku Kolams (V. Gopalan, 2023)",
+          "url": "https://arxiv.org/abs/2304.14134"
+        },
+        {
+          "title": "A Topological Approach to Creating any Pulli Kolam (Gopalan & VanLeeuwen, Forma 30, 2015)",
+          "url": "https://arxiv.org/abs/1503.02130"
+        }
+      ],
+      "diwali_tie": {
+        "claim": "Google Arts & Culture describes rangoli as made during Diwali and other festivals, in homes, courtyards, and sometimes on walls.",
+        "source_url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en"
+      }
+    },
+    {
+      "state": "Telangana",
+      "state_type": "state",
+      "grid": [
+        4,
+        6
+      ],
+      "tradition_id": "tg_pochampally-ikat",
+      "tradition": "Pochampally Ikat (tie-and-dye yarn weaving)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "First Indian textile GI; the name is the registered property of the weavers' society, so outputs must say 'inspired by Pochampally ikat' and never use the name as a product label. The feathered edge is a hallmark of resist dyeing; a crisp raster is an inspiration, not a reproduction.",
+      "sources": [
+        {
+          "title": "GI Application 4 - Pochampally Ikat",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/4"
+        },
+        {
+          "title": "Telangana GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/Telangana.html"
+        },
+        {
+          "title": "Pochampally Ikat",
+          "url": "https://www.incredibleindia.gov.in/en/telangana/pochampally-ikat"
+        },
+        {
+          "title": "Yarn Tie-Dye Weaving / Ikat of Pochampally, Telangana",
+          "url": "https://globalinch.org/craft/ikat-of-pochampally-telangana/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Tripura",
+      "state_type": "state",
+      "grid": [
+        8,
+        5
+      ],
+      "tradition_id": "tr_risa",
+      "tradition": "Risa (mirror-symmetric warp-striped breast cloth)",
+      "grammar": "stripe_band",
+      "tier": "B",
+      "caution": "The Risa is given at a girl's coming-of-age (12-14), used in Garia puja and harvest festivals, gifted to honour guests, and tribe-specific motifs identify the wearer's community. Use 'inspired by Tripura Risa stripe symmetry' and do not label output with a specific tribe's named design (kwchak pali etc.).",
+      "sources": [
+        {
+          "title": "GI Application 893 - Tripura Risa Textile",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/893"
+        },
+        {
+          "title": "Tripura GI Handloom Products",
+          "url": "https://hepcindia.com/gihandloom_products/Tripura.php"
+        },
+        {
+          "title": "Risa (Tripura Rural Livelihood Mission)",
+          "url": "https://trlm.tripura.gov.in/node/175"
+        },
+        {
+          "title": "Tribal textiles, weaving of Tripura",
+          "url": "https://globalinch.org/craft/tribal-textiles-weaving-of-tripura/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Uttar Pradesh",
+      "state_type": "state",
+      "grid": [
+        5,
+        3
+      ],
+      "tradition_id": "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri",
+      "tradition": "Mughal pierced-stone jaali screens of Agra and Fatehpur Sikri",
+      "grammar": "jaali_lattice",
+      "tier": "B",
+      "caution": "These are Indo-Islamic funerary and religious monuments (Salim Chishti's dargah is an active Sufi shrine where pilgrims tie threads to the jalis). Use 'inspired by Mughal jaali geometry', never reproduce or name a specific shrine screen as the product. Jaali geometry is shared across the Islamic world; do not claim UP-exclusive origin. Many UP jalis (e.g. Taj cenotaph screen) are floral/inlaid rather than purely geometric; brief should target the geometric type.",
+      "sources": [
+        {
+          "title": "Fatehpur Sikri",
+          "url": "https://whc.unesco.org/en/list/255/"
+        },
+        {
+          "title": "Taj Mahal",
+          "url": "https://whc.unesco.org/en/list/252/"
+        },
+        {
+          "title": "Jali (screen), carved sandstone, Agra, 19th century, copied from a late 16th century model (IS.1031-1883)",
+          "url": "https://collections.vam.ac.uk/item/O166360/architecture-unknown/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Uttarakhand",
+      "state_type": "state",
+      "grid": [
+        4,
+        2
+      ],
+      "tradition_id": "uk_aipan",
+      "tradition": "Aipan (Kumaoni ritual floor and wall painting)",
+      "grammar": "rotational_field",
+      "tier": "B",
+      "caution": "Ritual art tied to Hindu pujas, births, sacred-thread and marriage rites and to specific deities (Nav Durga, Saraswati, Shiva, Lakshmi); swastik is a sacred auspicious symbol here and must not be rendered in a way that resembles the Nazi hakenkreuz; avoid naming a specific deity chauki as a product; use 'inspired by Kumaoni aipan geometry'. GI-protected name 'Uttarakhand Aipan' should not be used as a product label. Made by women; attribute accordingly.",
+      "sources": [
+        {
+          "title": "GI Application 648: Uttarakhand Aipan - Registered",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/648"
+        },
+        {
+          "title": "GI Journal No. 138 (30-06-2020), Uttarakhand Aipan specification (POST form, DocumentPath '648/648 - GI - Journal Copy - 30-06-2020.pdf')",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/ViewDocument"
+        },
+        {
+          "title": "Aipan",
+          "url": "https://imp-art.org/?p=3615"
+        },
+        {
+          "title": "Aipan (ICH Archive entry)",
+          "url": "https://icharchive.intach.org/Myheritagedetail/Index?id=25"
+        }
+      ],
+      "diwali_tie": {
+        "claim": "Google Arts & Culture describes rangoli as made during Diwali and other festivals, in homes, courtyards, and sometimes on walls.",
+        "source_url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en"
+      }
+    },
+    {
+      "state": "West Bengal",
+      "state_type": "state",
+      "grid": [
+        7,
+        4
+      ],
+      "tradition_id": "wb_nakshi-kantha",
+      "tradition": "Nakshi Kantha (counted running-stitch quilt embroidery)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Shared heritage of West Bengal and Bangladesh (Banglapedia is a Bangladeshi source); Katna's Muslim community deliberately avoids human and animal forms, so an abstract geometric brief is both respectful and accurate; say 'inspired by Bengal kantha counted stitching' rather than claiming a regional style.",
+      "sources": [
+        {
+          "title": "GI Application 52 - Nakshi Kantha",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/52"
+        },
+        {
+          "title": "Nakshi Kantha",
+          "url": "https://en.banglapedia.org/index.php/Nakshi_Kantha"
+        },
+        {
+          "title": "Katna's Kantha: Preserving a Tradition and Transforming Lives (Brinda Gill)",
+          "url": "https://selvedge.org/blogs/journal/india-week-with-brinda-gill-katna-s-kantha-preserving-a-tradition-and-transforming-lives"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Andaman and Nicobar Islands",
+      "state_type": "union_territory",
+      "grid": [
+        8,
+        8
+      ],
+      "tradition_id": "an_nicobari-plaited-pandanus-mat",
+      "tradition": "Nicobari plaited pandanus mat (Chatrai / Hileuoi)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "The Nicobarese are a Scheduled Tribe in a restricted-access area and the GI is held by a tribal cooperative; any brief must say 'inspired by plaited pandanus mat structure' and must not claim to be a Nicobari mat or use the names Chatrai/Hileuoi as a product name. The mat has ceremonial use (serving food at festivals, hospitality). Do not extend this to other island communities: nothing from Jarawa, Sentinelese, Onge, Great Andamanese or Shompen material culture is proposed or appropriate.",
+      "sources": [
+        {
+          "title": "GI Application 1054 - Nicobari Mat (Chatrai / Hileuoi) of Andaman & Nicobar (record and 'GI - Journal Copy - 31-07-2024' = GI Journal No. 193, pp. 18-23)",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/1054"
+        },
+        {
+          "title": "Coconut Shell, Fibre & Stem Craft of Andaman & Nicobar",
+          "url": "https://www.globalinch.org/craft/coconut-shell-fibre-stem-craft-of-andaman-nicobar/"
+        },
+        {
+          "title": "7 Indigenous Products of A & N Islands Receive Geographical Indication Tag",
+          "url": "https://nicobartimes.com/?p=14836"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Chandigarh",
+      "state_type": "union_territory",
+      "grid": [
+        2,
+        2
+      ],
+      "tradition_id": "ch_phulkari",
+      "tradition": "Phulkari (Chandigarh practice; honest fallback shared with Punjab and Haryana)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "Chandigarh has no craft tradition of its own older than the 1950s; be explicit that this is a shared Punjab/Haryana tradition hosted in the UT. Use 'inspired by phulkari' and do not imply a Chandigarh-specific style.",
+      "sources": [
+        {
+          "title": "GI Application 27: Phulkari - Registered",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/27"
+        },
+        {
+          "title": "Craft of India - Chandigarh: Phulkari (My City, My History project)",
+          "url": "https://www.youngintach.org/public/maps_craft_chandigarh"
+        },
+        {
+          "title": "GI Journal No. 12, Phulkari specification",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/ViewDocument"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Dadra and Nagar Haveli and Daman and Diu",
+      "state_type": "union_territory",
+      "grid": [
+        1,
+        5
+      ],
+      "tradition_id": "dd_warli-painting",
+      "tradition": "Warli painting (Dadra & Nagar Haveli)",
+      "grammar": "periodic_raster",
+      "tier": "B",
+      "caution": "The marriage painting is sacred (dnh.gov.in: without it 'the marriage cannot take place'). The tradition originated in Maharashtra and is shared with Gujarat; attribute to the Warli community rather than to the UT administration. Avoid deity/horse motifs; use 'inspired by Warli geometry as practised around Silvassa'. Daman and Diu (the coastal districts) have no documented distinct geometric tradition in the sources found.",
+      "sources": [
+        {
+          "title": "GI Application 239 - Warli Painting",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/239"
+        },
+        {
+          "title": "Handicraft / Culture & Heritage",
+          "url": "https://dnh.gov.in/handicraft-2/"
+        },
+        {
+          "title": "Varli / Warli Painting",
+          "url": "https://dnh.gov.in/?p=2818"
+        },
+        {
+          "title": "Immerse yourself in the vibrant arts and handicrafts of Silvassa",
+          "url": "https://www.incredibleindia.gov.in/en/dadra-and-nagar-haveli-and-daman-and-diu/silvassa/immerse-yourself-in-the-vibrant-arts-and-handicrafts-of-silvassa"
+        },
+        {
+          "title": "Tribal Museum, Silvassa",
+          "url": "https://dnh.gov.in/?p=27783"
+        },
+        {
+          "title": "Warli Painting",
+          "url": "http://www.sahapedia.org/warli-painting"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Delhi",
+      "state_type": "union_territory",
+      "grid": [
+        4,
+        3
+      ],
+      "tradition_id": "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex",
+      "tradition": "Mughal sandstone and marble jaali screens of the Humayun's Tomb complex",
+      "grammar": "jaali_lattice",
+      "tier": "B",
+      "caution": "Funerary monuments (tombs of Humayun, Isa Khan, ~160 Mughal family members) adjacent to the living Sufi dargah of Nizamuddin Auliya; use 'inspired by Mughal jaali geometry', do not name or reproduce a specific tomb screen as a product. Geometric jaali vocabulary is pan-Islamic/pan-South-Asian; do not claim Delhi exclusivity. Conservation craftsmanship credit belongs to the stone carvers trained under AKTC/ASI.",
+      "sources": [
+        {
+          "title": "Mausoleum Facade Restoration (Humayun's Tomb Conservation)",
+          "url": "https://www.nizamuddinrenewal.org/conservation/humayun-tomb/data/mausoleum-facade-restoration.php"
+        },
+        {
+          "title": "Conserving Humayun's Tomb Main Hall 2009-11",
+          "url": "https://nizamuddinrenewal.org/conservation/humayun-tomb/data/main-hall.php"
+        },
+        {
+          "title": "Isa Khan's Tomb-Garden",
+          "url": "https://www.nizamuddinrenewal.org/conservation/isa-khan"
+        },
+        {
+          "title": "Mughal Tomb - before/after conservation",
+          "url": "https://www.nizamuddinrenewal.org/conservation/mughal-tomb/images/mughal-tomb-before-after.pdf"
+        },
+        {
+          "title": "Humayun's Tomb Conservation (September 2013 report)",
+          "url": "https://static.the.akdn/53832/1641877230-2013_09-aktc-india-humayun_tomb_conservation.pdf"
+        },
+        {
+          "title": "Humayun's Tomb, Delhi",
+          "url": "https://whc.unesco.org/en/list/232/"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Jammu and Kashmir",
+      "state_type": "union_territory",
+      "grid": [
+        3,
+        0
+      ],
+      "tradition_id": "jk_khatamband-geometric-wooden-ceiling",
+      "tradition": "Khatamband geometric wooden ceiling",
+      "grammar": "jaali_lattice",
+      "tier": "B",
+      "caution": "Patterns derive from Islamic geometric tradition and are found in mosques and Sufi shrines (Khanqah-e-Moalla, Dastgir Sahib, Hazratbal); use 'inspired by Khatamband' and avoid implying sacred use. Attribute to Srinagar's Khatamband carpenters, not generic 'Islamic art'. Craft is GI-protected; do not label outputs as Khatamband.",
+      "sources": [
+        {
+          "title": "Application for registration of Khatamband (Form GI-1)",
+          "url": "https://origin-gi.com/wp-content/uploads/2017/01/142-khatamband.pdf"
+        },
+        {
+          "title": "Khatumband and Pinjrakari Woodwork of Kashmir",
+          "url": "https://www.globalinch.org/craft/khatumband-and-pinjrakari-woodwork-of-kashmir/"
+        },
+        {
+          "title": "GI Tag for Kashmir Products",
+          "url": "https://www.drishtiias.com/state-pcs-current-affairs/gi-tag-for-kashmir-products"
+        },
+        {
+          "title": "Khatamband: A Symphony of Geometric Precision",
+          "url": "https://www.jkartsfoundation.in/post/khatamband-a-symphony-of-geometric-precision"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Ladakh",
+      "state_type": "union_territory",
+      "grid": [
+        4,
+        0
+      ],
+      "tradition_id": "la_thigma-resist-dyed-circles",
+      "tradition": "Thigma resist-dyed circles",
+      "grammar": "dot_field",
+      "tier": "B",
+      "caution": "Historically associated with the Ladakhi royal family and ceremonial women's dress (sulma); the thigma circle appears in 12th-century Alchi murals, a Buddhist monastery context. Keep to 'inspired by Ladakhi thigma'; do not reproduce monastery imagery. Attribute to Ladakhi women dyers of Nubra and Sabu; GI-protected name, so do not call outputs 'Thigma'.",
+      "sources": [
+        {
+          "title": "The Fabric of Life: Nomadic Textiles from the Ladakh Himalayas",
+          "url": "https://www.sahapedia.org/the-fabric-of-life-nomadic-textiles-the-ladakh-himalayas"
+        },
+        {
+          "title": "Thigma of Ladakh",
+          "url": "https://globalinch.org/craft/thigma-of-ladakh/"
+        },
+        {
+          "title": "Eight traditional Ladakhi products receive GI tag",
+          "url": "https://ladakh.gov.in/the-administration-of-union-territory-of-ladakh-lieutenant-governors-secretariat-eight-traditional-ladakhi-products-receive-gi-tag/"
+        },
+        {
+          "title": "8 handicraft products from Ladakh granted GI tag",
+          "url": "https://www.tribuneindia.com/news/j-k/8-handicraft-products-from-ladakh-granted-gi-tag/"
+        },
+        {
+          "title": "Namza Couture / Ladakh wool fashion feature",
+          "url": "https://thebetterindia.com/250308/ladakh-fashion-namza-couture-culture-sheep-yak-wool-london-fashion-week-india-women-inspiring-nor41"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Lakshadweep",
+      "state_type": "union_territory",
+      "grid": [
+        1,
+        8
+      ],
+      "tradition_id": "ld_lakshadweep-coir-and-screw-pine-mat-weave",
+      "tradition": "Lakshadweep coir and screw-pine mat weave (fallback)",
+      "grammar": "counted_grid",
+      "tier": "B",
+      "caution": "This is an honest fallback: no authoritative source documents a distinct Lakshadweep geometric mat motif vocabulary. Frame outputs as 'inspired by island coir and screw-pine mat weaves of Lakshadweep' and do not claim a named tradition. Lakshadweep's coir economy is largely rope and yarn today (PARI), with patterned mats mostly historical or emporium products. Minicoy (Maliku) has a distinct Maldivian-linked culture; do not conflate it with the Malayalam-speaking northern islands.",
+      "sources": [
+        {
+          "title": "Craft of India - Lakshadweep Island",
+          "url": "https://www.youngintach.org/public/maps_craft_lakshadweep_island"
+        },
+        {
+          "title": "Lakshadweep's coir workers",
+          "url": "https://ruralindiaonline.org/en/articles/lakshadweeps-coir-workers/"
+        },
+        {
+          "title": "Art & Handicraft gallery",
+          "url": "https://lakshadweep.gov.in/gallery-category/art-handicraft/"
+        },
+        {
+          "title": "Maliku Museum: Collection of Items catalogued by Vineeta Hoon & K.G. Mohammed",
+          "url": "https://www.seacology.org/wp-content/uploads/2020/05/Maliku-Museum-collection-for-seacology.pdf"
+        }
+      ],
+      "diwali_tie": null
+    },
+    {
+      "state": "Puducherry",
+      "state_type": "union_territory",
+      "grid": [
+        5,
+        8
+      ],
+      "tradition_id": "py_kolam-as-practised-in-puducherry",
+      "tradition": "Kolam as practised in Puducherry (Tamil-region threshold kolam)",
+      "grammar": "kolam_loop",
+      "tier": "B",
+      "caution": "Kolam is not unique to Puducherry; it is the Tamil tradition practised in a UT with a Tamil majority (Puducherry and Karaikal) and should be framed as 'inspired by kolam as drawn in Puducherry', not as a distinct Puducherry craft. Ritual/offering context and women's practice as for Tamil Nadu. The UT's own registered GIs (Villianur Terracotta Works, Thirukannur Papier Mache) are figurative, not geometric.",
+      "sources": [
+        {
+          "title": "The Art and Significance of Kolam (video, Anni Kumari)",
+          "url": "https://www.sahapedia.org/the-art-and-significance-of-kolam"
+        },
+        {
+          "title": "Significance of Kolam in Tamil Culture",
+          "url": "https://www.sahapedia.org/significance-of-kolam-tamil-culture"
+        },
+        {
+          "title": "On a Craft Walk Through Puducherry",
+          "url": "https://www.sahapedia.org/craft-walk-through-puducherry"
+        },
+        {
+          "title": "GI Application 201 - Villianur Terracotta Works",
+          "url": "https://search.ipindia.gov.in/GIRPublicSearch/Application/Details/201"
+        }
+      ],
+      "diwali_tie": {
+        "claim": "Google Arts & Culture describes rangoli as made during Diwali and other festivals, in homes, courtyards, and sometimes on walls.",
+        "source_url": "https://artsandculture.google.com/story/rangoli-for-diwali/sQWxwh-VUtKR3A?hl=en"
+      }
+    }
+  ],
+  "arms": [
+    {
+      "key": "beam-hf",
+      "label": "Beam",
+      "provider": "Hugging Face Inference Providers",
+      "run_kind": "official",
+      "request_params": {
+        "temperature": 0.4,
+        "max_tokens": 4096,
+        "reasoning_effort": "minimal"
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.2361111111111111,
+      "pass_at_3": 0.6527777777777778,
+      "ci_pass_at_1": [
+        0.1529670958084831,
+        0.3459876897285363
+      ],
+      "ci_pass_at_3": [
+        0.5376130384560558,
+        0.7524657699172488
+      ],
+      "rescue_rate": 0.5454545454545454,
+      "mean_reward": 0.8929292929292638,
+      "valid_schema_at_1": 0.8194444444444444,
+      "tokens_per_task": 7903.847222222223,
+      "est_cost_per_verified": 0.009323589787234042,
+      "median_latency_ms": 7380.5,
+      "length_rate": 0.0,
+      "near_bound_rate": 0.02127659574468085,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 163,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 11
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 2
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 7
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 24
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 2
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 1
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 0
+        }
+      }
+    }
+  ],
+  "common_prompt_ids": [
+    "an_nicobari-plaited-pandanus-mat-easy-28",
+    "an_nicobari-plaited-pandanus-mat-hard-28",
+    "ap_mangalagiri-sarees-and-fabrics-easy-0",
+    "ap_mangalagiri-sarees-and-fabrics-hard-0",
+    "ar_apatani-textiles-easy-1",
+    "ar_idu-mishmi-textiles-hard-1",
+    "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+    "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+    "br_madhubani-easy-3",
+    "br_madhubani-hard-3",
+    "cg_bastar-wooden-craft-easy-4",
+    "cg_bastar-wooden-craft-hard-4",
+    "ch_phulkari-easy-29",
+    "ch_phulkari-hard-29",
+    "dd_warli-painting-easy-30",
+    "dd_warli-painting-hard-30",
+    "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+    "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+    "ga_kunbi-check-sari-easy-5",
+    "ga_kunbi-check-sari-hard-5",
+    "gj_bandhani-easy-6",
+    "gj_patan-patola-double-ikat-grid-hard-6",
+    "hp_kinnauri-shawl-geometric-border-easy-8",
+    "hp_kullu-shawl-end-bands-hard-8",
+    "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+    "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+    "jh_sohrai-khovar-wall-painting-easy-9",
+    "jh_sohrai-khovar-wall-painting-hard-9",
+    "jk_khatamband-geometric-wooden-ceiling-easy-32",
+    "jk_khatamband-geometric-wooden-ceiling-hard-32",
+    "ka_ilkal-sarees-hard-10",
+    "ka_kasuti-embroidery-easy-10",
+    "kl_balaramapuram-kasavu-handloom-hard-11",
+    "kl_pookalam-easy-11",
+    "la_thigma-resist-dyed-circles-easy-33",
+    "la_thigma-resist-dyed-circles-hard-33",
+    "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+    "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+    "mh_warli-painting-easy-13",
+    "mh_warli-painting-hard-13",
+    "ml_garo-dakmanda-easy-15",
+    "ml_garo-dakmanda-hard-15",
+    "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+    "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+    "mp_bagh-hand-block-print-easy-12",
+    "mp_maheshwari-sari-border-bands-hard-12",
+    "mz_mizo-puanchei-easy-16",
+    "mz_mizo-puanchei-hard-16",
+    "nl_chakhesang-shawls-easy-17",
+    "nl_chakhesang-shawls-hard-17",
+    "od_sambalpuri-bandha-easy-18",
+    "od_sambalpuri-bandha-hard-18",
+    "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+    "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+    "py_kolam-as-practised-in-puducherry-easy-35",
+    "py_kolam-as-practised-in-puducherry-hard-35",
+    "rj_bagru-hand-block-print-easy-20",
+    "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+    "sk_lepcha-thara-weave-stripes-easy-21",
+    "sk_lepcha-thara-weave-stripes-hard-21",
+    "tg_pochampally-ikat-easy-23",
+    "tg_pochampally-ikat-hard-23",
+    "tn_kolam-easy-22",
+    "tn_toda-embroidery-hard-22",
+    "tr_risa-easy-24",
+    "tr_risa-hard-24",
+    "uk_aipan-easy-26",
+    "uk_rangwali-pichhoda-of-kumaon-hard-26",
+    "up_lucknow-chikan-jaali-hard-25",
+    "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+    "wb_nakshi-kantha-easy-27",
+    "wb_nakshi-kantha-hard-27"
+  ],
+  "baselines": [
+    {
+      "key": "empty-tile",
+      "n_tasks": 72,
+      "pass_at_1": 0.0,
+      "passed": 0
+    },
+    {
+      "key": "single-centred-dot",
+      "n_tasks": 72,
+      "pass_at_1": 0.0,
+      "passed": 0
+    }
+  ]
+}

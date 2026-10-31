@@ -1,0 +1,7 @@
+{
+  "prompt_id": "uk_rangwali-pichhoda-of-kumaon-hard-26",
+  "state": "Uttarakhand",
+  "tradition_id": "uk_rangwali-pichhoda-of-kumaon",
+  "brief": "A pichhoda-inspired dot field: yellow ground, maroon dots of radius 3 on a staggered lattice with pairwise clearance >= 4 px, C4 symmetry of the dot set about the tile centre, a central dot-free disc of radius 10, and a ring of 12 smaller dots (radius 1) around that disc.",
+  "mask_sha256": "8991d133d5b8506e635261bcaabd9a56a586fcdee52e2fd0d7a99dca9ca464b5"
+}

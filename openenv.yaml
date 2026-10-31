@@ -1,0 +1,22 @@
+spec_version: 1
+name: pramaan_env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+validation:
+  reward:
+    range: [0.0, 1.0]
+    floor_margin: 0.1
+  resources:
+    cpu: 2
+    memory_mb: 2048
+    disk_mb: 4096
+    episode_timeout_s: 120
+  capabilities:
+    verifier:
+      kind: reward_channel
+  types:
+    tags:
+      - proof-carrying-art
+      - geometric-patterns

@@ -1,0 +1,92 @@
+{
+  "certificate_version": "0.1",
+  "type": "auditable_deterministic_verification",
+  "schema_version": "0.1",
+  "dsl_sha256": "dfd7eb89bb91499011a20f880deaec8f2e7edbd22a89b6dbe36182e2fff676ef",
+  "mask_sha256": "7a9b2b3e32451e562daa1bfd102fbc1a25297ac11b9e9674e22d8d92b8ad308c",
+  "validator_version": "0.3.0",
+  "runtime": {
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "pydantic": "2.14.1"
+  },
+  "grid": [
+    64,
+    64
+  ],
+  "checks": [
+    {
+      "id": "schema_valid",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Check passed"
+    },
+    {
+      "id": "complexity_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "89 primitives; limit 100"
+    },
+    {
+      "id": "palette_limit",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "4 colours used; limit 4"
+    },
+    {
+      "id": "symmetry_d4",
+      "status": "FAIL",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Colour differs under R180",
+      "counterexample": {
+        "transform": "R180",
+        "original": [
+          21,
+          21
+        ],
+        "transformed": [
+          42,
+          42
+        ],
+        "original_colour_id": 1,
+        "transformed_colour_id": 0
+      }
+    },
+    {
+      "id": "periodic_raster",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Translated copies reproduce the canonical 64x64 raster"
+    },
+    {
+      "id": "layer_registration",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "All layers share one coordinate frame"
+    },
+    {
+      "id": "exclusive_ink_collision",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Exclusive ink layers do not overlap"
+    },
+    {
+      "id": "minimum_gap",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Minimum pairwise motif pixel-centre spacing meets the declared toroidal grid threshold"
+    },
+    {
+      "id": "coverage_bound",
+      "status": "PASS",
+      "assurance": "EXACT_DISCRETE",
+      "message": "Ink coverage 0.1750; allowed [0.0200, 0.7000]"
+    }
+  ],
+  "all_hard_constraints_pass": false,
+  "exclusions": [
+    "Not a proof of cultural authenticity",
+    "Not a guarantee of physical manufacturing quality",
+    "Raster checks do not prove continuous vector seam geometry"
+  ]
+}

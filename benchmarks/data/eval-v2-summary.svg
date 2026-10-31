@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="title desc">
+<title id="title">Pramaan Beam hard-constraint success rates</title>
+<desc id="desc">First-proposal and up-to-three-proposal success percentages, overall and by difficulty.</desc>
+<rect width="100%" height="100%" fill="#fbfaf7"/>
+<text x="42" y="42" font-family="Arial,sans-serif" font-size="23" font-weight="700" fill="#172F4A">Hard constraints pass: first proposal vs repair loop</text>
+<text x="42" y="70" font-family="Arial,sans-serif" font-size="14" fill="#4b5563">beam-hf · 72 prompts · one stochastic run</text>
+<line x1="250.0" y1="92" x2="250.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="250.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">0%</text>
+<line x1="374.0" y1="92" x2="374.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="374.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">20%</text>
+<line x1="498.0" y1="92" x2="498.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="498.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">40%</text>
+<line x1="622.0" y1="92" x2="622.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="622.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">60%</text>
+<line x1="746.0" y1="92" x2="746.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="746.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">80%</text>
+<line x1="870.0" y1="92" x2="870.0" y2="330" stroke="#d7d7d2" stroke-width="1"/>
+<text x="870.0" y="350" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#50545a">100%</text>
+<text x="42" y="131" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="#202124">Overall</text>
+<rect x="250" y="116" width="146.4" height="16" rx="3" fill="#315A83"/>
+<text x="404.4" y="129" font-family="Arial,sans-serif" font-size="12" fill="#202124">23.6%</text>
+<rect x="250" y="139" width="353.1" height="16" rx="3" fill="#A84436"/>
+<text x="611.1" y="152" font-family="Arial,sans-serif" font-size="12" fill="#202124">56.9%</text>
+<text x="42" y="189" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="#202124">Easy</text>
+<rect x="250" y="174" width="137.8" height="16" rx="3" fill="#315A83"/>
+<text x="395.8" y="187" font-family="Arial,sans-serif" font-size="12" fill="#202124">22.2%</text>
+<rect x="250" y="197" width="378.9" height="16" rx="3" fill="#A84436"/>
+<text x="636.9" y="210" font-family="Arial,sans-serif" font-size="12" fill="#202124">61.1%</text>
+<text x="42" y="247" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="#202124">Hard</text>
+<rect x="250" y="232" width="155.0" height="16" rx="3" fill="#315A83"/>
+<text x="413.0" y="245" font-family="Arial,sans-serif" font-size="12" fill="#202124">25.0%</text>
+<rect x="250" y="255" width="327.2" height="16" rx="3" fill="#A84436"/>
+<text x="585.2" y="268" font-family="Arial,sans-serif" font-size="12" fill="#202124">52.8%</text>
+<rect x="250" y="367" width="12" height="12" rx="2" fill="#315A83"/>
+<text x="268" y="378" font-family="Arial,sans-serif" font-size="12" fill="#34373b">pass@1</text>
+<rect x="350" y="367" width="12" height="12" rx="2" fill="#A84436"/>
+<text x="368" y="378" font-family="Arial,sans-serif" font-size="12" fill="#34373b">pass@3</text>
+</svg>

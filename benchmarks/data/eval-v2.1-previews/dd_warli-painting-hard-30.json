@@ -1,0 +1,7 @@
+{
+  "prompt_id": "dd_warli-painting-hard-30",
+  "state": "Dadra and Nagar Haveli and Daman and Diu",
+  "tradition_id": "dd_warli-painting",
+  "brief": "A 64x64 tile, white on mud-brown with one yellow accent dot at the centre, D4 symmetric: a central square whose sides are dotted at period 2, a surrounding circle of 16 triangles alternating up/down, and all four edges carrying a dash-dot frieze with translation period 6; white coverage 10-18%.",
+  "mask_sha256": "cca526fac62ed410416f136bbbcb2d1920ed0802797da03151b402a0ac11d85e"
+}

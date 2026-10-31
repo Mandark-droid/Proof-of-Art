@@ -1,0 +1,146 @@
+{
+  "schema_version": "0.2",
+  "grammar": "rotational_field",
+  "tradition_id": "br_aripana",
+  "title": "Original Aripana Rotational Field",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": false,
+    "wrap_y": false
+  },
+  "palette": [
+    "#F4E5C5",
+    "#A84436",
+    "#172F4A"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "central",
+      "colour_index": 1,
+      "anchor": [
+        32,
+        32
+      ],
+      "motifs": [
+        {
+          "kind": "dot",
+          "center": [
+            31,
+            31
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            32,
+            31
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            31,
+            32
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "dot",
+          "center": [
+            32,
+            32
+          ],
+          "radius": 2,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    },
+    {
+      "id": "surrounding_marks",
+      "colour_index": 2,
+      "anchor": [
+        32,
+        32
+      ],
+      "motifs": [
+        {
+          "kind": "diamond",
+          "center": [
+            32,
+            14
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            49,
+            32
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            31,
+            49
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        },
+        {
+          "kind": "diamond",
+          "center": [
+            14,
+            31
+          ],
+          "radius": 4,
+          "stroke": null,
+          "size": null,
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "C4",
+    "max_colours": 3,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": null,
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "kolam": null,
+  "jaali": null
+}

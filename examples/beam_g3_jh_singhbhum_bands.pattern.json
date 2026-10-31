@@ -1,0 +1,276 @@
+{
+  "schema_version": "0.2",
+  "grammar": "stripe_band",
+  "tradition_id": "jh_singhbhum-banded-house-murals",
+  "title": "Singhbhum Banded Mural Bands",
+  "tile": {
+    "width": 64,
+    "height": 64,
+    "wrap_x": true,
+    "wrap_y": true
+  },
+  "palette": [
+    "#342A26",
+    "#A84436",
+    "#D2AE74",
+    "#F4E5C5"
+  ],
+  "background_index": 0,
+  "layers": [
+    {
+      "id": "bands",
+      "colour_index": 1,
+      "anchor": [
+        0,
+        0
+      ],
+      "motifs": [
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            2
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            6
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            10
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            14
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            18
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            22
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            26
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            30
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            34
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            38
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            42
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            46
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            50
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            54
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            58
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        },
+        {
+          "kind": "rectangle",
+          "center": [
+            32,
+            62
+          ],
+          "radius": null,
+          "stroke": null,
+          "size": [
+            64,
+            2
+          ],
+          "points": null
+        }
+      ]
+    }
+  ],
+  "constraints": {
+    "symmetry": "D2",
+    "max_colours": 4,
+    "max_primitives": 100,
+    "min_gap": 0,
+    "min_coverage": 0.0,
+    "max_coverage": 0.7,
+    "exclusive_layer_pairs": [],
+    "min_clearance": null,
+    "translation_period": {
+      "axis": "y",
+      "period": 8
+    },
+    "cell_size": null,
+    "required_loops": null,
+    "min_open_fraction": null,
+    "max_open_fraction": null,
+    "min_web": null
+  },
+  "kolam": null,
+  "jaali": null
+}
