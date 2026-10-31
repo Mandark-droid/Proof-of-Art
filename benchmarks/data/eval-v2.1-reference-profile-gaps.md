@@ -27,15 +27,15 @@ The procedural references are verifier-certified constraint witnesses. This tabl
 | `rj_bagru-hand-block-print-easy-20` | Host fixes background to palette index 0 (indigo) and coverage is capped at 70%; an inset cream panel is used instead of a full cream tile. |
 | `sk_lepcha-thara-weave-stripes-easy-21` | Requested stripe order uses five colors and is not D2-palindromic; witness uses four-color palindrome. |
 | `tn_kolam-easy-22` | Host fixes background to palette index 0 (white); the witness uses a dark curve on white rather than the requested white curve on dark ground. |
-| `tg_pochampally-ikat-easy-23` | Brief asks D4; frozen profile enforces D2. |
+| `tg_pochampally-ikat-easy-23` | The red ground is fixed by the host; a larger cream square encloses the stepped cream diamond with a visible red gap. Brief asks D4; frozen profile enforces D2. |
 | `tr_risa-easy-24` | No explicit brief/profile conflict identified; the procedural reference is an illustrative geometric witness, not an authentic craft artifact. |
-| `up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25` | Brief asks 5x5 holes and frame 6; frozen D2/profile frame 4 plus min-web yields a 4x4 witness. |
+| `up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25` | Brief asks frame 6; frozen profile sets frame 4. A 5x5 hole grid passes the frozen openness and minimum-web checks. |
 | `uk_aipan-easy-26` | Five-point star conflicts with C4; witness uses a four-point rosette. |
 | `wb_nakshi-kantha-easy-27` | No explicit brief/profile conflict identified; the procedural reference is an illustrative geometric witness, not an authentic craft artifact. |
 | `an_nicobari-plaited-pandanus-mat-easy-28` | No explicit brief/profile conflict identified; the procedural reference is an illustrative geometric witness, not an authentic craft artifact. |
 | `ch_phulkari-easy-29` | No explicit brief/profile conflict identified; the procedural reference is an illustrative geometric witness, not an authentic craft artifact. |
 | `dd_warli-painting-easy-30` | Host fixes background to palette index 0 (white) and coverage is capped at 70%; a brown inset ground is used. |
-| `dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31` | Brief asks frame 6; frozen profile sets frame 4. |
+| `dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31` | Red sandstone is used for the web; brief asks frame 6 while the frozen profile sets frame 4. |
 | `jk_khatamband-geometric-wooden-ceiling-easy-32` | Eight-point star openings are outside the supported jaali-hole grammar; witness uses square openings. |
 | `la_thigma-resist-dyed-circles-easy-33` | Ring centers collide under the verifier's min-clearance rule; witness uses white dots without maroon center marks. |
 | `ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34` | No explicit brief/profile conflict identified; the procedural reference is an illustrative geometric witness, not an authentic craft artifact. |

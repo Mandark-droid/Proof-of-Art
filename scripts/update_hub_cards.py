@@ -12,7 +12,7 @@ from huggingface_hub import CommitOperationAdd, HfApi, get_token, hf_hub_downloa
 from scripts.push_hub_datasets import dataset_card, openenv_dataset_card
 
 REPOSITORIES = (
-    ("kshitijthakkar/pramaan-proof-of-art-eval-v2.1", lambda: dataset_card("eval", suite_name="eval-v2.1")),
+    ("kshitijthakkar/pramaan-proof-of-art-eval-v2.1", lambda: dataset_card("eval", suite_name="eval-v2.1", include_references=True)),
     ("kshitijthakkar/pramaan-proof-of-art-eval-v2", lambda: dataset_card("eval", suite_name="eval-v2")),
     ("kshitijthakkar/pramaan-proof-of-art-train-v1", lambda: dataset_card("train", suite_name="train-v1")),
     ("kshitijthakkar/pramaan-proof-of-art-openenv", openenv_dataset_card),

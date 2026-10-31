@@ -7,6 +7,7 @@ import html
 import re
 
 from .quilt import STATE_GRID
+from .check_labels import check_label, check_labels
 
 
 _SAFE_B64 = re.compile(r"[A-Za-z0-9+/]+={0,2}\Z")
@@ -75,8 +76,8 @@ def _task_attempts(model_task: dict | None) -> str:
         if not isinstance(attempt, dict):
             continue
         outcome = "passed" if attempt.get("passed") is True else "did not pass"
-        checks = attempt.get("failing_checks", [])
-        checks = ", ".join(html.escape(item) for item in checks[:8] if isinstance(item, str)) if isinstance(checks, list) else ""
+        checks = check_labels(attempt.get("failing_checks", []))
+        checks = html.escape(checks)
         witness = attempt.get("witness", [])
         points = []
         if isinstance(witness, list):
@@ -120,7 +121,7 @@ def _task_sheet_section(state: str, level: str, spec: dict | None, reference: di
     if reference:
         reference_html = _img(reference.get("thumbnail_uri", ""), f"Verified procedural reference for {state}, {level}")
         check_rows = reference.get("checks", []) if isinstance(reference.get("checks"), list) else []
-        check_text = " · ".join(html.escape(row.get("id", "check")) for row in check_rows
+        check_text = " · ".join(html.escape(check_label(row.get("id", "check"))) for row in check_rows
                                if isinstance(row, dict) and row.get("status") == "PASS")
         reference_note = f'<small>Procedural reference · all saved checks pass{": " + check_text if check_text else ""}</small>'
     elif isinstance(spec, dict) and spec.get("id") == "py_kolam-as-practised-in-puducherry-easy-35":
@@ -131,11 +132,20 @@ def _task_sheet_section(state: str, level: str, spec: dict | None, reference: di
         reference_note = ""
     selected_uri = _attempt_uri(selected_task)
     selected_status, selected_result = _result(selected_task)
-    selected_html = _img(selected_uri, f"{selected_label} model attempt for {state} {level} brief")
+    attempts = selected_task.get("attempts") if isinstance(selected_task, dict) else []
+    attempts = attempts if isinstance(attempts, list) else []
+    unreadable = any(isinstance(attempt, dict)
+                     and "candidate_parse" in (attempt.get("failing_checks") or [])
+                     for attempt in attempts)
+    selected_html = ('<p class="pramaan-wall-unreadable" role="status">Could not be read as a pattern.</p>'
+                     if unreadable and not selected_uri else
+                     _img(selected_uri, f"{selected_label} model attempt for {state} {level} brief"))
+    verification_note = ('<small class="pramaan-wall-verification-note">Passed means the geometric checks passed; it does not mean the design matches the brief.</small>'
+                         if selected_status in {"first", "repair"} else "")
     compare = ('<div class="pramaan-wall-pair"><figure><figcaption>Reference</figcaption>'
                + reference_html + reference_note + '</figure><figure>'
                + f'<figcaption>{html.escape(selected_label)} attempt · {html.escape(selected_result)}</figcaption>'
-               + selected_html + _task_attempts(selected_task) + '</figure></div>')
+               + verification_note + selected_html + _task_attempts(selected_task) + '</figure></div>')
     return (f'<section class="pramaan-wall-task" data-wall-task-level="{level}">'
             + f'<p class="pramaan-ui-eyebrow">{title}</p><h4>{html.escape(str(spec.get("tradition_id", "")) if isinstance(spec, dict) else "Task brief")}</h4>'
             + f'<p class="pramaan-wall-brief">{html.escape(str(brief))}</p>'

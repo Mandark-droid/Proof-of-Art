@@ -112,16 +112,12 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
             chart_rows.append(f'<li data-model-key="{html_escape(row["key"], quote=True)}"><strong>{label}</strong><span>No evaluated tasks yet</span></li>')
             continue
         rate = row["within"] / row["n"]
-        first_rate = row["first"] / row["n"]
-        low, high = wilson_interval(row["within"], row["n"])
         chart_rows.append(
             f'<li data-model-key="{html_escape(row["key"], quote=True)}" data-testid="model-chart-{html_escape(row["key"], quote=True)}">'
-            f'<div class="pramaan-model-bar-label"><strong>{label}</strong><span>{row["within"]}/{row["n"]} · {rate:.1%} within three · first try {row["first"]}/{row["n"]}</span></div>'
-            f'<div class="pramaan-model-bar-track" role="img" aria-label="{label}: within three {row["within"]} of {row["n"]}, {rate:.1%}; first try {row["first"]} of {row["n"]}, {first_rate:.1%}; 95 percent Wilson interval {low:.1%} to {high:.1%}">'
+            f'<div class="pramaan-model-bar-label"><strong>{label}</strong><span>{rate:.1%}</span></div>'
+            f'<div class="pramaan-model-bar-track" role="img" aria-label="{label}: {rate:.1%} of evaluated tasks passed within three proposals, {row["within"]} of {row["n"]}">'
             f'<span class="pramaan-model-bar" style="width:{rate * 100:.3f}%"></span>'
-            f'<span class="pramaan-model-first-mark" style="left:{first_rate * 100:.3f}%"></span>'
-            f'<span class="pramaan-model-wilson" style="left:{low * 100:.3f}%;width:{(high - low) * 100:.3f}%"></span></div>'
-            f'<small>95% Wilson {low:.1%}–{high:.1%}</small></li>')
+            f'</div></li>')
 
     table_rows = []
     for row in sorted(records, key=lambda item: (rank_by_key.get(item["key"], expected_tasks + 1), item["label"].casefold())):
@@ -148,8 +144,8 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
         '<section class="pramaan-model-report" data-testid="model-report" aria-label="Canonical model results">'
         '<h3>Model results</h3><p>Quality is measured by the deterministic geometric verifier. Provider errors are excluded from evaluated counts and scores.</p>'
         '<section class="pramaan-model-chart" data-testid="model-report-chart" aria-label="Within-three success by model">'
-        '<h4>Verified within three proposals</h4><p>Bars show the share of evaluated tasks accepted within three proposals; the vertical mark shows first-try success and the line shows the 95% Wilson interval.</p>'
-        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: each model’s first-try and within-three counts, percentages, evaluated denominator, rank, and Wilson interval are printed next to its bar.</p></section>'
+        '<h4>Verified within three proposals</h4><p>Each bar shows the share of evaluated tasks accepted within three proposals; exact counts appear in its accessible label and in the table.</p>'
+        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: bars compare within-three percentages; the table lists exact counts, denominators, ranks, and costs.</p></section>'
         '<div class="pramaan-leaderboard-scroll"><table class="pramaan-model-table" data-testid="model-report-table" data-leaderboard-table>'
         '<caption>One result row per model; missing provider answers are not scored as failures.</caption>'
         '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Evaluated</th><th scope="col">Cost</th></tr></thead>'

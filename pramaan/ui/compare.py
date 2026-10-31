@@ -9,6 +9,8 @@ import re
 from pathlib import Path
 from numbers import Real
 
+from .check_labels import check_labels
+
 
 _COLORS = tuple(f"var(--pramaan-chart-{index})" for index in range(1, 7))
 
@@ -87,7 +89,7 @@ def render_arena(
             passed = attempt.get("passed") is True
             verdict = "Pass" if passed else "Fail"
             checks = attempt.get("failing_checks") if isinstance(attempt.get("failing_checks"), list) else []
-            check_text = ", ".join(str(value) for value in checks[:8])
+            check_text = check_labels(checks)
             tile = attempt.get("tile_png_b64")
             preview = ""
             if isinstance(tile, str) and 0 < len(tile) <= 50000 and _BASE64_PNG.fullmatch(tile):
@@ -98,11 +100,13 @@ def render_arena(
                 if decoded.startswith(b"\x89PNG\r\n\x1a\n"):
                     preview = (f'<img class="pramaan-arena-tile" src="data:image/png;base64,{tile}" '
                                f'alt="{verdict} attempt {index_num} tile for {safe_label}" loading="lazy" decoding="async">')
+            unreadable = not preview and isinstance(checks, list) and "candidate_parse" in checks
             attempt_rows.append(
                 f'<li data-testid="arena-attempt-{safe_key}-{index_num}" data-attempt-state="{"pass" if passed else "fail"}">'
                 f'<span class="pramaan-arena-verdict" aria-label="{verdict} attempt {index_num}">'
                 f'{"✓" if passed else "×"} {verdict}</span><strong>Attempt {index_num}</strong>'
-                + preview + (f'<small>Checks: {html.escape(check_text)}</small>' if check_text and not passed else "")
+                + preview + ('<small>Could not be read as a pattern.</small>' if unreadable else "")
+                + (f'<small>Checks: {html.escape(check_text)}</small>' if check_text and not passed else "")
                 + '</li>')
         passed_at = task.get("passed_at")
         status = (f"Verified on attempt {passed_at}" if type(passed_at) is int
@@ -203,7 +207,7 @@ def render_same_brief_wall(
             status = f"Verified · passed on attempt {passed_at}" if accepted else (
                 "Not run" if task.get("status") == "not_run" else "Not verified · no passing attempt")
             checks = attempt.get("failing_checks") if isinstance(attempt.get("failing_checks"), list) else []
-            failures = (" · failing checks: " + html.escape(", ".join(str(item) for item in checks[:6]))
+            failures = (" · failing checks: " + html.escape(check_labels(checks, limit=6))
                         if checks and not accepted else "")
             evidence = []
             for field, name in (("cert_sha256", "certificate"), ("mask_sha256", "mask")):

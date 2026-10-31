@@ -11,12 +11,15 @@ pinned: false
 models:
   - reflection/Beam-1.0-501B-A23B
 tags:
+  - beam
   - openenv
-  - openenv-0.11.0
+  - reinforcement-learning
+  - verifiable-rewards
+  - benchmark
   - generative-art
-  - verification
   - india
-short_description: Beam proposes art; exact checks verify its declared rules.
+thumbnail: https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art/resolve/main/assets/space-card.png
+short_description: "Art you can prove: AI patterns from 36 Indian traditions."
 suggested_hardware: cpu-basic
 ---
 
@@ -28,15 +31,11 @@ suggested_hardware: cpu-basic
 
 **Public demo:** [Pramaan on Hugging Face Spaces](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art).
 
-Pramaan is a generative-art demo and model benchmark inspired by Indian geometric craft traditions. A model proposes a structured PatternDSL design; an independent deterministic checker evaluates the requested rules on a fixed 64×64 raster, returns concrete counterexamples, and produces a replayable certificate. Verified examples span seven grammars, from Ajrakh-inspired repeat geometry to Sikku Kolam loops and Jaali lattices.
+Pramaan is a generative-art benchmark inspired by Indian geometric craft traditions. Models propose structured PatternDSL designs; an independent deterministic checker evaluates declared rules on a fixed 64×64 raster, returns concrete counterexamples, and produces replayable certificates. The benchmark covers seven grammars, from Ajrakh-inspired repeat geometry to Sikku Kolam loops and Jaali lattices.
 
 These designs are mathematical reinterpretations, not artisan-authentic work, ritual guidance, or physical printing guarantees. They do not replace craft practitioners. Ajrakh is practiced in Gujarat, Rajasthan, and Sindh in Pakistan. See [CITATIONS.md](CITATIONS.md) for cultural and technical references.
 
-### A Diwali lens on geometric welcome
-
-[Incredible India's Diwali overview](https://www.incredibleindia.gov.in/en/festivals-and-events/diwali) describes doorstep rangoli as welcome and festive decoration. Pramaan uses this as a festival lens while keeping its sourced registry of 36 entries across India's states and Union Territories distinct; this does not imply that every listed tradition is Diwali-specific. For broader context, see the [Indira Gandhi National Centre for the Arts' *Walls and Floors* resource](https://ignca.gov.in/walls-and-floors/).
-
-The project pairs a Gradio studio with a sourced traditions registry, cross-state evaluation suites, and an OpenEnv reinforcement-learning environment. The responsive custom interface has six screens: Benchmark, Leaderboard, Gallery, Studio, Traditions, and RL. The Leaderboard supports model search, provenance filtering, metric sorting, shared-task ranking, and links to same-brief side-by-side Gallery reviews. On 30 October 2026, the public Space API reported running revision `8f31147`; read-only `/studio/` HTML contained the six screens, Leaderboard controls, Gallery state mosaic, and visitor model field. This confirms served markup, not responsive visual layout or browser first-contentful paint; clean-profile desktop/narrow review and cold-wake timing remain open.
+The project includes a Gradio Space, a sourced traditions registry covering 36 states and Union Territories, a 10-model leaderboard and comparison Arena, and an OpenEnv reinforcement-learning environment. Some examples draw on festival welcome patterns; the wider collection preserves the distinct traditions and communities represented by its sources.
 
 ## Run locally
 
@@ -50,25 +49,11 @@ python app.py
 
 The app opens with a checked example and works without model credentials. To enable local Beam generation, copy `.env.example` to `.env` and set `HF_TOKEN`. For the hosted Space, set it in **Settings → Secrets** with Inference Providers access. The token is used server-side; never put it in tracked files or browser inputs. Each worker permits one active generation, queues up to 32 app events, and defaults to a 40-request UTC-day cap including repairs and transient retries. Lower the cap with `PRAMAAN_DAILY_MODEL_CALL_CAP` in Space variables.
 
-Prompts are sent to Hugging Face Inference Providers only when live generation is requested. Prompt and generated design files are not persisted beyond temporary worker files; downloads expire after one hour and the Gradio file cache is cleaned hourly. The built-in example works offline.
+Prompts are sent to Hugging Face Inference Providers only when live generation is requested. Private runs are kept in the visitor's session; generated files use temporary worker storage, downloads expire after one hour, and the Gradio file cache is cleaned hourly. If the community contribution flow is enabled, publishing requires separate consent and replay checks. Those records are separate from the official training and benchmark datasets and are not added to them automatically. The built-in example works offline.
 
-## Examples
+## Reproducible examples
 
-### A recorded Beam repair
-
-This animation replays a saved D4 trajectory: a symmetry failure, its coordinate witness, and the passing repair. It is reconstructed from the trajectory, not captured live from the Space.
-
-![Replay of the saved Beam D4 failure-and-repair trajectory](assets/pramaan_beam_repair_walkthrough.gif)
-
-The passing Ajrakh starfield below is hand-authored. The D4 rosette is a Beam-generated design repaired after the checker returned an exact symmetry counterexample. The deliberately failing counterexample and all generated examples have separate source files, certificates, and saved trajectories in [examples](examples). Gallery-only samples are not evaluation or training records.
-
-![Hand-authored passing Ajrakh-inspired starfield](assets/ajrakh_starfield_preview.png)
-
-![Beam-generated and verifier-repaired Ajrakh-inspired D4 rosette](assets/beam_d4_rosette_preview.png)
-
-![Beam-generated Sikku Kolam loop](assets/beam_g6_tn_kolam_sikku_preview.png)
-
-Run `python scripts/check_builtin_examples.py` to replay the bundled certificates and trajectory fixtures. To inspect the intentionally failing D4 design, run:
+The [examples directory](examples) contains design files, certificates, and saved trajectories for passing, repaired, and deliberately failing patterns. Gallery-only samples are illustrative; they are not benchmark results or training records. Run `python scripts/check_builtin_examples.py` to replay the bundled certificates and trajectories. To inspect the intentionally failing D4 design, run:
 
 ```bash
 python -m pramaan.verify --design examples/ajrakh_d4_counterexample.pattern.json --certificate examples/ajrakh_d4_counterexample.certificate.json --json
@@ -86,15 +71,28 @@ The host, not the model, controls palette and constraint profile. Model output i
 
 ## Model benchmark
 
-Pramaan evaluates models against versioned prompts and the same deterministic verifier. The audited `eval-v2.1` suite contains 72 tasks across 36 states and Union Territories. One Beam pass scored 17/72 pass@1 (23.6%) and 47/72 pass@3 (65.3%) over 146 candidate replays; 46 unique masks were accepted. All 72 rows passed independent replay. The rate-card estimate was USD 0.4382; provider-billed cost was unavailable. This single stochastic run is not a cross-model ranking.
+The completed `eval-v2.1` comparison covers the same 72 task IDs for all ten models. Each run used the same deterministic verifier, a 4,096-token output ceiling, up to three proposals per task, zero provider retries, and the same input-size guard. Provider-specific request settings are recorded with the results; Anthropic, OpenAI-compatible, and Hugging Face endpoints do not expose identical sampling controls. The public evaluation export contains 720 model-task records, plus the leaderboard and certified reference data.
 
-**Known unsatisfiable brief:** `py_kolam-as-practised-in-puducherry-easy-35` requires one loop on a 2×2 D2 Kolam grid. Exhaustive enumeration of its four D2-invariant mirror subsets yields either zero or two loops, never one. The prompt and frozen common-47 manifest remain unchanged, with no paid rerun; report the original 47-task rates with this footnote and also show a 46-task rate over satisfiable briefs.
+| Model | Tasks | Pass@1 | Pass@3 | Mean tokens / task | Mean request latency | Rate-card spend | Spend cap |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Beam | 72/72 | 23.6% | 65.3% | 7.9k | 7.8 s | $0.44 | — |
+| Claude Fable 5.1 | 72/72 | 41.7% | 87.5% | 8.8k | 58.7 s | $20.63 | $22 |
+| Claude Haiku 5.5 | 72/72 | 22.2% | 54.2% | 12.9k | 36.9 s | $0.34 | $10 |
+| Claude Opus 5.5 | 72/72 | 8.3% | 90.3% | 9.3k | 36.6 s | $8.97 | $10 |
+| Claude Sonnet 5.5 | 72/72 | 8.3% | 69.4% | 9.8k | 26.8 s | $4.49 | $10 |
+| DeepSeek V4 Flash | 72/72 | 4.2% | 9.7% | 11.5k | 21.8 s | $0.45 | $10 |
+| GPT-6 Astra | 72/72 | 81.9% | 93.1% | 3.3k | 20.7 s | $7.06 | $10 |
+| GPT-6 Luna | 72/72 | 2.8% | 12.5% | 10.7k | 21.9 s | $0.16 | $10 |
+| GPT-6.1 Sol | 72/72 | 79.2% | 91.7% | 3.5k | 20.2 s | $1.51 | $10 |
+| GPT-6.1 Terra | 72/72 | 52.8% | 79.2% | 5.4k | 25.5 s | $0.96 | $10 |
 
-The former `eval-v2` results and 144-task `train-v1` run are superseded. The sanitized 144-brief `train-v1.2` suite (canonical SHA-256 `c8bc4c59c6738b755bee24d8ed5af7fbe90bb9ca2a843dcd47c4e68bd9ad773e`) adds the explicit opposite-edge mirror instruction to the Garo D2 training brief; it has not been evaluated and has no matching trajectory or training export. See the [historical training dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1), [evaluation data](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1), and [trajectory schema and split policy](benchmarks/TRAJECTORY_DATASET.md).
+Pass rates use all 72 frozen task IDs. Token and latency columns are per-task means from the recorded runs. Spend is an estimated rate-card ledger amount; provider invoices were unavailable. The table shows Fable's settled estimate ($20.63); its conservative exposure including pending reservations was $21.12 under the $22 cap. Each other paid arm used a $10 cap. These results are one observed run, not a confidence claim about future performance.
 
-A one-pass comparison of the Beam baseline and four paid models—Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, and DeepSeek V4.1 Flash—is planned after release readiness and review of the exact task manifest and no-call cost preflight. Every paid model uses the same predeclared 47-task subset and 4,096-token output limit, with up to three proposals per task. Each paid model has its own USD 10 hard cap (USD 40 maximum total); an arm may stop at its cap, and quality comparisons use only task IDs completed by every compared model. The fixed protocol, provider differences, task-selection rule, and per-model cost gate are in [the benchmark protocol](docs/benchmark-protocol.md). No paid evaluation should begin before that preflight is reviewed.
+**Beam baseline:** 23.6% passed on the first proposal; repair accepted 30 of 55 initial failures (54.5%); 65.3% passed within three proposals. [See how 10 models compare in the Space](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art#/leaderboard).
 
-The public Space offers visitor BYO-key evaluation as a 12-question Quick run by default. A 72-question run first shows a no-call estimate based on the official Beam run's mean token usage and the selected model's dated rate card, then requires separate confirmation; the Space enforces a USD 10 per-run cap and one capped run per account or browser session per UTC day, so a run can stop early. The daily guard is in memory and resets when the Space restarts. Private results stay in the visitor's session. Public dataset uploads require Hugging Face sign-in, separate opt-in, and replay checks. The public Hugging Face Collection currently links this Space, the current `eval-v2.1` and OpenEnv datasets, and the superseded `train-v1` and `eval-v2` datasets. The growing training/development trajectory dataset still needs to be produced from new runs. A Hub article covering verified results, costs, observations, and limitations remains planned. Hugging Face [Evaluation Results](https://huggingface.co/docs/hub/eval-results) is supplemental discovery; do not describe results as registered or Hub-verified without the required approval.
+**Unsatisfiable task:** `py_kolam-as-practised-in-puducherry-easy-35` requests one loop on a 2×2 D2 Kolam grid. Exhaustive enumeration shows that this frozen profile permits either zero or two loops, never one. The prompt stays in the shared benchmark denominator for every model; it has no reference pattern and the paid results were not rerun. The reference dataset contains 71 verified designs for the other tasks.
+
+Third-party model outputs are evaluation data only (`training_eligible=false`). They are not used to train the evaluated models. See the [benchmark protocol](docs/benchmark-protocol.md), [trajectory schema and reuse policy](benchmarks/TRAJECTORY_DATASET.md), and the [Hugging Face Evaluation Results documentation](https://huggingface.co/docs/hub/eval-results).
 
 ## Development
 
@@ -107,12 +105,19 @@ python scripts/run_local_checks.py
 
 The checks use integer-grid raster masks and pinned Pillow drawing conventions; results are not proofs about continuous or manufactured objects.
 
-## Project status
+## Published resources
 
-The repository has verified Beam gallery examples for all seven grammars, a v0.2 grammar and verifier, and a replay-audited 72-task Beam baseline. The public Hugging Face Collection links the Space, current evaluation and OpenEnv datasets, and superseded public datasets. The one-pass multi-model run, growing run-derived training dataset, Hub article, clean Space deployment/history, browser review, and demo recording remain in progress. The public Space may not match `main`; check its deployed revision and user-facing screens before relying on source-only behavior.
+- [Live Space](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art) for the interactive studio and model comparison.
+- [GitHub repository](https://github.com/Mandark-droid/Proof-of-Art) with the verifier, evaluation protocol, and client code.
+- [Pramaan Collection](https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art) with the Space and public datasets.
+- [Evaluation dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1) with model results, replayable trajectories, leaderboard rows, and references.
+- [Training dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1) with SFT, repair, preference, and trajectory exports. This is the published `train-v1` snapshot; the corrected `train-v1.2` briefs have not yet been evaluated or exported as training records.
+- [OpenEnv dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv) with separate training and evaluation transition splits.
+
+The Space, source repository, benchmark results, training export, and RL transitions are published as distinct artifacts. The published training snapshot does not grow automatically when someone runs a model; private run traces remain private unless a visitor separately opts into the community contribution flow.
 ## RL environment
 
-The same Docker Space serves the Studio at [`/studio`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/studio/) and the OpenEnv playground at [`/web`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/). The environment uses no model credentials: each action is parsed and checked by the deterministic verifier, which returns a finite reward from 0 to 1 and a replayable certificate when the design passes.
+The same Docker Space serves the Studio at [`/studio`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/studio/) and the OpenEnv playground at [`/web`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/). The environment uses no model credentials: each action is parsed and checked by the deterministic verifier, which returns a finite reward from 0 to 1 and a replayable certificate when the design passes. The reward measures declared geometric checks; it does not test whether the rendered design has visible ink.
 
 ```python
 from pramaan_env import PramaanAction, PramaanEnv
@@ -125,6 +130,10 @@ with PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space")
 
 ## Datasets
 
-The [eval-v2.1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1) contains 72 held-out tasks across 36 states and Union Territories, with replay-verified results and accepted previews. The [OpenEnv dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv) contains role-separated reset/step records, actions, verifier evidence, rewards, and termination metadata. The corrected `train-v1.2` suite has 144 sanitized briefs, including the Garo D2 opposite-edge mirror wording, but has not been evaluated and has no matching training trajectory or export; historical `train-v1` exports are superseded and must not be combined with current evaluation results. See [the trajectory schema and reuse policy](benchmarks/TRAJECTORY_DATASET.md) for roles, provenance, and split rules.
+The [eval-v2.1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1) contains the 72-task held-out suite across 36 states and Union Territories, with replay-verified results and accepted previews for ten models. Third-party benchmark records are evaluation-only and carry `training_eligible=false`.
 
-Browse the [public Pramaan — Proof of Art collection](https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art) for the Space, current evaluation and OpenEnv datasets, and superseded public datasets.
+The published [train-v1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1) has four exports: 339 SFT rows, 195 repair rows, 50 preference rows, and 144 trajectories. It is a historical prompt-suite snapshot and is separate from `eval-v2.1`. The corrected `train-v1.2` suite contains 144 sanitized briefs, including the Garo D2 opposite-edge mirror wording, but has not been evaluated or exported as training records.
+
+The [OpenEnv dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv) contains role-separated reset/step records, actions, verifier evidence, rewards, and termination metadata in separate training and evaluation splits. See [the trajectory schema and reuse policy](benchmarks/TRAJECTORY_DATASET.md) for roles, provenance, and split rules.
+
+Browse the [public Pramaan — Proof of Art collection](https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art) for the Space and published evaluation, training, and OpenEnv datasets.

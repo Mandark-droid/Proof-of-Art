@@ -642,28 +642,23 @@ def _model_methodology_html(index: dict | None = None, summary: dict | None = No
         effort = params.get("reasoning_effort", output_config.get("effort"))
         reasoning_cap = params.get("max_reasoning_tokens", params.get("reasoning_tokens"))
         rows.append(
-            f'<tr data-model-protocol-row="{html_escape(key, quote=True)}">'
-            f'<th scope="row">{html_escape(str(arm.get("label") or key))}</th>'
-            f'<td>{html_escape(str(arm.get("provider") or "not specified"))}</td>'
-            f'<td>{html_escape(value_text(params.get("temperature")) if "temperature" in params else "not sent")}</td>'
-            f'<td>{html_escape(value_text(effort))}</td>'
-            f'<td>{html_escape(value_text(thinking.get("type")))}</td>'
-            f'<td>{html_escape(value_text(output_cap))}</td>'
-            f'<td>{html_escape(value_text(reasoning_cap))}</td></tr>'
+            f'<li data-model-protocol-row="{html_escape(key, quote=True)}">'
+            f'<strong>{html_escape(str(arm.get("label") or key))}</strong> · '
+            f'{html_escape(str(arm.get("provider") or "not specified"))}; '
+            f'temperature {html_escape(value_text(params.get("temperature")) if "temperature" in params else "not sent")}; '
+            f'effort {html_escape(value_text(effort))}; '
+            f'thinking {html_escape(value_text(thinking.get("type")))}; '
+            f'output cap {html_escape(value_text(output_cap))}; '
+            f'reasoning cap {html_escape(value_text(reasoning_cap))}</li>'
         )
     body = ("".join(rows) if rows else
-            '<tr><td colspan="7">Provider request settings have not been published yet.</td></tr>')
+            '<li>Provider request settings have not been published yet.</li>')
     model_label = "model" if len(arms) == 1 else "models"
     return (
         '<details id="leaderboard-methodology" class="pramaan-leaderboard-method">'
         f'<summary>Methodology · {len(arms)} {model_label} · {expected_count} suite tasks</summary>'
-        '<p>The verifier and task definitions were frozen. Up to three proposals were allowed per task; provider-error rows are not scored. Provider-specific request controls are listed below.</p>'
-        '<div class="pramaan-leaderboard-scroll"><table class="pramaan-leaderboard" data-testid="model-protocol-table">'
-        '<caption>Per-model request settings recorded with the canonical benchmark</caption>'
-        '<thead><tr><th scope="col">Model</th><th scope="col">Provider</th><th scope="col">Temperature</th>'
-        '<th scope="col">Effort / reasoning</th><th scope="col">Thinking mode</th>'
-        '<th scope="col">Output-token cap</th><th scope="col">Reasoning-token cap</th></tr></thead>'
-        f'<tbody>{body}</tbody></table></div>'
+        '<p>The verifier and task definitions were frozen. Up to three proposals were allowed per task; provider-error rows are not scored. Per-model request settings are listed below.</p>'
+        f'<ul class="pramaan-model-protocol-list">{body}</ul>'
         '<p>One task has a documented unsatisfiable constraint. Rows were collected in two sittings.</p>'
         '</details>'
     )
@@ -2374,8 +2369,6 @@ html.light, body.light {
 .pramaan-model-bar-label { display: flex; flex-wrap: wrap; gap: .2rem .7rem; justify-content: space-between; font-size: .82rem; }
 .pramaan-model-bar-track { background: var(--pramaan-line); border-radius: 99px; height: 13px; margin: .27rem 0 .12rem; overflow: hidden; position: relative; }
 .pramaan-model-bar { background: var(--pramaan-indigo); border-radius: 99px; display: block; height: 100%; }
-.pramaan-model-first-mark { border-left: 2px solid var(--pramaan-madder); bottom: -2px; position: absolute; top: -2px; z-index: 2; }
-.pramaan-model-wilson { border: 1px solid var(--pramaan-ink); border-radius: 99px; height: 5px; pointer-events: none; position: absolute; top: 4px; z-index: 3; }
 .pramaan-model-table { border-collapse: collapse; font-size: .84rem; min-width: 720px; width: 100%; }
 .pramaan-model-table th, .pramaan-model-table td { border-bottom: 1px solid var(--pramaan-line); padding: .65rem .55rem; text-align: left; vertical-align: top; }
 .pramaan-model-table tbody th small, .pramaan-model-table td small { color: var(--pramaan-muted); display: block; }
@@ -2428,7 +2421,30 @@ html.light, body.light {
 .tabs { border-color: var(--pramaan-line) !important; }
 .tab-nav button { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); color: var(--pramaan-muted); font-weight: 650; }
 .tab-nav button.selected { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
+.gradio-container .tab-nav button.selected,
+.gradio-container .tab-nav button.selected:hover,
+.gradio-container .tab-nav button.selected:focus-visible {
+  background-color: var(--pramaan-teal) !important;
+  border-color: var(--pramaan-teal) !important;
+  color: var(--pramaan-on-accent) !important;
+}
+.gradio-container .tab-nav button.selected > span { color: inherit !important; }
 .prose a { color: var(--pramaan-teal) !important; }
+.gradio-container .pramaan-ui a.pramaan-ui-button,
+.gradio-container .pramaan-ui a.pramaan-ui-button:visited,
+.gradio-container .pramaan-ui a.pramaan-ui-button:hover,
+.gradio-container .pramaan-ui a.pramaan-ui-button:focus-visible {
+  background-color: var(--pramaan-card) !important;
+  border-color: var(--pramaan-line) !important;
+  color: var(--pramaan-indigo) !important;
+}
+.gradio-container .pramaan-ui a.pramaan-ui-button.secondary,
+.gradio-container .pramaan-ui a.pramaan-ui-button.secondary:visited,
+.gradio-container .pramaan-ui a.pramaan-ui-button.secondary:hover,
+.gradio-container .pramaan-ui a.pramaan-ui-button.secondary:focus-visible {
+  background-color: var(--pramaan-card) !important;
+  color: var(--pramaan-indigo) !important;
+}
 .pramaan-ui { color: var(--pramaan-indigo); font: 400 15px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; margin: 0 auto; max-width: 1480px; }
 .gradio-container .pramaan-ui p:not([class]),
 .gradio-container .pramaan-ui div:not([class]),
@@ -2467,6 +2483,14 @@ html.light, body.light {
 }
 .gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab > span { color: inherit !important; }
 .pramaan-ui-subtabs button[aria-pressed="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
+.gradio-container .pramaan-ui .pramaan-ui-subtabs > button[aria-pressed="true"],
+.gradio-container .pramaan-ui .pramaan-ui-subtabs > button[aria-pressed="true"]:hover,
+.gradio-container .pramaan-ui .pramaan-ui-subtabs > button[aria-pressed="true"]:focus-visible {
+  background-color: var(--pramaan-teal) !important;
+  border-color: var(--pramaan-teal) !important;
+  color: var(--pramaan-on-accent) !important;
+}
+.gradio-container .pramaan-ui .pramaan-ui-subtabs > button[aria-pressed="true"] > span { color: inherit !important; }
 .pramaan-ui-button.secondary, .pramaan-ui-subtabs button { background: var(--pramaan-card); border-color: var(--pramaan-line); color: var(--pramaan-indigo); }
 .pramaan-ui-button:disabled { background: var(--pramaan-pending-bg); border-color: var(--pramaan-pending); color: var(--pramaan-pending); cursor: not-allowed; opacity: 1; }
 .pramaan-ui-layout { align-items: start; display: grid; gap: 1rem; grid-template-columns: minmax(300px,.9fr) minmax(0,1.5fr); }
@@ -2632,7 +2656,8 @@ html.light, body.light {
 .pramaan-wall-models { display: flex; flex-wrap: wrap; gap: .4rem; }
 .pramaan-wall-model-chip { align-items: flex-start; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: .04rem; max-width: 100%; padding: .35rem .75rem; text-align: left; }
 .pramaan-wall-model-chip[aria-checked="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
-.pramaan-wall-model-chip small { color: inherit; font-size: .66rem; opacity: .92; }
+.pramaan-wall-model-chip small { color: var(--pramaan-muted); font-size: 12px; opacity: 1; }
+.pramaan-wall-model-chip[aria-checked="true"] small { color: var(--pramaan-on-accent); }
 .pramaan-wall-mode-toggle { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: inline-flex; justify-self: start; overflow: hidden; }
 .pramaan-wall-mode { background: transparent; border: 0; color: var(--pramaan-text); cursor: pointer; font: inherit; font-size: .82rem; min-height: 38px; padding: .35rem .85rem; }
 .pramaan-wall-mode[aria-pressed="true"] { background: var(--pramaan-indigo); color: var(--pramaan-on-accent); }

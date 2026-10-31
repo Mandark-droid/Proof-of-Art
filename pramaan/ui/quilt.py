@@ -6,6 +6,8 @@ import html
 import re
 import base64
 
+from .check_labels import check_labels
+
 
 _ABBREVIATED_GRID = {
     "JK": (3, 0), "LA": (4, 0),
@@ -92,8 +94,7 @@ def _attempt_history(task: dict) -> str:
         if type(index) is not int or not 1 <= index <= 3:
             continue
         outcome = "passed" if attempt.get("passed") is True else "did not pass"
-        checks = attempt.get("failing_checks")
-        checks_text = ", ".join(str(item) for item in checks[:12] if isinstance(item, str)) if isinstance(checks, list) else ""
+        checks_text = check_labels(attempt.get("failing_checks"), limit=12)
         witness = attempt.get("witness")
         witness_text = html.escape(str(witness[:4])) if isinstance(witness, list) and witness else "none recorded"
         uri = _tile_uri([attempt])

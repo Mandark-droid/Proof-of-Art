@@ -2,7 +2,7 @@
   "suite_id": "eval-v2.1",
   "suite_sha256": "b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a",
   "validator_version": "0.3.0",
-  "generated_at": "2026-10-30T02:09:10+00:00",
+  "generated_at": "2026-10-31T17:11:14+00:00",
   "states": [
     {
       "state": "Andhra Pradesh",
@@ -1294,6 +1294,1297 @@
         "G6": {
           "n": 3,
           "passed_at_3": 1
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 0
+        }
+      }
+    },
+    {
+      "key": "claude-fable-5-1",
+      "label": "claude-fable-5-1",
+      "provider": "Anthropic",
+      "run_kind": "official",
+      "request_params": {
+        "max_tokens": 4096,
+        "output_config": {
+          "effort": "low"
+        }
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.4166666666666667,
+      "pass_at_3": 0.875,
+      "ci_pass_at_1": [
+        0.30985217474739846,
+        0.5319230206853446
+      ],
+      "ci_pass_at_3": [
+        0.7791894627583916,
+        0.9328221577942649
+      ],
+      "rescue_rate": 0.7857142857142857,
+      "mean_reward": 0.926546717171736,
+      "valid_schema_at_1": 0.5833333333333334,
+      "tokens_per_task": 8837.875,
+      "est_cost_per_verified": 0.3274284126984127,
+      "median_latency_ms": 45405.5,
+      "length_rate": 0.1953125,
+      "near_bound_rate": 0.0,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 128,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 10
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 4
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 13
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 30
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 3
+        }
+      }
+    },
+    {
+      "key": "claude-haiku-5-5",
+      "label": "claude-haiku-5-5",
+      "provider": "Anthropic",
+      "run_kind": "official",
+      "request_params": {
+        "max_tokens": 4096,
+        "output_config": {
+          "effort": "low"
+        }
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.2222222222222222,
+      "pass_at_3": 0.5416666666666666,
+      "ci_pass_at_1": [
+        0.14167443539575805,
+        0.3309095493800518
+      ],
+      "ci_pass_at_3": [
+        0.4273986728598905,
+        0.651713729423738
+      ],
+      "rescue_rate": 0.4107142857142857,
+      "mean_reward": 0.7577335858585834,
+      "valid_schema_at_1": 0.5972222222222222,
+      "tokens_per_task": 12850.027777777777,
+      "est_cost_per_verified": 0.008164620512820513,
+      "median_latency_ms": 35191.5,
+      "length_rate": 0.40476190476190477,
+      "near_bound_rate": 0.05128205128205128,
+      "normalizations": {
+        "strip_code_fence": 15,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 168,
+      "normalization_rates": {
+        "strip_code_fence": 0.08928571428571429,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 8
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 1
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 25
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 1
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 1
+        }
+      }
+    },
+    {
+      "key": "claude-opus-5-5",
+      "label": "claude-opus-5-5",
+      "provider": "Anthropic",
+      "run_kind": "official",
+      "request_params": {
+        "max_tokens": 4096,
+        "output_config": {
+          "effort": "low"
+        }
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.08333333333333333,
+      "pass_at_3": 0.9027777777777778,
+      "ci_pass_at_1": [
+        0.038752424956949666,
+        0.17012355220676517
+      ],
+      "ci_pass_at_3": [
+        0.8126495420487314,
+        0.9521036800263443
+      ],
+      "rescue_rate": 0.8939393939393939,
+      "mean_reward": 0.9542192760942778,
+      "valid_schema_at_1": 0.19444444444444445,
+      "tokens_per_task": 9284.902777777777,
+      "est_cost_per_verified": 0.11413052307692308,
+      "median_latency_ms": 29802.5,
+      "length_rate": 0.044585987261146494,
+      "near_bound_rate": 0.0,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 157,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 11
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 13
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 31
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 2
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 2
+        }
+      }
+    },
+    {
+      "key": "claude-sonnet-5-5",
+      "label": "claude-sonnet-5-5",
+      "provider": "Anthropic",
+      "run_kind": "official",
+      "request_params": {
+        "max_tokens": 4096,
+        "output_config": {
+          "effort": "low"
+        }
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.08333333333333333,
+      "pass_at_3": 0.6944444444444444,
+      "ci_pass_at_1": [
+        0.038752424956949666,
+        0.17012355220676517
+      ],
+      "ci_pass_at_3": [
+        0.5804575204088857,
+        0.7887336902480474
+      ],
+      "rescue_rate": 0.6666666666666666,
+      "mean_reward": 0.8849326599326388,
+      "valid_schema_at_1": 0.2916666666666667,
+      "tokens_per_task": 9771.638888888889,
+      "est_cost_per_verified": 0.07371,
+      "median_latency_ms": 22111.5,
+      "length_rate": 0.045714285714285714,
+      "near_bound_rate": 0.04,
+      "normalizations": {
+        "strip_code_fence": 4,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 175,
+      "normalization_rates": {
+        "strip_code_fence": 0.022857142857142857,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 10
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 8
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 26
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 2
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 1
+        }
+      }
+    },
+    {
+      "key": "deepseek-v4.1-flash",
+      "label": "deepseek-v4.1-flash",
+      "provider": "CometAPI",
+      "run_kind": "official",
+      "request_params": {
+        "temperature": 0.4,
+        "max_tokens": 4096,
+        "extra_body": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.041666666666666664,
+      "pass_at_3": 0.09722222222222222,
+      "ci_pass_at_1": [
+        0.01427080746692519,
+        0.11549276741316111
+      ],
+      "ci_pass_at_3": [
+        0.047896319973655774,
+        0.1873504579512686
+      ],
+      "rescue_rate": 0.057971014492753624,
+      "mean_reward": 0.613110269360236,
+      "valid_schema_at_1": 0.5833333333333334,
+      "tokens_per_task": 11471.847222222223,
+      "est_cost_per_verified": 0.061845462857142854,
+      "median_latency_ms": 16579.0,
+      "length_rate": 0.06310679611650485,
+      "near_bound_rate": 0.14285714285714285,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 206,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 1
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 0
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 1
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 5
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 0
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 0
+        }
+      }
+    },
+    {
+      "key": "gpt-6-astra",
+      "label": "gpt-6-astra",
+      "provider": "OpenAI",
+      "run_kind": "official",
+      "request_params": {
+        "reasoning_effort": "low",
+        "max_completion_tokens": 4096
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.8194444444444444,
+      "pass_at_3": 0.9305555555555556,
+      "ci_pass_at_1": [
+        0.7151965826080176,
+        0.891331834899801
+      ],
+      "ci_pass_at_3": [
+        0.8475202051632649,
+        0.9699746184342299
+      ],
+      "rescue_rate": 0.6153846153846154,
+      "mean_reward": 0.982575757575764,
+      "valid_schema_at_1": 0.9583333333333334,
+      "tokens_per_task": 3254.902777777778,
+      "est_cost_per_verified": 0.10519910447761195,
+      "median_latency_ms": 17289.0,
+      "length_rate": 0.0,
+      "near_bound_rate": 0.0,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 90,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 11
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 4
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 14
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 31
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 4
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 2
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 1
+        }
+      }
+    },
+    {
+      "key": "gpt-6-luna",
+      "label": "gpt-6-luna",
+      "provider": "OpenAI",
+      "run_kind": "official",
+      "request_params": {
+        "reasoning_effort": "none",
+        "max_completion_tokens": 4096
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.027777777777777776,
+      "pass_at_3": 0.125,
+      "ci_pass_at_1": [
+        0.007651021904494577,
+        0.09574175221438225
+      ],
+      "ci_pass_at_3": [
+        0.06717784220573504,
+        0.22081053724160832
+      ],
+      "rescue_rate": 0.1,
+      "mean_reward": 0.6945812289561667,
+      "valid_schema_at_1": 0.25,
+      "tokens_per_task": 10728.652777777777,
+      "est_cost_per_verified": 0.017090866666666666,
+      "median_latency_ms": 17738.0,
+      "length_rate": 0.00966183574879227,
+      "near_bound_rate": 0.1111111111111111,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 207,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 2
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 0
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 0
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 7
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 0
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 0
+        }
+      }
+    },
+    {
+      "key": "gpt-6.1-sol",
+      "label": "gpt-6.1-sol",
+      "provider": "OpenAI",
+      "run_kind": "official",
+      "request_params": {
+        "reasoning_effort": "low",
+        "max_completion_tokens": 4096
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.7916666666666666,
+      "pass_at_3": 0.9166666666666666,
+      "ci_pass_at_1": [
+        0.6843073658064066,
+        0.869479450178993
+      ],
+      "ci_pass_at_3": [
+        0.8298764477932348,
+        0.9612475750430503
+      ],
+      "rescue_rate": 0.6,
+      "mean_reward": 0.9787563131313194,
+      "valid_schema_at_1": 0.9444444444444444,
+      "tokens_per_task": 3536.6805555555557,
+      "est_cost_per_verified": 0.02282419696969697,
+      "median_latency_ms": 17509.5,
+      "length_rate": 0.0,
+      "near_bound_rate": 0.0,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 94,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 11
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 4
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 14
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 31
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 2
+        },
+        "G7": {
+          "n": 5,
+          "passed_at_3": 1
+        }
+      }
+    },
+    {
+      "key": "gpt-6.1-terra",
+      "label": "gpt-6.1-terra",
+      "provider": "OpenAI",
+      "run_kind": "official",
+      "request_params": {
+        "reasoning_effort": "none",
+        "max_completion_tokens": 4096
+      },
+      "n_tasks": 72,
+      "completed_prompt_ids": [
+        "an_nicobari-plaited-pandanus-mat-easy-28",
+        "an_nicobari-plaited-pandanus-mat-hard-28",
+        "ap_mangalagiri-sarees-and-fabrics-easy-0",
+        "ap_mangalagiri-sarees-and-fabrics-hard-0",
+        "ar_apatani-textiles-easy-1",
+        "ar_idu-mishmi-textiles-hard-1",
+        "as_gamosa-red-on-white-border-and-motif-band-easy-2",
+        "as_gamosa-red-on-white-border-and-motif-band-hard-2",
+        "br_madhubani-easy-3",
+        "br_madhubani-hard-3",
+        "cg_bastar-wooden-craft-easy-4",
+        "cg_bastar-wooden-craft-hard-4",
+        "ch_phulkari-easy-29",
+        "ch_phulkari-hard-29",
+        "dd_warli-painting-easy-30",
+        "dd_warli-painting-hard-30",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-easy-31",
+        "dl_mughal-sandstone-and-marble-jaali-screens-of-the-humayun-s-tomb-complex-hard-31",
+        "ga_kunbi-check-sari-easy-5",
+        "ga_kunbi-check-sari-hard-5",
+        "gj_bandhani-easy-6",
+        "gj_patan-patola-double-ikat-grid-hard-6",
+        "hp_kinnauri-shawl-geometric-border-easy-8",
+        "hp_kullu-shawl-end-bands-hard-8",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-easy-7",
+        "hr_phulkari-and-bagh-counted-thread-embroidery-hard-7",
+        "jh_sohrai-khovar-wall-painting-easy-9",
+        "jh_sohrai-khovar-wall-painting-hard-9",
+        "jk_khatamband-geometric-wooden-ceiling-easy-32",
+        "jk_khatamband-geometric-wooden-ceiling-hard-32",
+        "ka_ilkal-sarees-hard-10",
+        "ka_kasuti-embroidery-easy-10",
+        "kl_balaramapuram-kasavu-handloom-hard-11",
+        "kl_pookalam-easy-11",
+        "la_thigma-resist-dyed-circles-easy-33",
+        "la_thigma-resist-dyed-circles-hard-33",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-easy-34",
+        "ld_lakshadweep-coir-and-screw-pine-mat-weave-hard-34",
+        "mh_warli-painting-easy-13",
+        "mh_warli-painting-hard-13",
+        "ml_garo-dakmanda-easy-15",
+        "ml_garo-dakmanda-hard-15",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14",
+        "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-hard-14",
+        "mp_bagh-hand-block-print-easy-12",
+        "mp_maheshwari-sari-border-bands-hard-12",
+        "mz_mizo-puanchei-easy-16",
+        "mz_mizo-puanchei-hard-16",
+        "nl_chakhesang-shawls-easy-17",
+        "nl_chakhesang-shawls-hard-17",
+        "od_sambalpuri-bandha-easy-18",
+        "od_sambalpuri-bandha-hard-18",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+        "pb_phulkari-and-bagh-counted-thread-embroidery-hard-19",
+        "py_kolam-as-practised-in-puducherry-easy-35",
+        "py_kolam-as-practised-in-puducherry-hard-35",
+        "rj_bagru-hand-block-print-easy-20",
+        "rj_leheriya-diagonal-stripe-tie-dye-hard-20",
+        "sk_lepcha-thara-weave-stripes-easy-21",
+        "sk_lepcha-thara-weave-stripes-hard-21",
+        "tg_pochampally-ikat-easy-23",
+        "tg_pochampally-ikat-hard-23",
+        "tn_kolam-easy-22",
+        "tn_toda-embroidery-hard-22",
+        "tr_risa-easy-24",
+        "tr_risa-hard-24",
+        "uk_aipan-easy-26",
+        "uk_rangwali-pichhoda-of-kumaon-hard-26",
+        "up_lucknow-chikan-jaali-hard-25",
+        "up_mughal-pierced-stone-jaali-screens-of-agra-and-fatehpur-sikri-easy-25",
+        "wb_nakshi-kantha-easy-27",
+        "wb_nakshi-kantha-hard-27"
+      ],
+      "pass_at_1": 0.5277777777777778,
+      "pass_at_3": 0.7916666666666666,
+      "ci_pass_at_1": [
+        0.4140067049007661,
+        0.6387348966216531
+      ],
+      "ci_pass_at_3": [
+        0.6843073658064066,
+        0.869479450178993
+      ],
+      "rescue_rate": 0.5588235294117647,
+      "mean_reward": 0.9458754208754167,
+      "valid_schema_at_1": 0.8888888888888888,
+      "tokens_per_task": 5408.583333333333,
+      "est_cost_per_verified": 0.016863077192982457,
+      "median_latency_ms": 16847.0,
+      "length_rate": 0.0,
+      "near_bound_rate": 0.017543859649122806,
+      "normalizations": {
+        "strip_code_fence": 0,
+        "strip_think_block": 0
+      },
+      "normalization_calls": 128,
+      "normalization_rates": {
+        "strip_code_fence": 0.0,
+        "strip_think_block": 0.0
+      },
+      "by_grammar": {
+        "G1": {
+          "n": 11,
+          "passed_at_3": 10
+        },
+        "G2": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G3": {
+          "n": 14,
+          "passed_at_3": 11
+        },
+        "G4": {
+          "n": 31,
+          "passed_at_3": 30
+        },
+        "G5": {
+          "n": 4,
+          "passed_at_3": 3
+        },
+        "G6": {
+          "n": 3,
+          "passed_at_3": 0
         },
         "G7": {
           "n": 5,

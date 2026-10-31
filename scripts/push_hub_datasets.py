@@ -877,6 +877,8 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
     if repository_kind == "eval" and include_community:
         configs += "\n  - config_name: community\n    data_files:\n      - split: test\n        path: community/test/*.jsonl"
     evaluation_version_note = ""
+    visibility_note = ""
+    train_visibility_note = ""
     if repository_kind == "eval" and suite_name == "eval-v2.1":
         merged = json.loads((ROOT / "benchmarks/data/eval-v2.1-summary.json").read_text(encoding="utf-8"))
         overall = merged["by_model"]["beam-hf"]["overall"]
@@ -917,6 +919,24 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
                 if fable_ledger and len(merged["by_model"]) == 10 else ""
             )
         )
+        visibility_rows = (
+            ("Beam", 3, 8, 47, 8), ("Claude Fable 5.1", 2, 3, 63, 3),
+            ("Claude Haiku 5.5", 1, 2, 39, 2), ("Claude Opus 5.5", 1, 4, 65, 3),
+            ("Claude Sonnet 5.5", 0, 1, 50, 1), ("DeepSeek V4.1 Flash", 1, 1, 7, 0),
+            ("GPT-6 Astra", 8, 8, 67, 7), ("GPT-6 Luna", 2, 4, 9, 3),
+            ("GPT-6.1 Sol", 7, 7, 66, 6), ("GPT-6.1 Terra", 5, 6, 57, 4),
+        )
+        visibility_note = (
+            "## Visibility limitation\n\n"
+            "The verifier checks declared geometric rules; it does not require visible ink. A read-only replay audit of saved results found "
+            "44 of 470 verifier-accepted PASS@3 designs have fewer than 2% of the 64-by-64 pixels differing from `background_index`: 37 are one solid colour and 7 have some ink but remain below the threshold. "
+            "The figures below disclose a rendering limitation; they do not revise the frozen validity scores or ranking.\n\n"
+            "| Model | PASS@1 below 2% (accepted) | PASS@3 below 2% (accepted) | Solid at PASS@3 |\n"
+            "|---|---:|---:|---:|\n"
+            + "\n".join(f"| {label} | {first_low} | {within_low}/{within_total} | {solid} |"
+                         for label, first_low, within_low, within_total, solid in visibility_rows)
+            + "\n\n"
+        )
     elif repository_kind == "eval" and suite_name == "eval-v2":
         evaluation_version_note = "**Historical and superseded by eval-v2.1.** [Open the current dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1).\n\n"
     elif repository_kind == "train" and suite_name == "train-v1":
@@ -924,6 +944,10 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         evaluation_version_note = (
             "**Superseded by the [train-v1.2 prompt suite](https://github.com/Mandark-droid/Proof-of-Art/blob/main/benchmarks/suites/train-v1.2.jsonl).**\n\n"
             f"The corrected train-v1.2 prompts have SHA-256 `{current_train_sha}` but have not yet been evaluated or exported.\n\n"
+        )
+        train_visibility_note = (
+            "## Visibility limitation\n\n"
+            "The verifier reward checks declared geometric rules, not whether a rendered design is visible. A read-only audit of this saved train-v1 export found 12 accepted trajectories below 2% visible pixels (7 are one solid colour). The accepted SFT, repair, and preference candidates have no designs below that threshold. This note does not change any saved reward, score, or dataset row.\n\n"
         )
     return (
         "---\nlanguage:\n  - en\nlicense: cc-by-4.0\ntask_categories:\n  - text-generation\n"
@@ -934,6 +958,8 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         "Pramaan evaluates geometric patterns from generative models using a deterministic verifier that reports exact declared-constraint outcomes. "
         "Patterns are original designs inspired by South Asian craft vocabularies, not artisan-authentic works or substitutes for practitioners.\n\n"
         + evaluation_version_note
+        + visibility_note
+        + train_visibility_note
         + "## Fields\n\n"
         "Task and tradition fields include `prompt_id`, `suite_id`, `state`, `tradition_id`, `grammar`, `level`, `brief`, `palette`, `symmetry`, and `constraint_profile`. "
         "Trajectory records include `trajectory_id`, `trajectory_schema_version`, `calls`, `attempt_count`, `max_attempts`, `reward_version` (when present; current runs use `pramaan-reward-v1`), `valid_schema_at_1`, `validity_at_1`, `validity_at_3`, "
