@@ -1134,6 +1134,8 @@ def _quilt_legend_html() -> str:
 def _image_data_uri(image) -> str:
     if image is None:
         return ""
+    if isinstance(image, str) and image.startswith("data:image/png;base64,"):
+        return image
     buffer = BytesIO()
     image.save(buffer, format="PNG")
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
@@ -1165,12 +1167,22 @@ def _initial_custom_state() -> dict:
         "min_web": int(profile.get("min_web", 0)),
     }
     form["example"] = _example_for_selection(state_name, tradition.id if tradition else None)
+    example_result = _initial_example_result(form["example"]) if form["example"] in EXAMPLES else None
+    if example_result:
+        try:
+            saved_example = json.loads(example_result[4])
+        except (TypeError, json.JSONDecodeError):
+            saved_example = {}
+        saved_brief = saved_example.get("original_prompt") if isinstance(saved_example, dict) else None
+        if isinstance(saved_brief, str) and saved_brief.strip():
+            form["brief"] = saved_brief
     return {
         "active_tab": "benchmark", "form": form,
         "about_state": state_name, "benchmark_state": state_name,
         "wall_model": "beam-hf", "wall_mode": "reference",
         "community_loaded": False,
-        "result": {"status": "Load an example to inspect its independent checker report."},
+        "result": (dict(zip(("image", "gallery", "source", "certificate", "history", "status", "bundle"), example_result))
+                   if example_result else {"status": "Choose a worked example to inspect its independent checker report."}),
     }
 
 
@@ -1457,12 +1469,28 @@ def _render_proof_replay_html_from_data() -> str:
                 'width="384" height="384" decoding="async">')
 
     def check_list(rows: list[dict]) -> str:
-        return '<ul class="pramaan-proof-checks">' + "".join(
+        labels = {
+            "schema_valid": "Readable pattern",
+            "complexity_bound": "Within the design size limit",
+            "palette_limit": "At most 4 colours",
+            "symmetry_d2": "Symmetric",
+            "symmetry_d4": "Symmetric",
+            "periodic_raster": "Repeat tiles match",
+            "layer_registration": "Layers line up",
+            "exclusive_ink_collision": "Ink layers do not overlap",
+            "minimum_gap": "Motifs keep their distance",
+            "coverage_bound": "Ink coverage is within the requested range",
+            "dot_clearance": "Dots keep their distance",
+        }
+        visible = '<ul class="pramaan-proof-checks">' + "".join(
             '<li class="' + ("is-pass" if row.get("status") == "PASS" else "is-fail") + '">'
             + '<span aria-hidden="true">' + ("✓" if row.get("status") == "PASS" else "×") + '</span> '
-            + '<strong>' + safe(str(row.get("id", "check"))) + '</strong> '
-            + '<span>' + safe(str(row.get("message", ""))) + '</span></li>'
+            + '<strong>' + safe(labels.get(str(row.get("id", "")), "Check the pattern")) + '</strong></li>'
             for row in rows) + '</ul>'
+        technical = '<ul>' + "".join(
+            '<li><code>' + safe(str(row.get("id", "check"))) + '</code>: '
+            + safe(str(row.get("message", ""))) + '</li>' for row in rows) + '</ul>'
+        return visible + '<details class="pramaan-proof-technical"><summary>Technical check details</summary>' + technical + '</details>'
 
     counterexample = first_failed["pixel"]
     pixel_text = (f"pixel ({counterexample[0]}, {counterexample[1]})"
@@ -1474,7 +1502,7 @@ def _render_proof_replay_html_from_data() -> str:
     steps = [
         f'<div class="pramaan-proof-step" data-proof-step="0" hidden><p><b>The brief</b></p><p>{brief}</p></div>',
         f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>{image_html(first_failed, "First failed attempt tile")}</div>',
-        f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>Exact checks · attempt 1</b></p>{check_list(first_checks)}</div>',
+        f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>What needs attention · attempt 1</b></p>{check_list(first_checks)}</div>',
     ]
     if counterexample:
         steps.append(f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden><p><b>Counterexample · {pixel_text}</b></p>{image_html(first_failed, "Counterexample pixel outlined in magenta on the first attempt")}</div>')
@@ -1591,17 +1619,23 @@ def _render_custom_app(ui_state: dict) -> str:
             '<p class="pramaan-muted">Choose a state and tradition to see matching worked examples.</p>'
         )
     studio = (
-        '<section><p class="pramaan-ui-intro">Choose a craft-inspired starting point, adjust the rules, and ask Beam to propose a pattern.</p><div class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
-        '<p class="pramaan-ui-eyebrow">Design studio</p><h2>Set the construction rules</h2>'
+        '<section><p class="pramaan-ui-intro">Choose a state, load an example or generate a pattern, then read the independent checker result.</p><div class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
+        '<p class="pramaan-ui-eyebrow">Design studio</p><h2>Start with a checked example</h2>'
+        '<ol class="pramaan-studio-steps"><li>Pick a state and tradition.</li><li>Load the example or generate with Beam.</li><li>Read the preview and checker result.</li></ol>'
         '<p class="pramaan-muted">The tradition choice supplies its own grammar, palette and starting constraints. The verifier checks the resulting finite pattern.</p>'
         + _field("State / Union Territory", "state", state_name, options=state_options)
         + _field("Tradition", "tradition", tradition_id, options=tradition_options)
         + example_guidance
         + _field("Worked example for this tradition", "example", selected_example, options=example_options)
+        + '<div class="pramaan-studio-actions" aria-label="Pattern actions">'
         + ('<button type="button" class="pramaan-ui-button secondary" data-action="example">Load example</button>'
            if example_choices else '<button type="button" class="pramaan-ui-button secondary" data-action="example" disabled>Load example</button>')
+        + '<button type="button" class="pramaan-ui-button" data-action="generate"'
+        + ("" if beam_available else ' disabled title="Beam is not configured in this build"')
+        + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck edited PatternDSL</button></div>'
         + _field("Pattern brief", "brief", form.get("brief", ""), kind="textarea", attrs=f'maxlength="{MAX_BRIEF_CHARS}" rows="3"')
         + (f'<p class="pramaan-muted">Grammar: <code>{html_escape(grammar or "select a tradition")}</code></p>')
+        + '<details class="pramaan-ui-advanced-rules"><summary>Advanced rules</summary>'
         + _field("Palette preset", "palette", form.get("palette", ""), options=palette_options)
         + _field("Symmetry", "symmetry", form.get("symmetry", "D2"), options=[(value, value) for value in symmetry_options])
         + '<div class="pramaan-ui-grid">'
@@ -1625,20 +1659,20 @@ def _render_custom_app(ui_state: dict) -> str:
         studio += _field("Jaali frame", "frame", form.get("frame", 0), kind="number", attrs='min="0" max="12" step="1"')
         studio += _field("Minimum Jaali web", "min_web", form.get("min_web", 0), kind="number", attrs='min="0" max="32" step="1"')
     studio += (
+        '</details>'
         f'<p class="pramaan-ui-muted" role="status">{html_escape(beam_note)}</p>'
-        '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button" data-action="generate"'
-        + ("" if beam_available else ' disabled title="Beam is not configured in this build"')
-        + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck edited PatternDSL</button></div></article>'
+        '</article>'
         '<article class="pramaan-ui-card pramaan-ui-result"><p class="pramaan-ui-eyebrow">Verifier evidence</p>'
+        '<p class="pramaan-muted">Read the preview, then open checks, attempts, or source.</p>'
         f'<h2>{html_escape(status or "Ready to load an example")}</h2>'
         + (f'<img class="pramaan-ui-preview" src="{preview_uri}" alt="Verified Pramaan pattern preview">' if preview_uri else '<div class="pramaan-ui-placeholder">Load an example or generate a pattern to see the 3 × 3 repeat.</div>')
         + '<nav class="pramaan-ui-subtabs" aria-label="Evidence panels">'
-        + '<button type="button" data-local-panel="source" aria-pressed="true">Pattern source</button>'
-        + '<button type="button" data-local-panel="checks" aria-pressed="false">Checks and certificate</button>'
+        + '<button type="button" data-local-panel="source" aria-pressed="false">Pattern source</button>'
+        + '<button type="button" data-local-panel="checks" aria-pressed="true">Checks and certificate</button>'
         + '<button type="button" data-local-panel="attempts" aria-pressed="false">Attempts</button>'
         + '<button type="button" data-local-panel="previews" aria-pressed="false">Proposals</button></nav>'
-        + f'<div class="pramaan-ui-subpanel" data-panel="source"><label for="pramaan-source">Editable PatternDSL JSON</label><textarea id="pramaan-source" data-field="source" rows="18" spellcheck="false">{html_escape(source)}</textarea></div>'
-        + f'<div class="pramaan-ui-subpanel" data-panel="checks" hidden><pre>{html_escape(certificate)}</pre></div>'
+        + f'<div class="pramaan-ui-subpanel" data-panel="source" hidden><label for="pramaan-source">Editable PatternDSL JSON</label><textarea id="pramaan-source" data-field="source" rows="18" spellcheck="false">{html_escape(source)}</textarea></div>'
+        + f'<div class="pramaan-ui-subpanel" data-panel="checks"><pre>{html_escape(certificate)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel" data-panel="attempts" hidden><pre>{html_escape(history)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel pramaan-ui-gallery" data-panel="previews" hidden>{"".join(gallery_html) or "<p class=\"pramaan-muted\">Proposal previews will appear here.</p>"}</div>'
         + download_html + '</article></div></section>'
@@ -1738,17 +1772,21 @@ def _render_custom_app(ui_state: dict) -> str:
             all_benchmark_images, all_benchmark_info,
             festival_lens_states=festival_states, festival_lens_active=festival_lens_active,
         )
+    suite_task_rows = _home_suite_tasks()
     arena_html = render_arena(
         gallery_index, gallery_arm_documents, suite_id=EVAL_SUITE_ID,
         suite_sha256=EVAL_SUITE_SHA256, prompt_id=PROOF_REPLAY_PROMPT_ID,
         replay_prompt_id=PROOF_REPLAY_PROMPT_ID,
         selected_model_keys=_arena_default_model_keys(_benchmark_summary()),
+        task_backgrounds={row["id"]: row["palette"][0] for row in suite_task_rows
+                          if isinstance(row.get("id"), str) and isinstance(row.get("palette"), list)
+                          and row["palette"] and isinstance(row["palette"][0], str)},
     )
     home_wall = render_reference_wall(
         _home_reference_rows(),
         gallery_index.get("states", []) if isinstance(gallery_index, dict) else [],
         gallery_arm_documents,
-        _home_suite_tasks(),
+        suite_task_rows,
         canonical_arms,
         selected_model=str(ui_state.get("wall_model", "beam-hf")),
         display_mode=str(ui_state.get("wall_mode", "reference")),
@@ -1762,7 +1800,9 @@ def _render_custom_app(ui_state: dict) -> str:
         '<a class="pramaan-ui-button" href="#proof-replay">Watch a proof</a>'
         '<a class="pramaan-ui-button secondary" href="#/studio">Try it</a>'
         '<a class="pramaan-home-text-link" href="/web/">Use it as an RL environment</a></nav>'
-        + _home_metrics_html() + home_wall + '</section>'
+        + _home_metrics_html()
+        + '<p class="pramaan-home-compare-link"><a href="#/leaderboard">See how 10 models compare</a></p>'
+        + home_wall + '</section>'
     )
     community_models = _community_model_choices()
     community_status = str(ui_state.get("community_status", ""))
@@ -1843,16 +1883,16 @@ def _render_custom_app(ui_state: dict) -> str:
     )
     about_state = ui_state.get("about_state", state_name)
     traditions = (
-        '<section><p class="pramaan-ui-intro">Read the tradition notes and sources behind each mathematical interpretation.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Sources and cautions</p>'
+        '<details class="pramaan-ui-sources"><summary>Sources</summary><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Sources and cautions</p>'
         '<h2>Tradition references</h2><p>These designs are computational interpretations inspired by documented geometric ideas. The verifier checks geometry, not cultural authenticity.</p>'
-        '<aside class="pramaan-ui-card pramaan-festival-context" aria-label="Diwali and geometric welcome patterns">'
+        '<details class="pramaan-ui-diwali"><summary>Optional Diwali context</summary>'
         '<p class="pramaan-ui-eyebrow">A festival-of-lights lens</p>'
         '<h3>Diwali: light, welcome, and pattern</h3>'
         '<p>In some communities, homes are illuminated and rangoli is made at doorways for Diwali. This 36-entry survey spans Indian states and Union Territories; it is not a claim that every listed tradition is Diwali-specific.</p>'
         '<p><a href="https://www.incredibleindia.gov.in/en/festivals-and-events/diwali" target="_blank" rel="noopener noreferrer">Incredible India: Diwali</a> · '
-        '<a href="https://ignca.gov.in/walls-and-floors/" target="_blank" rel="noopener noreferrer">IGNCA: Walls and Floors</a></p></aside>'
+        '<a href="https://ignca.gov.in/walls-and-floors/" target="_blank" rel="noopener noreferrer">IGNCA: Walls and Floors</a></p></details>'
         + _field("Browse state / territory", "about_state", about_state, options=state_options)
-        + _tradition_html_for_state(about_state) + '</article></section>'
+        + _tradition_html_for_state(about_state) + '</article></details>'
     )
     rl = (
         '<section><p class="pramaan-ui-intro">Connect the checker to an agent, dataset, or reinforcement-learning workflow.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
@@ -1863,8 +1903,24 @@ def _render_custom_app(ui_state: dict) -> str:
         + '<p>The 72-task source suite spans 36 states. The one-pass paid comparison uses the same 47 predeclared task IDs and order for Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, and DeepSeek V4.1 Flash. Each paid arm has a USD 10 cap, the same verifier, 4,096-token cap, and up to three proposals per task; an arm may stop early at its spend cap. The separate Beam baseline covers all 72 tasks and is not pooled with the 47-task comparison. Provider costs, tokens, and latency are shown separately from quality.</p>'
         + _benchmark_summary_html() + _community_leaderboard_html(community_snapshot) + '</details></section>'
     )
+    builder_resources = (
+        '<section aria-label="Public datasets and source code"><div class="pramaan-ui-card-grid">'
+        '<article class="pramaan-ui-card"><h2>Evaluation dataset</h2><p>Frozen tasks, model results, trajectories, references, and leaderboard records.</p>'
+        '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1" target="_blank" rel="noopener noreferrer">Open the evaluation dataset</a></article>'
+        '<article class="pramaan-ui-card"><h2>Training dataset</h2><p>Published supervised examples, repairs, preferences, and execution traces.</p>'
+        '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1" target="_blank" rel="noopener noreferrer">Open the training dataset</a></article>'
+        '<article class="pramaan-ui-card"><h2>RL environment dataset</h2><p>Role-separated environment transitions, actions, rewards, and verifier evidence.</p>'
+        '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv" target="_blank" rel="noopener noreferrer">Open the OpenEnv dataset</a></article>'
+        '<article class="pramaan-ui-card"><h2>Pramaan collection</h2><p>Browse the public Space and related datasets together.</p>'
+        '<a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener noreferrer">Open the collection</a></article>'
+        '<article class="pramaan-ui-card"><h2>Source repository</h2><p>Verifier, environment, benchmark protocol, and model runner.</p>'
+        '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Open the GitHub repository</a>'
+        '<h3>Add and run a model</h3><p>Add its provider and model key in <code>benchmarks/models.json</code>, then select it on the command line:</p>'
+        '<pre><code>python scripts/run_arms.py --suite benchmarks/suites/eval-v2.1.jsonl --models benchmarks/models.json --model your-model-key --output artifacts/my-run.jsonl</code></pre></article>'
+        '</div></section>'
+    )
     models = leaderboard + '<div id="model-arena">' + arena_html + '</div>'
-    build_with_it = traditions + rl
+    build_with_it = rl + builder_resources + traditions
     tabs = (("benchmark", "Home", benchmark), ("leaderboard", "Models", models),
             ("studio", "Try it", studio), ("rl", "Build with it", build_with_it))
     tab_routes = {"benchmark": "#/overview", "leaderboard": "#/leaderboard",
@@ -2601,13 +2657,17 @@ html.light, body.light {
 .pramaan-proof-art .pramaan-proof-tile { margin-inline: auto; max-height: 340px; width: min(100%,340px); }
 .pramaan-proof-art figcaption { color: var(--pramaan-muted); font-size: .78rem; margin-top: .45rem; overflow-wrap: anywhere; text-align: center; }
 .pramaan-proof-checks { display: grid; gap: .32rem; list-style: none; margin: .45rem 0 0; padding: 0; }
-.pramaan-proof-checks li { align-items: start; display: grid; font-size: .76rem; gap: .35rem; grid-template-columns: 1rem minmax(90px,.35fr) minmax(0,1fr); line-height: 1.3; overflow-wrap: anywhere; }
+.pramaan-proof-checks li { align-items: start; display: grid; font-size: .82rem; gap: .35rem; grid-template-columns: 1rem minmax(90px,.35fr) minmax(0,1fr); line-height: 1.3; overflow-wrap: anywhere; }
 .pramaan-proof-checks .is-pass > span:first-child { color: var(--pramaan-pass); font-weight: 800; }
 .pramaan-proof-checks .is-fail > span:first-child { color: var(--pramaan-fail); font-weight: 900; }
 .pramaan-proof-controls { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0; }
 .pramaan-proof-controls .pramaan-ui-button, .pramaan-proof-copy > [data-proof-verify] { min-height: 40px; }
 .pramaan-proof-progress { color: var(--pramaan-muted); font-size: .78rem; }
 .pramaan-proof-digest { display: block; font-size: .76rem; overflow-wrap: anywhere; }
+.pramaan-proof-technical { color: var(--pramaan-muted); font-size: .78rem; margin-top: .45rem; }
+.pramaan-proof-technical summary { cursor: pointer; }
+.pramaan-proof-technical ul { margin: .35rem 0; padding-left: 1.2rem; }
+.pramaan-proof-step .pramaan-proof-tile { display: none; }
 @media (prefers-reduced-motion: reduce) { .pramaan-proof-step { scroll-behavior: auto; transition: none !important; } }
 @media (max-width: 820px) {
   .pramaan-findings-grid { grid-template-columns: minmax(0,1fr); }
@@ -2662,7 +2722,7 @@ html.light, body.light {
 .pramaan-wall-mode { background: transparent; border: 0; color: var(--pramaan-text); cursor: pointer; font: inherit; font-size: .82rem; min-height: 38px; padding: .35rem .85rem; }
 .pramaan-wall-mode[aria-pressed="true"] { background: var(--pramaan-indigo); color: var(--pramaan-on-accent); }
 .pramaan-wall-legend { color: var(--pramaan-muted); display: flex; flex-wrap: wrap; gap: .3rem 1rem; list-style: none; margin: 0 0 .55rem; padding: 0; }
-.pramaan-wall-legend li { align-items: center; display: inline-flex; gap: .35rem; font-size: .78rem; }
+.pramaan-wall-legend li { align-items: center; display: inline-flex; gap: .35rem; font-size: 13px; }
 .pramaan-wall-legend [data-status="first"] { color: var(--pramaan-pass); }
 .pramaan-wall-legend [data-status="repair"] { color: var(--pramaan-pending); }
 .pramaan-wall-legend [data-status="fail"] { color: var(--pramaan-fail); }
@@ -2673,9 +2733,9 @@ html.light, body.light {
 .pramaan-wall-tile:focus-visible, .pramaan-wall-model-chip:focus-visible, .pramaan-wall-mode:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 2; }
 .pramaan-wall-art { display: block; height: 100%; image-rendering: pixelated; object-fit: cover; width: 100%; }
 .pramaan-wall-empty-art, .pramaan-wall-placeholder { align-items: center; background: repeating-linear-gradient(135deg,var(--pramaan-card-subtle) 0 6px,var(--pramaan-line) 6px 7px); color: var(--pramaan-muted); display: flex; justify-content: center; min-height: 90px; text-align: center; }
-.pramaan-wall-state-name { background: color-mix(in srgb,var(--pramaan-card) 90%,transparent); bottom: 0; color: var(--pramaan-text); font-size: clamp(.52rem,.7vw,.72rem); font-weight: 750; left: 0; line-height: 1.1; overflow: hidden; padding: 2px 3px; position: absolute; right: 0; text-overflow: ellipsis; white-space: nowrap; }
+.pramaan-wall-state-name { background: color-mix(in srgb,var(--pramaan-card) 90%,transparent); bottom: 0; color: var(--pramaan-text); font-size: max(12px,clamp(.52rem,.7vw,.72rem)); font-weight: 750; left: 0; line-height: 1.1; overflow: hidden; padding: 2px 3px; position: absolute; right: 0; text-overflow: ellipsis; white-space: nowrap; }
 .pramaan-wall-marks { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: flex; gap: 2px; padding: 0 3px; position: absolute; right: 2px; top: 2px; }
-.pramaan-wall-mark { font-size: clamp(.48rem,.75vw,.8rem); font-weight: 900; line-height: 1.25; }
+.pramaan-wall-mark { font-size: 12px; font-weight: 900; line-height: 1.25; }
 .pramaan-wall-mark[data-status="first"] { color: var(--pramaan-pass); }
 .pramaan-wall-mark[data-status="repair"] { color: var(--pramaan-pending); }
 .pramaan-wall-mark[data-status="fail"] { color: var(--pramaan-fail); }
@@ -2713,14 +2773,21 @@ html.light, body.light {
 .pramaan-wall-task ol { color: var(--pramaan-muted); font-size: .82rem; padding-left: 1.2rem; }
 .pramaan-wall-task ol small { display: block; }
 .pramaan-ui-intro { color: var(--pramaan-muted); font-size: 1rem; margin: .2rem 0 .8rem; }
+.pramaan-home-compare-link { margin: -.55rem 0 1rem; text-align: center; }
+.pramaan-home-compare-link a { color: var(--pramaan-teal); font-weight: 750; }
+.pramaan-studio-steps { color: var(--pramaan-muted); display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; margin: .5rem 0; padding-left: 1.3rem; }
+.pramaan-studio-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin: .55rem 0 .8rem; }
+.pramaan-ui-advanced-rules { border-top: 1px solid var(--pramaan-line); margin-top: .75rem; padding-top: .5rem; }
+.pramaan-ui-advanced-rules summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; padding: .3rem 0; }
+.pramaan-ui-sources, .pramaan-ui-diwali { border-top: 1px solid var(--pramaan-line); margin-top: .8rem; padding-top: .5rem; }
+.pramaan-ui-sources summary, .pramaan-ui-diwali summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; }
 @media (max-width: 600px) {
   .pramaan-home-metrics { gap: .35rem; }
   .pramaan-home-metrics article { border-radius: 10px; padding: .55rem .35rem; }
   .pramaan-home-metrics span { font-size: .68rem; }
   .pramaan-home-wall-grid { gap: 2px; }
-  .pramaan-wall-state-name { display: none; }
+  .pramaan-wall-state-name { font-size: clamp(6px,1.55vw,9px); }
   .pramaan-wall-marks { gap: 0; padding: 0 1px; right: 0; top: 0; }
-  .pramaan-wall-mark { font-size: .46rem; }
   .pramaan-wall-pair { grid-template-columns: minmax(0,1fr); }
   .pramaan-home-actions { gap: .35rem; }
 }
@@ -2773,7 +2840,7 @@ def _attempt_gallery(attempts: list[dict]):
     return gallery
 
 
-def load_example(name: str):
+def load_example(name: str, *, include_bundle: bool = True):
     path = EXAMPLES[name]
     source = path.read_text(encoding="utf-8")
     pattern, checks, masks, grid, cert = _verify_json(source)
@@ -2811,8 +2878,16 @@ def load_example(name: str):
         history = json.dumps({**provenance, "all_hard_constraints_pass": verified}, indent=2)
         status = ("Verified at 64×64 discrete resolution" if verified else
                   "Not verified · hand-authored counterexample demonstrates a failed constraint")
-    bundle = _artifact_bundle_with_seal(pattern, cert, grid, provenance) if verified else None
+    bundle = _artifact_bundle_with_seal(pattern, cert, grid, provenance) if verified and include_bundle else None
     return image, gallery, source, json.dumps(cert, indent=2), history, status, bundle
+
+
+@lru_cache(maxsize=1)
+def _initial_example_result(name: str):
+    """Prepare one deterministic built-in Studio example once per worker, offline."""
+    image, gallery, source, certificate, history, status, _bundle = load_example(name, include_bundle=False)
+    serializable_gallery = [(_image_data_uri(item), label) for item, label in gallery]
+    return _image_data_uri(image), serializable_gallery, source, certificate, history, status, None
 
 
 def generate(brief: str, state_name: str, tradition_id: str, palette_name: str, symmetry: str,

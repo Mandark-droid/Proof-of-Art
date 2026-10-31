@@ -11,6 +11,7 @@ from numbers import Real
 
 from .check_labels import check_labels
 from .leaderboard import model_display_name
+from .visibility import accepted_pattern_is_low_visibility
 
 
 _COLORS = tuple(f"var(--pramaan-chart-{index})" for index in range(1, 7))
@@ -30,6 +31,7 @@ def render_arena(
     prompt_id: str,
     replay_prompt_id: str,
     selected_model_keys: list[str] | None = None,
+    task_backgrounds: dict[str, str] | None = None,
 ) -> str:
     """Show all available model attempts for one frozen, identical benchmark brief."""
     if (not isinstance(index, dict) or index.get("suite_id") != suite_id
@@ -102,11 +104,16 @@ def render_arena(
                     preview = (f'<img class="pramaan-arena-tile" src="data:image/png;base64,{tile}" '
                                f'alt="{verdict} attempt {index_num} tile for {safe_label}" loading="lazy" decoding="async">')
             unreadable = not preview and isinstance(checks, list) and "candidate_parse" in checks
+            visibility_note = ('<small class="pramaan-arena-visibility-warning">'
+                               'Passes the checks, but almost nothing is visible</small>'
+                               if accepted_pattern_is_low_visibility(
+                                   attempt, (task_backgrounds or {}).get(prompt_id)
+                               ) else "")
             attempt_rows.append(
                 f'<li data-testid="arena-attempt-{safe_key}-{index_num}" data-attempt-state="{"pass" if passed else "fail"}">'
                 f'<span class="pramaan-arena-verdict" aria-label="{verdict} attempt {index_num}">'
                 f'{"✓" if passed else "×"} {verdict}</span><strong>Attempt {index_num}</strong>'
-                + preview + ('<small>Could not be read as a pattern.</small>' if unreadable else "")
+                + visibility_note + preview + ('<small>Could not be read as a pattern.</small>' if unreadable else "")
                 + (f'<small>Checks: {html.escape(check_text)}</small>' if check_text and not passed else "")
                 + '</li>')
         passed_at = task.get("passed_at")

@@ -157,6 +157,7 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
         '<caption>One result row per model; missing provider answers are not scored as failures.</caption>'
         '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Evaluated</th><th scope="col">Cost</th></tr></thead>'
         '<tbody>' + body + '</tbody></table></div>'
+        '<p class="pramaan-model-footnote" data-testid="visibility-limitation">The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.</p>'
         '<p class="pramaan-model-footnote">One benchmark task has a documented unsatisfiable constraint. Rows were collected in two sittings; the task definitions and evaluation protocol stayed frozen.</p>'
         '</section>')
 

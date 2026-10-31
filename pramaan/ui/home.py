@@ -9,6 +9,7 @@ import re
 from .quilt import STATE_GRID
 from .check_labels import check_label, check_labels
 from .leaderboard import model_display_name
+from .visibility import accepted_pattern_is_low_visibility
 
 
 _SAFE_B64 = re.compile(r"[A-Za-z0-9+/]+={0,2}\Z")
@@ -17,6 +18,12 @@ _STATUS = {
     "repair": ("◐", "Right after repair"),
     "fail": ("×", "Not yet right"),
     "none": ("○", "Not run"),
+}
+_STATE_SHORT_NAMES = {
+    "Jammu and Kashmir": "J&K",
+    "Dadra and Nagar Haveli and Daman and Diu": "DNH & DD",
+    "Arunachal Pradesh": "Arunachal",
+    "Andaman and Nicobar Islands": "Andaman",
 }
 
 
@@ -143,10 +150,15 @@ def _task_sheet_section(state: str, level: str, spec: dict | None, reference: di
                      _img(selected_uri, f"{selected_label} model attempt for {state} {level} brief"))
     verification_note = ('<small class="pramaan-wall-verification-note">Passed means the geometric checks passed; it does not mean the design matches the brief.</small>'
                          if selected_status in {"first", "repair"} else "")
+    background = spec.get("palette", [None])[0] if isinstance(spec, dict) and isinstance(spec.get("palette"), list) else None
+    accepted_attempt = next((attempt for attempt in reversed(attempts)
+                             if isinstance(attempt, dict) and attempt.get("passed") is True), None)
+    visibility_note = ('<small class="pramaan-wall-visibility-warning">Passes the checks, but almost nothing is visible</small>'
+                       if accepted_pattern_is_low_visibility(accepted_attempt, background) else "")
     compare = ('<div class="pramaan-wall-pair"><figure><figcaption>Reference</figcaption>'
                + reference_html + reference_note + '</figure><figure>'
                + f'<figcaption>{html.escape(selected_label)} attempt · {html.escape(selected_result)}</figcaption>'
-               + verification_note + selected_html + _task_attempts(selected_task) + '</figure></div>')
+               + verification_note + visibility_note + selected_html + _task_attempts(selected_task) + '</figure></div>')
     return (f'<section class="pramaan-wall-task" data-wall-task-level="{level}">'
             + f'<p class="pramaan-ui-eyebrow">{title}</p><h4>{html.escape(str(spec.get("tradition_id", "")) if isinstance(spec, dict) else "Task brief")}</h4>'
             + f'<p class="pramaan-wall-brief">{html.escape(str(brief))}</p>'
@@ -243,7 +255,7 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
             f'style="grid-column:{column + 1};grid-row:{row + 1}">'
             f'<button type="button" class="pramaan-wall-tile" data-home-wall-tile data-state="{html.escape(state, quote=True)}" '
             f'aria-label="{html.escape(aria, quote=True)}" aria-haspopup="dialog">'
-            + art + f'<span class="pramaan-wall-state-name">{html.escape(state)}</span>'
+            + art + f'<span class="pramaan-wall-state-name" title="{html.escape(state, quote=True)}">{html.escape(_STATE_SHORT_NAMES.get(state, state))}</span>'
             + f'<span class="pramaan-wall-marks">{marks}</span></button>'
             + f'<template data-wall-state-sheet data-state="{html.escape(state, quote=True)}">{details}</template></article>')
     state_model_counts = sum(tally[selected_model].values()) if selected_model in tally else 0
@@ -257,8 +269,8 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         '<section class="pramaan-home-wall" id="state-wall" aria-labelledby="state-wall-heading" '
         f'data-wall-display="{display_mode}" data-wall-selected-model="{html.escape(selected_model, quote=True)}">'
         f'<div class="pramaan-home-wall-heading"><div><p class="pramaan-ui-eyebrow">{len(STATE_GRID)} states and territories</p>'
-        '<h2 id="state-wall-heading">The Wall</h2>'
-        '<p>Each tile shows a verified reference for one state or Union Territory. Its two marks show the selected model’s easy and hard task outcomes.</p>'
+        '<h2 id="state-wall-heading">36 states, one tile each</h2>'
+        '<p>Tap a tile to inspect its verified reference and model results. The two marks show easy and hard task outcomes.</p>'
         '</div>' + selected_count_line + '</div>'
         '<details class="pramaan-home-reference-note"><summary>How to read this</summary>'
         '<p>References are independently generated constraint witnesses, not model submissions or leaderboard scores. '

@@ -86,6 +86,8 @@ The completed `eval-v2.1` comparison covers the same 72 task IDs for all ten mod
 | GPT-6.1 Sol | 72/72 | 79.2% | 91.7% | 3.5k | 20.2 s | $1.51 | $10 |
 | GPT-6.1 Terra | 72/72 | 52.8% | 79.2% | 5.4k | 25.5 s | $0.96 | $10 |
 
+The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.
+
 Pass rates use all 72 frozen task IDs. Token and latency columns are per-task means from the recorded runs. Spend is an estimated rate-card ledger amount; provider invoices were unavailable. The table shows Fable's settled estimate ($20.63); its conservative exposure including pending reservations was $21.12 under the $22 cap. Each other paid arm used a $10 cap. These results are one observed run, not a confidence claim about future performance.
 
 **Beam baseline:** 23.6% passed on the first proposal; repair accepted 30 of 55 initial failures (54.5%); 65.3% passed within three proposals. [See how 10 models compare in the Space](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art#/leaderboard).
