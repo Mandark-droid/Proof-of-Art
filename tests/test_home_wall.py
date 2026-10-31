@@ -151,3 +151,19 @@ def test_wall_uses_short_visible_names_without_losing_full_state_accessible_name
         assert f'data-state="{full}"' in rendered
         assert f'title="{full}"' in rendered
         assert f'class="pramaan-wall-state-name" title="{full}">{short}</span>' in rendered
+
+
+def test_phone_wall_switches_to_three_columns_with_readable_art_and_compact_model_row():
+    from pramaan.app import PRAMAAN_CSS
+    from pramaan.ui.quilt import STATE_GRID
+
+    rendered = render_reference_wall([], [], {}, [], [])
+    phone_rules = PRAMAAN_CSS.split("@media (max-width: 600px)", 1)[1]
+
+    assert rendered.count('class="pramaan-wall-state"') == len(STATE_GRID) == 36
+    assert "grid-template-columns: repeat(3,minmax(0,1fr))" in phone_rules
+    assert "grid-column: auto !important" in phone_rules
+    assert "grid-row: auto !important" in phone_rules
+    assert ".pramaan-wall-models { flex-wrap: nowrap; overflow-x: auto;" in phone_rules
+    assert ".pramaan-wall-state-name { font-size: 12px; }" in phone_rules
+    assert ".pramaan-wall-mark { font-size: 9px;" in phone_rules

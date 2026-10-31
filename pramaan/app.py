@@ -2785,9 +2785,14 @@ html.light, body.light {
   .pramaan-home-metrics { gap: .35rem; }
   .pramaan-home-metrics article { border-radius: 10px; padding: .55rem .35rem; }
   .pramaan-home-metrics span { font-size: .68rem; }
-  .pramaan-home-wall-grid { gap: 2px; }
-  .pramaan-wall-state-name { font-size: clamp(6px,1.55vw,9px); }
-  .pramaan-wall-marks { gap: 0; padding: 0 1px; right: 0; top: 0; }
+  .pramaan-home-wall-grid { gap: 5px; grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: none; max-width: 420px; }
+  .pramaan-home-wall-grid .pramaan-wall-state { grid-column: auto !important; grid-row: auto !important; }
+  .pramaan-wall-state-name { font-size: 12px; }
+  .pramaan-wall-marks { border-radius: 6px; gap: 1px; padding: 0 2px; right: 2px; top: 2px; }
+  .pramaan-wall-mark { font-size: 9px; line-height: 1.1; }
+  .pramaan-wall-models { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: .25rem; width: 100%; }
+  .pramaan-wall-model-chip { flex: 0 0 auto; max-width: 9rem; padding: .25rem .55rem; }
+  .pramaan-wall-model-chip small { font-size: 10px; }
   .pramaan-wall-pair { grid-template-columns: minmax(0,1fr); }
   .pramaan-home-actions { gap: .35rem; }
 }

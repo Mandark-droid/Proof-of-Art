@@ -49,7 +49,7 @@ def test_mobile_proof_replay_uses_the_large_tile_once_and_wall_details_are_colla
     assert "36 states, one tile each" in wall
     assert ".pramaan-wall-mark { font-size: 12px;" in css
     assert ".pramaan-wall-legend li { align-items: center; display: inline-flex; gap: .35rem; font-size: 13px; }" in css
-    assert '.pramaan-wall-state-name { font-size: clamp(6px,1.55vw,9px); }' in css
+    assert ".pramaan-wall-state-name { font-size: 12px; }" in css
     assert "unsatisfiable" in wall
     intro = re.search(r'<p>Tap a tile to inspect.*?</p>', wall)
     assert intro and "easy and hard task outcomes" in intro.group(0)
