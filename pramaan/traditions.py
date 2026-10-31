@@ -7,6 +7,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .paths import resolve_project_root
+
 try:
     from pramaan.dsl import GRAMMARS
 except ImportError:  # TODO: remove when the public v0.2 interface is available.
@@ -118,7 +120,9 @@ class Tradition(BaseModel):
 
 @lru_cache(maxsize=1)
 def load_registry() -> dict[str, Tradition]:
-    path = Path(__file__).parent / "data" / "traditions.json"
+    package_path = Path(__file__).parent / "data" / "traditions.json"
+    project_path = resolve_project_root(__file__) / "pramaan" / "data" / "traditions.json"
+    path = package_path if package_path.is_file() else project_path
     raw = json.loads(path.read_text(encoding="utf-8"))
     entries = [Tradition.model_validate(item) for item in raw["entries"]]
     registry = {item.id: item for item in entries}

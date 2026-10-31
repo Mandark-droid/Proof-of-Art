@@ -8,14 +8,16 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from pramaan.traditions import GRAMMARS
+from pramaan.paths import resolve_project_root
 
+_ROOT = resolve_project_root(__file__)
 SUITES = {
-    "eval-v2": Path(__file__).parents[1] / "benchmarks" / "suites" / "eval-v2.jsonl",
-    "eval-v2.1": Path(__file__).parents[1] / "benchmarks" / "suites" / "eval-v2.1.jsonl",
-    "eval-v2.1-common47": Path(__file__).parents[1] / "benchmarks" / "suites" / "eval-v2.1-common47.jsonl",
-    "train-v1": Path(__file__).parents[1] / "benchmarks" / "suites" / "train-v1.jsonl",
-    "train-v1.1": Path(__file__).parents[1] / "benchmarks" / "suites" / "train-v1.1.jsonl",
-    "train-v1.2": Path(__file__).parents[1] / "benchmarks" / "suites" / "train-v1.2.jsonl",
+    "eval-v2": _ROOT / "benchmarks" / "suites" / "eval-v2.jsonl",
+    "eval-v2.1": _ROOT / "benchmarks" / "suites" / "eval-v2.1.jsonl",
+    "eval-v2.1-common47": _ROOT / "benchmarks" / "suites" / "eval-v2.1-common47.jsonl",
+    "train-v1": _ROOT / "benchmarks" / "suites" / "train-v1.jsonl",
+    "train-v1.1": _ROOT / "benchmarks" / "suites" / "train-v1.1.jsonl",
+    "train-v1.2": _ROOT / "benchmarks" / "suites" / "train-v1.2.jsonl",
 }
 
 

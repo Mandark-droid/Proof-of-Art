@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 MAX_BRIEF_CHARS = 500
 MAX_ATTEMPTS = 3
 TRAJECTORY_SCHEMA_VERSION = "1.0"
+_ERROR_SECRET_RE = re.compile(r"(?i)\b(?:sk-[A-Za-z0-9_-]{10,}|hf_[A-Za-z0-9]{10,})\b|\bBearer\s+[A-Za-z0-9._~+/=-]{8,}")
+_ERROR_LOCAL_PATH_RE = re.compile(r"(?i)(?:\b[A-Z]:\\[^\s\"']+|/(?:home|Users|tmp|workspace|root|mnt)/[^\s\"']+)")
 
 
 class CompletionClient(Protocol):
@@ -123,12 +125,30 @@ def _parse_task_candidate(raw: str, task) -> Pattern | PatternV2:
     return parsed
 
 
-def _provider_error(exc: Exception, phase: str) -> dict:
-    """Return bounded diagnostic metadata without serializing provider response bodies."""
-    result = {"phase": phase, "type": type(exc).__name__,
+def _provider_error(exc: Exception, phase: str, *, sensitive_values=()) -> dict:
+    """Return bounded diagnostics with credentials, prompts, paths, and refusals removed."""
+    error_type = getattr(exc, "provider_error_type", type(exc).__name__)
+    result = {"phase": phase,
+              "type": error_type,
               "status_code": getattr(exc, "status_code", None)}
     category = getattr(exc, "category", None)
-    if (type(exc).__name__ == "AnthropicRefusalError" and isinstance(category, str)
+    is_refusal = error_type == "AnthropicRefusalError" or type(exc).__name__ == "AnthropicRefusalError"
+    if not is_refusal:
+        message = str(exc)
+        for value in sensitive_values:
+            if isinstance(value, str) and len(value) >= 8:
+                message = message.replace(value, "[REDACTED_PROMPT]")
+        message = _ERROR_SECRET_RE.sub("[REDACTED_KEY]", message)
+        message = _ERROR_LOCAL_PATH_RE.sub("[LOCAL_PATH]", message)
+        if message:
+            result["message"] = message[:300]
+    budget_guard = getattr(exc, "budget_guard", None)
+    if isinstance(budget_guard, dict):
+        result["budget_guard"] = {
+            key: budget_guard[key] for key in ("reservation_id", "released", "released_amount_usd", "elapsed_ms")
+            if key in budget_guard
+        }
+    if (is_refusal and isinstance(category, str)
             and len(category) <= 64 and re.fullmatch(r"[A-Za-z0-9_.-]+", category)):
         result["refusal_category"] = category
     return result
@@ -332,7 +352,7 @@ def generate_and_verify(brief: str = "", palette: list[str] | None = None, symme
             call.update({"raw_response": response, "metadata": metadata, "error": None})
             return response, metadata
         except Exception as exc:
-            error = _provider_error(exc, phase)
+            error = _provider_error(exc, phase, sensitive_values=(system_prompt, request_prompt, brief))
             call.update({"raw_response": None, "metadata": {}, "error": error})
             call["_provider_telemetry"] = {
                 "provider_attempts": getattr(exc, "provider_attempts", None),

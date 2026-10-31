@@ -12,6 +12,7 @@ from typing import Any
 from pramaan.checks.core import all_pass, verify_pattern
 from pramaan.dsl import parse_pattern
 from pramaan.reward import reward_for_report
+from pramaan.tasks import canonical_jsonl_bytes
 from scripts.export_preference_pairs import export_pairs, export_repair_examples, export_sft_examples
 from scripts.push_hub_datasets import make_suite_trajectory, read_jsonl
 
@@ -135,7 +136,7 @@ def append_shard(*, root: Path, shard_id: str, role: str, results_path: Path, su
     if not generator_version.strip() or not str(seed).strip():
         raise ValueError("prompt generator version and seed are required provenance")
 
-    suite_sha = hashlib.sha256(suite_path.read_bytes()).hexdigest()
+    suite_sha = hashlib.sha256(canonical_jsonl_bytes(suite_path.read_bytes())).hexdigest()
     tasks = read_jsonl(suite_path)
     task_by_id = {task["id"]: task for task in tasks}
     if len(task_by_id) != len(tasks):

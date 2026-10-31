@@ -1,4 +1,4 @@
-"""Build an allowlisted Space tree, run release gates, deploy one commit, smoke, then squash history."""
+"""Build an allowlisted Space tree, run release gates, deploy one commit, and smoke it."""
 from __future__ import annotations
 
 import argparse
@@ -139,7 +139,7 @@ def assert_space_head_identity(expected_commit: str) -> None:
             check=True, capture_output=True, text=True,
         ).stdout.strip()
         if head != expected_commit:
-            raise RuntimeError(f"Space main advanced before the pre-squash check: expected {expected_commit}, found {head}")
+            raise RuntimeError(f"Space main advanced before the release check: expected {expected_commit}, found {head}")
         identities = subprocess.run(
             ["git", "-C", str(clone), "log", "-1", "--format=%an%x09%ae%x09%cn%x09%ce"],
             check=True, capture_output=True, text=True,
@@ -147,8 +147,8 @@ def assert_space_head_identity(expected_commit: str) -> None:
         if (len(identities) != 4 or identities[0].lower() != HUB_AUTHOR.lower()
                 or identities[1].lower() != HUB_EMAIL.lower() or identities[2].lower() != HUB_AUTHOR.lower()
                 or identities[3].lower() != HUB_EMAIL.lower()):
-            raise RuntimeError("new Space commit author and committer are not the Hub no-reply identity; refusing history squash")
-    print("PASS pre-squash Space identity and head check", flush=True)
+            raise RuntimeError("new Space commit author and committer are not the Hub no-reply identity")
+    print("PASS Space release commit identity and head check", flush=True)
 
 
 def check_public_cleanup(api: HfApi) -> None:
@@ -159,21 +159,22 @@ def check_public_cleanup(api: HfApi) -> None:
     if branch_names != ["main"] or refs.get("tags") or refs.get("converts"):
         raise RuntimeError(f"Space refs are not clean: branches={branch_names}, tags={refs.get('tags')}, converts={refs.get('converts')}")
     commits = api.list_repo_commits(repo_id=SPACE_ID, repo_type="space", revision="main")
-    if len(commits) != 1:
-        raise RuntimeError(f"expected one Space commit after squash, found {len(commits)}")
-    commit_authors = commits[0].authors
-    if commit_authors != [HUB_AUTHOR]:
-        issues.append(f"Hub squash retained contributor identities in its co-author metadata: {commit_authors}")
-    trailers = [line for line in (commits[0].message or "").splitlines()
-                if line.lower().startswith("co-authored-by:")]
-    if trailers:
-        issues.append(f"Hub squash retained co-author trailers: {trailers}")
+    if not commits:
+        raise RuntimeError("Space main has no commits")
+    for index, commit in enumerate(commits, start=1):
+        commit_authors = commit.authors
+        if commit_authors != [HUB_AUTHOR]:
+            issues.append(f"Space commit {index} has unexpected author metadata: {commit_authors}")
+        trailers = [line for line in (commit.message or "").splitlines()
+                    if line.lower().startswith("co-authored-by:")]
+        if trailers:
+            issues.append(f"Space commit {index} has co-author trailers: {trailers}")
     with tempfile.TemporaryDirectory(prefix="pramaan-space-audit-") as temp_dir:
         clone = Path(temp_dir) / "space"
         env = os.environ.copy()
         env["GIT_LFS_SKIP_SMUDGE"] = "1"
         subprocess.run([
-            "git", "clone", "--quiet", "--depth=10",
+            "git", "clone", "--quiet", "--depth=100",
             "https://huggingface.co/spaces/" + SPACE_ID, str(clone),
         ], check=True, env=env)
         refs_output = subprocess.run(
@@ -188,13 +189,13 @@ def check_public_cleanup(api: HfApi) -> None:
         ).stdout.strip().split("\t")
         if (len(identities) != 4 or identities[1].lower() != HUB_EMAIL.lower()
                 or "@users.noreply.huggingface.co" not in identities[3].lower()):
-            raise RuntimeError("squashed Space commit author is not the Hub no-reply identity")
+            raise RuntimeError("latest Space commit author is not the Hub no-reply identity")
         count = subprocess.run(
             ["git", "-C", str(clone), "rev-list", "--all", "--count"],
             check=True, capture_output=True, text=True,
         ).stdout.strip()
-        if count != "1":
-            raise RuntimeError(f"expected one Space commit in fresh clone, found {count}")
+        if count != str(len(commits)):
+            raise RuntimeError(f"Space API lists {len(commits)} commits but fresh clone contains {count}")
     for path in RAW_DRAFT_PATHS:
         url = f"https://huggingface.co/spaces/{SPACE_ID}/raw/main/{path}"
         try:
@@ -204,7 +205,7 @@ def check_public_cleanup(api: HfApi) -> None:
             status = error.code
         if status != 404:
             raise RuntimeError(f"removed raw file still responds HTTP {status}: {path}")
-    print("PASS Space structure: only main ref, one no-reply commit, draft URLs return 404", flush=True)
+    print(f"PASS Space structure: only main ref, {len(commits)} no-reply commit(s), draft URLs return 404", flush=True)
     if issues:
         raise RuntimeError("Space history cleanup is incomplete: " + "; ".join(issues))
 
@@ -285,17 +286,13 @@ def deploy(source: Path, paths: list[Path], stage: Path) -> None:
         "--base-url", SPACE_URL, "--embed-url", EMBED_URL,
     ], cwd=source, check=True)
     assert_space_head_identity(commit)
-    api.super_squash_history(
-        repo_id=SPACE_ID, repo_type="space", branch="main",
-        commit_message="Pramaan: Proof of Art",
-    )
     check_public_cleanup(api)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=ROOT)
-    parser.add_argument("--deploy", action="store_true", help="run all release checks, deploy, smoke, then squash Space history")
+    parser.add_argument("--deploy", action="store_true", help="run release checks, deploy one commit, smoke, and verify Space refs")
     parser.add_argument("--output", type=Path, help="copy the allowlisted tree here for inspection")
     parser.add_argument("--gitattributes", type=Path, help="optional LFS rules preserved from the current Space")
     args = parser.parse_args()

@@ -28,8 +28,13 @@ from .dsl import parse_pattern
 from .export import artifact_bundle, render_highlighted_png, render_png, trajectory_bundle
 from .orchestrate import MAX_BRIEF_CHARS, generate_and_verify, require_integer_control
 from .ui.quilt import render_data_quilt, state_grid_cell, state_grid_style
+from .ui.home import render_reference_wall
 from .ui.compare import render_arena, render_comparison_charts, render_same_brief_wall
-from .ui.leaderboard import (leaderboard_numeric_attr, render_canonical_leaderboard, render_community_leaderboard)
+from .ui.leaderboard import (leaderboard_numeric_attr, render_canonical_leaderboard,
+                             render_community_leaderboard, render_model_report)
+from .ui.findings import render_findings_strip
+from .paths import resolve_project_root
+from .tasks import canonical_jsonl_bytes
 from . import VALIDATOR_VERSION
 
 try:
@@ -61,20 +66,20 @@ except ImportError:  # Keep the standalone app usable without the optional regis
             )]
         return []
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = resolve_project_root(__file__)
 EVAL_SUITE_ID = "eval-v2.1"
 EVAL_SUITE_SHA256 = "b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a"
 EVAL_RESULT_PATH = Path("benchmarks/results/eval-v2.1-beam-20261030.jsonl")
 EVAL_TRAJECTORY_PATH = Path("benchmarks/data/eval-v2.1-trajectories.jsonl")
 EVAL_SUMMARY_PATH = Path("benchmarks/data/eval-v2.1-summary.json")
-PROOF_REPLAY_TRAJECTORY_ID = "beam-hf:nl_chakhesang-shawls-easy-17:b04b568d84d2"
-PROOF_REPLAY_PROMPT_ID = "nl_chakhesang-shawls-easy-17"
+PROOF_REPLAY_TRAJECTORY_ID = "beam-hf:gj_bandhani-easy-6:b04b568d84d2"
+PROOF_REPLAY_PROMPT_ID = "gj_bandhani-easy-6"
 
 
 def _load_frozen_eval_suite():
     path = ROOT / "benchmarks" / "suites" / f"{EVAL_SUITE_ID}.jsonl"
     suite_bytes = path.read_bytes()
-    actual_digest = hashlib.sha256(suite_bytes).hexdigest()
+    actual_digest = hashlib.sha256(canonical_jsonl_bytes(suite_bytes)).hexdigest()
     if actual_digest != EVAL_SUITE_SHA256:
         raise ValueError("The bundled evaluation suite does not match its frozen digest.")
     prompts = [json.loads(line) for line in suite_bytes.decode("utf-8").splitlines() if line.strip()]
@@ -568,6 +573,99 @@ def _canonical_leaderboard_html(index: dict | None = None) -> str:
         index, root=ROOT, suite_id=EVAL_SUITE_ID, suite_sha256=EVAL_SUITE_SHA256,
         load_gallery_index=_load_gallery_index, gallery_json=_gallery_json,
         wilson_interval=_wilson_interval, comparison_charts=render_comparison_charts,
+    )
+
+
+def _arena_default_model_keys(summary: dict | None) -> list[str]:
+    by_model = summary.get("by_model") if isinstance(summary, dict) else None
+    if not isinstance(by_model, dict):
+        return ["beam-hf"]
+    ranked = []
+    for key, document in by_model.items():
+        if not isinstance(document, dict):
+            continue
+        overall = document.get("overall") if isinstance(document.get("overall"), dict) else {}
+        n = overall.get("n")
+        score = overall.get("validity_at_3")
+        first = overall.get("validity_at_1")
+        if (type(n) is int and n > 0 and isinstance(score, (int, float))
+                and not isinstance(score, bool) and isinstance(first, (int, float))
+                and not isinstance(first, bool)):
+            ranked.append((float(score), float(first), str(key)))
+    ranked.sort(key=lambda row: (-row[0], -row[1], row[2]))
+    selected = ["beam-hf"]
+    selected.extend(key for _score, _first, key in ranked if key != "beam-hf")
+    return list(dict.fromkeys(selected))[:4]
+
+
+def _model_methodology_html(index: dict | None = None, summary: dict | None = None) -> str:
+    """Show measured request settings for every model with a published result."""
+    index = index if isinstance(index, dict) else _load_gallery_index()
+    indexed_arms = [row for row in index.get("arms", []) if isinstance(row, dict)] if isinstance(index, dict) else []
+    arm_map = {str(row.get("key")): row for row in indexed_arms if row.get("key")}
+    model_map = summary.get("by_model") if isinstance(summary, dict) else None
+    if isinstance(model_map, dict):
+        ordered_keys = list(dict.fromkeys([str(row.get("key")) for row in indexed_arms if row.get("key")] +
+                                          [str(key) for key in model_map]))
+        arms = []
+        for key in ordered_keys:
+            document = model_map.get(key) if isinstance(model_map.get(key), dict) else {}
+            merged = dict(document)
+            merged.update(arm_map.get(key, {}))
+            merged["key"] = key
+            arms.append(merged)
+    else:
+        arms = indexed_arms
+    expected_count = summary.get("expected_prompt_count", 72) if isinstance(summary, dict) else 72
+    if type(expected_count) is not int or expected_count <= 0:
+        expected_count = 72
+
+    def value_text(value) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return f"{value:g}"
+        if isinstance(value, str) and value:
+            return value
+        return "not specified"
+
+    rows = []
+    for arm in arms:
+        key = str(arm.get("key") or "")
+        params = arm.get("request_params") if isinstance(arm.get("request_params"), dict) else {}
+        if not params and isinstance(arm.get("parameters"), dict):
+            params = arm["parameters"]
+        output_cap = params.get("max_tokens", params.get("max_completion_tokens"))
+        output_config = params.get("output_config") if isinstance(params.get("output_config"), dict) else {}
+        extra_body = params.get("extra_body") if isinstance(params.get("extra_body"), dict) else {}
+        thinking = extra_body.get("thinking") if isinstance(extra_body.get("thinking"), dict) else {}
+        effort = params.get("reasoning_effort", output_config.get("effort"))
+        reasoning_cap = params.get("max_reasoning_tokens", params.get("reasoning_tokens"))
+        rows.append(
+            f'<tr data-model-protocol-row="{html_escape(key, quote=True)}">'
+            f'<th scope="row">{html_escape(str(arm.get("label") or key))}</th>'
+            f'<td>{html_escape(str(arm.get("provider") or "not specified"))}</td>'
+            f'<td>{html_escape(value_text(params.get("temperature")) if "temperature" in params else "not sent")}</td>'
+            f'<td>{html_escape(value_text(effort))}</td>'
+            f'<td>{html_escape(value_text(thinking.get("type")))}</td>'
+            f'<td>{html_escape(value_text(output_cap))}</td>'
+            f'<td>{html_escape(value_text(reasoning_cap))}</td></tr>'
+        )
+    body = ("".join(rows) if rows else
+            '<tr><td colspan="7">Provider request settings have not been published yet.</td></tr>')
+    model_label = "model" if len(arms) == 1 else "models"
+    return (
+        '<details id="leaderboard-methodology" class="pramaan-leaderboard-method">'
+        f'<summary>Methodology · {len(arms)} {model_label} · {expected_count} suite tasks</summary>'
+        '<p>The verifier and task definitions were frozen. Up to three proposals were allowed per task; provider-error rows are not scored. Provider-specific request controls are listed below.</p>'
+        '<div class="pramaan-leaderboard-scroll"><table class="pramaan-leaderboard" data-testid="model-protocol-table">'
+        '<caption>Per-model request settings recorded with the canonical benchmark</caption>'
+        '<thead><tr><th scope="col">Model</th><th scope="col">Provider</th><th scope="col">Temperature</th>'
+        '<th scope="col">Effort / reasoning</th><th scope="col">Thinking mode</th>'
+        '<th scope="col">Output-token cap</th><th scope="col">Reasoning-token cap</th></tr></thead>'
+        f'<tbody>{body}</tbody></table></div>'
+        '<p>One task has a documented unsatisfiable constraint. Rows were collected in two sittings.</p>'
+        '</details>'
     )
 
 
@@ -1075,6 +1173,7 @@ def _initial_custom_state() -> dict:
     return {
         "active_tab": "benchmark", "form": form,
         "about_state": state_name, "benchmark_state": state_name,
+        "wall_model": "beam-hf", "wall_mode": "reference",
         "community_loaded": False,
         "result": {"status": "Load an example to inspect its independent checker report."},
     }
@@ -1200,11 +1299,86 @@ PROOF_REPLAY_HTML_PATH = ROOT / "assets" / "proof-replay.html"
 def _proof_replay_html() -> str:
     """Read the pre-rendered replay so first paint never waits for geometry checks."""
     try:
-        return PROOF_REPLAY_HTML_PATH.read_text(encoding="utf-8")
+        content = PROOF_REPLAY_HTML_PATH.read_text(encoding="utf-8")
+        return content.replace(f"<h1>{html_escape(HEADLINE)}</h1>", "", 1)
     except OSError:
         return ('<article class="pramaan-ui-card pramaan-proof-replay" data-testid="proof-replay">'
-                f'<p class="pramaan-ui-eyebrow">Proof Replay</p><h1>{html_escape(HEADLINE)}</h1>'
+                f'<p class="pramaan-ui-eyebrow">Proof Replay</p>'
                 '<p role="status">The saved replay is not available in this build.</p></article>')
+
+
+@lru_cache(maxsize=1)
+def _home_reference_rows() -> list[dict]:
+    """Load all 71 independently replayed task references for the Home Wall."""
+    path = ROOT / "benchmarks" / "data" / "eval-v2.1-references.jsonl"
+    references: dict[str, dict] = {}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (not isinstance(row, dict) or row.get("suite_id") != EVAL_SUITE_ID
+                or row.get("suite_sha256") != EVAL_SUITE_SHA256
+                or row.get("source") != "procedural_reference"
+                or row.get("data_role") != "reference" or row.get("training_eligible") is not False
+                or row.get("all_hard_constraints_pass") is not True):
+            continue
+        task_id = row.get("task_id")
+        certificate = row.get("certificate")
+        if (not isinstance(task_id, str) or not isinstance(certificate, dict)
+                or certificate.get("all_hard_constraints_pass") is not True
+                or certificate.get("mask_sha256") != row.get("mask_sha256")
+                or not isinstance(row.get("checks"), list)
+                or not all(isinstance(check, dict) and check.get("status") == "PASS" for check in row["checks"])):
+            continue
+        thumbnail_path = ROOT / "assets" / "reference-thumbnails" / f"{task_id}.png"
+        try:
+            thumbnail_bytes = thumbnail_path.read_bytes()
+        except OSError:
+            continue
+        if not thumbnail_bytes.startswith(b"\x89PNG\r\n\x1a\n") or len(thumbnail_bytes) > 150_000:
+            continue
+        row = dict(row)
+        row["thumbnail_uri"] = "data:image/png;base64," + base64.b64encode(thumbnail_bytes).decode("ascii")
+        references[task_id] = row
+    return list(references.values())
+
+
+@lru_cache(maxsize=1)
+def _home_suite_tasks() -> list[dict]:
+    """Read the frozen 72-task suite once for the paired easy/hard Wall details."""
+    path = ROOT / "benchmarks" / "suites" / f"{EVAL_SUITE_ID}.jsonl"
+    try:
+        payload = path.read_bytes()
+        if hashlib.sha256(canonical_jsonl_bytes(payload)).hexdigest() != EVAL_SUITE_SHA256:
+            return []
+        rows = [json.loads(line) for line in payload.decode("utf-8").splitlines() if line.strip()]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return []
+    if len(rows) != 72 or len({row.get("id") for row in rows if isinstance(row, dict)}) != 72:
+        return []
+    return rows
+
+
+def _home_metrics_html() -> str:
+    summary = _benchmark_summary()
+    model = summary.get("by_model", {}).get("beam-hf", {}) if isinstance(summary, dict) else {}
+    overall = model.get("overall", {}) if isinstance(model, dict) else {}
+    total = overall.get("n")
+    first = overall.get("validity_at_1")
+    after = overall.get("validity_at_3")
+    def count(rate):
+        return str(round(rate * total)) if type(total) is int and total > 0 and isinstance(rate, (int, float)) else "—"
+    total_text = str(total) if type(total) is int and total > 0 else "—"
+    return ('<section class="pramaan-home-metrics" aria-label="Beam evaluation summary">'
+            f'<article><strong>{count(first)} of {total_text}</strong><span>Beam designs correct on the first try</span></article>'
+            f'<article><strong>{count(after)} of {total_text}</strong><span>Beam designs correct after checker feedback</span></article>'
+            f'<article><strong>{len(ALL_STATES)}</strong><span>states and territories covered</span></article>'
+            '</section>')
 
 
 @lru_cache(maxsize=1)
@@ -1224,22 +1398,16 @@ def _render_proof_replay_html_from_data() -> str:
             continue
         calls = record.get("calls") if isinstance(record, dict) else None
         if (not isinstance(calls, list) or len(calls) < 2
-                or record.get("grammar") == "kolam_loop"
                 or "rangoli" in str(record.get("tradition_id", "")).casefold()
                 or calls[0].get("accepted") is not False
                 or not isinstance(calls[0].get("candidate"), dict)
                 or calls[-1].get("accepted") is not True):
             continue
-        failures = [item for item in calls[0].get("verifier_report", {}).get("checks", [])
-                    if isinstance(item, dict) and item.get("status") == "FAIL"]
-        if not any(isinstance((item.get("counterexample") or {}).get("pixel"), list)
-                   for item in failures):
-            continue
         selected = record
         break
     if selected is None:
         return ('<article class="pramaan-ui-card pramaan-proof-replay" data-testid="proof-replay">'
-                f'<p class="pramaan-ui-eyebrow">Proof Replay</p><h1>{html_escape(HEADLINE)}</h1>'
+                f'<p class="pramaan-ui-eyebrow">Proof Replay</p>'
                 '<p role="status">A replayable saved trajectory is not available in this build.</p></article>')
 
     calls = selected["calls"]
@@ -1274,7 +1442,8 @@ def _render_proof_replay_html_from_data() -> str:
             "image": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
             "pattern": pattern.model_dump(mode="json"), "certificate": certificate,
         })
-    first_failed = next((row for row in attempts if not row["accepted"] and row["pixel"]), None)
+    first_failed = next((row for row in attempts if not row["accepted"] and any(
+        isinstance(check, dict) and check.get("status") == "FAIL" for check in row["checks"])), None)
     final_pass = next((row for row in reversed(attempts) if row["accepted"]), None)
     if first_failed is None or final_pass is None:
         return ('<article class="pramaan-ui-card pramaan-proof-replay" data-testid="proof-replay">'
@@ -1301,17 +1470,19 @@ def _render_proof_replay_html_from_data() -> str:
             for row in rows) + '</ul>'
 
     counterexample = first_failed["pixel"]
-    pixel_text = f"pixel ({counterexample[0]}, {counterexample[1]})"
+    pixel_text = (f"pixel ({counterexample[0]}, {counterexample[1]})"
+                  if isinstance(counterexample, list) else "topological check witness")
     certificate = final_pass["certificate"] or {}
     digest = str(certificate.get("mask_sha256", ""))
     pattern_json = json.dumps(final_pass["pattern"], ensure_ascii=False, separators=(",", ":"))
     pattern_b64 = base64.b64encode(pattern_json.encode("utf-8")).decode("ascii")
     steps = [
         f'<div class="pramaan-proof-step" data-proof-step="0" hidden><p><b>The brief</b></p><p>{brief}</p></div>',
-        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>{image_html(first_failed, "First attempt tile; failing witness pixel is circled in magenta")}</div>',
+        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>{image_html(first_failed, "First failed attempt tile")}</div>',
         f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>Exact checks · attempt 1</b></p>{check_list(first_checks)}</div>',
-        f'<div class="pramaan-proof-step" data-proof-step="3" hidden><p><b>Counterexample · {pixel_text}</b></p>{image_html(first_failed, "Counterexample pixel outlined in magenta on the first attempt")}</div>',
     ]
+    if counterexample:
+        steps.append(f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden><p><b>Counterexample · {pixel_text}</b></p>{image_html(first_failed, "Counterexample pixel outlined in magenta on the first attempt")}</div>')
     attempt_number = 1
     for row in attempts:
         if row is first_failed or row is final_pass:
@@ -1333,7 +1504,7 @@ def _render_proof_replay_html_from_data() -> str:
                 + image_html(row, f"Repair counterexample pixel {point[0]}, {point[1]} outlined in magenta")
                 + '</div>')
     steps.append(
-        f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden>'
+        f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" data-proof-result hidden>'
         '<p><b>Repair · all checks pass</b></p>'
         + image_html(final_pass, "Repaired tile; all deterministic checks pass")
         + check_list([item for item in final_pass["checks"] if isinstance(item, dict)])
@@ -1425,7 +1596,7 @@ def _render_custom_app(ui_state: dict) -> str:
             '<p class="pramaan-muted">Choose a state and tradition to see matching worked examples.</p>'
         )
     studio = (
-        '<section class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
+        '<section><p class="pramaan-ui-intro">Choose a craft-inspired starting point, adjust the rules, and ask Beam to propose a pattern.</p><div class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
         '<p class="pramaan-ui-eyebrow">Design studio</p><h2>Set the construction rules</h2>'
         '<p class="pramaan-muted">The tradition choice supplies its own grammar, palette and starting constraints. The verifier checks the resulting finite pattern.</p>'
         + _field("State / Union Territory", "state", state_name, options=state_options)
@@ -1475,7 +1646,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + f'<div class="pramaan-ui-subpanel" data-panel="checks" hidden><pre>{html_escape(certificate)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel" data-panel="attempts" hidden><pre>{html_escape(history)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel pramaan-ui-gallery" data-panel="previews" hidden>{"".join(gallery_html) or "<p class=\"pramaan-muted\">Proposal previews will appear here.</p>"}</div>'
-        + download_html + '</article></section>'
+        + download_html + '</article></div></section>'
     )
 
     benchmark_state = ui_state.get("benchmark_state", state_name)
@@ -1572,63 +1743,31 @@ def _render_custom_app(ui_state: dict) -> str:
             all_benchmark_images, all_benchmark_info,
             festival_lens_states=festival_states, festival_lens_active=festival_lens_active,
         )
-    community_gallery = _community_state_gallery(community_snapshot, benchmark_state, gallery_model)
     arena_html = render_arena(
         gallery_index, gallery_arm_documents, suite_id=EVAL_SUITE_ID,
         suite_sha256=EVAL_SUITE_SHA256, prompt_id=PROOF_REPLAY_PROMPT_ID,
         replay_prompt_id=PROOF_REPLAY_PROMPT_ID,
+        selected_model_keys=_arena_default_model_keys(_benchmark_summary()),
     )
-    gallery_state_mosaic = _benchmark_state_mosaic_html(
-        all_benchmark_images, all_benchmark_info, selectable=True, selected_state=benchmark_state,
+    home_wall = render_reference_wall(
+        _home_reference_rows(),
+        gallery_index.get("states", []) if isinstance(gallery_index, dict) else [],
+        gallery_arm_documents,
+        _home_suite_tasks(),
+        canonical_arms,
+        selected_model=str(ui_state.get("wall_model", "beam-hf")),
+        display_mode=str(ui_state.get("wall_mode", "reference")),
     )
-    benchmark_cards = []
-    for image, label in benchmark_images:
-        uri = _image_data_uri(image)
-        benchmark_cards.append(f'<figure><img src="{uri}" loading="lazy" decoding="async" alt="{html_escape(label, quote=True)}"><figcaption>{html_escape(label)}</figcaption></figure>')
-    benchmark_details = ("".join(
-        '<details class="pramaan-ui-card"><summary>' + html_escape(str(row.get("prompt_id", "task"))) + '</summary>'
-        + '<p>' + html_escape(str(row.get("exact_prompt", ""))) + '</p><p><code>mask SHA-256: '
-        + html_escape(str(row.get("accepted_mask_sha256", ""))) + '</code></p></details>'
-        for row in benchmark_info if isinstance(row, dict)
-    ) if isinstance(benchmark_info, list) else f'<p class="pramaan-muted">{html_escape(str(benchmark_info.get("status", "")))}</p>')
-    if benchmark_cards:
-        beam_gallery_html = '<div class="pramaan-ui-gallery">' + "".join(benchmark_cards) + '</div>'
-    elif isinstance(benchmark_info, dict):
-        empty_message = str(benchmark_info.get("status") or
-                            "Replay-audited eval-v2.1 gallery data is unavailable in this Space build.")
-        beam_gallery_html = '<p class="pramaan-muted" role="status">' + html_escape(empty_message) + '</p>'
-    else:
-        empty_message = f"No replay-audited accepted eval-v2.1 design is recorded for {benchmark_state}."
-        beam_gallery_html = '<p class="pramaan-muted" role="status">' + html_escape(empty_message) + '</p>'
     benchmark = (
-        _proof_replay_html()
-        + '<section><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Frozen evaluation protocol</p>'
-        '<h2>Compare models on one shared suite</h2><p><strong>Frozen eval-v2.1 protocol.</strong> The 72-task source suite spans 36 states; the one-pass paid comparison uses the same 47 predeclared task IDs and order for Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, and DeepSeek V4.1 Flash. Each paid arm has a USD 10 cap, the same verifier, 4,096-token cap, and up to three proposals per task; an arm may stop early at its spend cap. The separate Beam baseline covers all 72 tasks and is not pooled with the 47-task comparison. Beam and DeepSeek use temperature 0.4. Anthropic rejects temperature, so Claude uses provider-default sampling with low effort; this difference is disclosed. Provider costs, tokens, and latency are shown separately from quality.</p>'
-        '<h3>One festival of lights, 36 regional views</h3>'
-        '<p>Explore replay-audited examples by state, compare model outcomes on the same task, or inspect first-attempt hardness. Empty tiles are not pass/fail scores; use the artifact status and task evidence to distinguish missing records from evaluated tasks with no accepted example. The cultural sources remain distinct, and the quilt does not label every design as a Diwali custom.</p>'
-        + festival_toggle
-        + quilt_controls
-        + benchmark_mosaic
-        + _benchmark_summary_html() + '</article></section>'
-        + _community_leaderboard_html(community_snapshot)
-    )
-    gallery = (
-        '<section><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Replay-verified designs</p>'
-        '<h2>Design gallery</h2><p>Browse accepted Beam and community designs by state. Every displayed candidate is independently replayed against the frozen suite and checked against its saved mask digest.</p>'
-        '<h3>All states and Union Territories</h3>' + gallery_state_mosaic
-        + '<h3>Selected state details</h3>'
-        + _field("Accepted designs by state", "benchmark_state", benchmark_state, options=state_options)
-        + _field("Model", "gallery_model", gallery_model, options=gallery_model_options)
-        + '<h3>Beam examples</h3>'
-        + (beam_gallery_html if gallery_model in ("all", "beam-hf")
-           else '<p class="pramaan-muted">Beam examples are hidden by the selected model filter.</p>')
-        + '<h3>Replayed task evidence</h3><div class="pramaan-ui-card-grid">' + benchmark_details + '</div>'
-        + ('<h3>Same-brief model wall</h3><p class="pramaan-muted">Tiles are grouped by the exact frozen task brief. Failure and not-run states remain labeled separately from verified designs.</p>'
-           + _canonical_state_gallery_html(gallery_index, benchmark_state, gallery_model)
-           if gallery_index else '')
-        + arena_html
-        + '<h3>Community designs</h3><div class="pramaan-ui-gallery">' + community_gallery + '</div>'
-        + '</article></section>'
+        '<section class="pramaan-home" aria-label="Home"><div class="pramaan-home-intro">'
+        f'<h1>{html_escape(HEADLINE)}</h1>'
+        '<p>AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
+        + _proof_replay_html()
+        + '<nav class="pramaan-home-actions" aria-label="Start exploring">'
+        '<a class="pramaan-ui-button" href="#proof-replay">Watch a proof</a>'
+        '<a class="pramaan-ui-button secondary" href="#/studio">Try it</a>'
+        '<a class="pramaan-home-text-link" href="/web/">Use it as an RL environment</a></nav>'
+        + _home_metrics_html() + home_wall + '</section>'
     )
     community_models = _community_model_choices()
     community_status = str(ui_state.get("community_status", ""))
@@ -1685,38 +1824,31 @@ def _render_custom_app(ui_state: dict) -> str:
         + '</article>'
         + archive_contribution
     )
+    model_summary = _benchmark_summary()
     leaderboard = (
-        '<section><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Shared-question comparison</p>'
-        '<h2>Model leaderboard</h2><p>Models are ranked only on the same completed eval-v2.1 questions. Partial coverage stays visible but does not produce a cross-model rank.</p>'
+        '<section><p class="pramaan-ui-intro">Compare verifier outcomes, then inspect recorded attempts for a selected brief.</p><article class="pramaan-ui-card">'
+        '<p class="pramaan-ui-eyebrow">Canonical benchmark</p><h2>Model leaderboard</h2>'
         + '<nav class="pramaan-leaderboard-nav" aria-label="Leaderboard sections">'
-        + '<a href="#leaderboard-ranking">Ranking</a><a href="#leaderboard-head-to-head">Head to head</a>'
-        + '<a href="#leaderboard-full-results">Full results</a><a href="#leaderboard-methodology">Methodology</a></nav>'
-        + '<div class="pramaan-leaderboard-controls" aria-label="Filter and sort leaderboard results">'
+        + '<a href="#leaderboard-ranking">Ranking</a><a href="#model-arena">Arena</a>'
+        + '<a href="#leaderboard-full-results">Community results</a><a href="#leaderboard-methodology">Methodology</a></nav>'
+        + '<div class="pramaan-leaderboard-controls" aria-label="Filter and sort model results">'
         + '<label>Find a model<input type="search" data-leaderboard-control data-leaderboard-search placeholder="Search model or provider"></label>'
-        + '<label>Provenance<select data-leaderboard-control data-leaderboard-provenance>'
-        + '<option value="all">All runs</option><option value="official">Canonical</option><option value="community">Community</option></select></label>'
-        + '<label>Sort by<select data-leaderboard-control data-leaderboard-sort>'
-        + '<option value="pass3">Pass@3</option><option value="pass1">Pass@1</option>'
-        + '<option value="coverage">Coverage</option><option value="cost">Estimated cost</option>'
-        + '<option value="latency">Latency</option><option value="tokens">Tokens</option></select></label>'
-        + '<button type="button" class="pramaan-ui-button secondary" data-leaderboard-reset>Reset</button>'
-        + '<span role="status" aria-live="polite" data-leaderboard-count></span></div>'
-        + '<section id="leaderboard-ranking" aria-label="Shared-question ranking">'
-        + _canonical_leaderboard_html(gallery_index) + '</section>'
-        + '<section id="leaderboard-head-to-head" class="pramaan-leaderboard-method">'
-        + '<h3>Head-to-head design review</h3><p>Open the Gallery to inspect replay-audited outputs for the same brief side by side. Choose a state and keep “All models” selected to compare each available model on matching task IDs.</p>'
-        + '<button type="button" class="pramaan-ui-button secondary" data-tab-button="gallery" data-testid="leaderboard-open-arena">Open same-brief Arena</button></section>'
-        + '<section id="leaderboard-full-results" aria-label="Community full results">'
-        + _community_leaderboard_html(community_snapshot) + '</section>'
-        + '<section id="leaderboard-methodology" class="pramaan-leaderboard-method"><h3>How to read these results</h3>'
-        + '<p>Ranks use only identical completed task IDs. Partial runs remain visible and are not assigned cross-model ranks. Pass@1 and Pass@3 measure deterministic geometric verifier outcomes; they are not cultural-authenticity ratings. Costs distinguish provider-reported billing from rate-card estimates, and latency separates model requests from verifier work when available.</p>'
-        + '<p>Community runs are self-reported and appear only after explicit publication consent and replay checks. See the <a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1">versioned benchmark dataset</a> and <a href="https://huggingface.co/docs/hub/eval-results">Hugging Face Evaluation Results</a> for the recorded protocol and results.</p></section>'
+        + '<label>Provenance<select data-leaderboard-control data-leaderboard-provenance><option value="all">All runs</option><option value="official">Canonical</option><option value="community">Community</option></select></label>'
+        + '<label>Sort by<select data-leaderboard-control data-leaderboard-sort><option value="pass3">Within three</option><option value="pass1">First try</option><option value="coverage">Evaluated tasks</option><option value="cost">Cost</option></select></label>'
+        + '<button type="button" class="pramaan-ui-button secondary" data-leaderboard-reset>Reset</button><span role="status" aria-live="polite" data-leaderboard-count></span></div>'
+        + '<section id="leaderboard-ranking" aria-label="Model ranking">'
+        + render_model_report(model_summary)
+        + '</section>'
+        + render_findings_strip(model_summary)
+        + _model_methodology_html(gallery_index, model_summary)
+        + '<details id="leaderboard-full-results" class="pramaan-leaderboard-method"><summary>Community runs</summary>'
+        + _community_leaderboard_html(community_snapshot)
         + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_refresh">Refresh public community runs</button></div>'
-        + community + '</article></section>'
+        + community + '</details></article></section>'
     )
     about_state = ui_state.get("about_state", state_name)
     traditions = (
-        '<section><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Sources and cautions</p>'
+        '<section><p class="pramaan-ui-intro">Read the tradition notes and sources behind each mathematical interpretation.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Sources and cautions</p>'
         '<h2>Tradition references</h2><p>These designs are computational interpretations inspired by documented geometric ideas. The verifier checks geometry, not cultural authenticity.</p>'
         '<aside class="pramaan-ui-card pramaan-festival-context" aria-label="Diwali and geometric welcome patterns">'
         '<p class="pramaan-ui-eyebrow">A festival-of-lights lens</p>'
@@ -1728,30 +1860,32 @@ def _render_custom_app(ui_state: dict) -> str:
         + _tradition_html_for_state(about_state) + '</article></section>'
     )
     rl = (
-        '<section><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
+        '<section><p class="pramaan-ui-intro">Connect the checker to an agent, dataset, or reinforcement-learning workflow.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
         '<p>A reward of 1.0 means every hard geometric check passes. Partial structural progress receives a bounded score below 1.0; parse errors, truncation and missing checks receive 0. The reward does not assess cultural authenticity.</p>'
         '<pre><code>from pramaan_env import PramaanEnv, PramaanAction\nenv = PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space")\nobservation = env.reset(suite="eval-v2.1", seed=0)\nobservation = env.step(PramaanAction(pattern_json=pattern_json))</code></pre>'
-        '<a class="pramaan-ui-button secondary" href="/web/" target="_blank" rel="noopener noreferrer">Open the interactive environment</a></article></section>'
+        '<a class="pramaan-ui-button secondary" href="/web/" target="_blank" rel="noopener noreferrer">Open the interactive environment</a></article>'
+        + '<details class="pramaan-ui-card"><summary>How the benchmark is measured</summary>'
+        + '<p>The 72-task source suite spans 36 states. The one-pass paid comparison uses the same 47 predeclared task IDs and order for Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, and DeepSeek V4.1 Flash. Each paid arm has a USD 10 cap, the same verifier, 4,096-token cap, and up to three proposals per task; an arm may stop early at its spend cap. The separate Beam baseline covers all 72 tasks and is not pooled with the 47-task comparison. Provider costs, tokens, and latency are shown separately from quality.</p>'
+        + _benchmark_summary_html() + _community_leaderboard_html(community_snapshot) + '</details></section>'
     )
-    tabs = (("benchmark", "Benchmark", benchmark), ("leaderboard", "Leaderboard", leaderboard),
-            ("gallery", "Gallery", gallery), ("studio", "Design studio", studio),
-            ("traditions", "Traditions", traditions), ("rl", "RL environment", rl))
+    models = leaderboard + '<div id="model-arena">' + arena_html + '</div>'
+    build_with_it = traditions + rl
+    tabs = (("benchmark", "Home", benchmark), ("leaderboard", "Models", models),
+            ("studio", "Try it", studio), ("rl", "Build with it", build_with_it))
     tab_routes = {"benchmark": "#/overview", "leaderboard": "#/leaderboard",
-                  "gallery": "#/states?view=gallery", "studio": "#/studio",
-                  "traditions": "#/states?view=traditions", "rl": "/web/"}
+                  "studio": "#/studio", "rl": "#/build"}
     tab_buttons = "".join(
         f'<a class="pramaan-ui-tab" href="{tab_routes[key]}" role="tab" data-tab-button="{key}" '
         f'aria-selected="{"true" if ui_state.get("active_tab", "benchmark") == key else "false"}" '
-        f'tabindex="{"0" if ui_state.get("active_tab", "benchmark") == key else "-1"}">{label}</a>'
+        f'tabindex="{"0" if ui_state.get("active_tab", "benchmark") == key else "-1"}"><span>{label}</span></a>'
         for key, label, _ in tabs
     )
     tab_panels = "".join(f'<div class="pramaan-ui-tabpanel" data-tab-panel="{key}"{" hidden" if ui_state.get("active_tab", "benchmark") != key else ""}>{content}</div>' for key, _, content in tabs)
     return (
         '<main class="pramaan-ui">'
         + '<header class="pramaan-ui-masthead">' + _brand_header_html() + '</header>'
-        '<aside class="pramaan-ui-disclaimer" data-ui-disclaimer><div><strong>Craft-informed computation.</strong> Patterns are mathematical reinterpretations of geometric ideas; they do not claim artisan authenticity or physical print readiness.</div><button type="button" data-dismiss-disclaimer aria-label="Dismiss this note">×</button></aside>'
         '<nav class="pramaan-ui-tabs" role="tablist" aria-label="Pramaan sections">' + tab_buttons + '</nav>'
-        + tab_panels + '<p class="pramaan-ui-footnote">Counterexample overlays mark the pixels and transforms that failed. Certificates record deterministic checks at 64 × 64 resolution.</p></main>'
+        + tab_panels + '<p class="pramaan-ui-footnote">Craft-informed computation: designs are mathematical interpretations, not claims of artisan authenticity or physical print readiness. Counterexamples mark exact failed pixels.</p></main>'
     )
 
 
@@ -1760,7 +1894,7 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
                          request: gr.Request | None = None):
     state = dict(previous_state or _initial_custom_state())
     active_tab = getattr(event, "active_tab", None)
-    if active_tab in {"studio", "benchmark", "leaderboard", "gallery", "traditions", "rl"}:
+    if active_tab in {"studio", "benchmark", "leaderboard", "rl"}:
         state["active_tab"] = active_tab
     form = _form_from_event(event, state)
     action = str(getattr(event, "action", "") or "")
@@ -1786,6 +1920,12 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
             state["benchmark_state"] = gallery_state
     elif action == "gallery_model":
         state["gallery_model"] = str(getattr(event, "gallery_model", "all"))
+    elif action in {"wall_model", "wall_mode"}:
+        value = str(getattr(event, action, ""))
+        if action == "wall_model" and re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]{0,100}", value):
+            state[action] = value
+        elif action == "wall_mode" and value in {"reference", "attempt"}:
+            state[action] = value
     elif action in {"quilt_model", "quilt_level", "quilt_mode", "quilt_compare_model"}:
         allowed = {
             "quilt_model": lambda value: isinstance(value, str) and re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]{0,100}", value),
@@ -1964,18 +2104,126 @@ def _brand_logo_data_uri() -> str:
 
 PRAMAAN_CSS = """
 :root {
+  color-scheme: light;
   --pramaan-indigo: #172f4a;
+  --pramaan-ink: #26384b;
+  --pramaan-text: #26384b;
   --pramaan-madder: #a84436;
-  --pramaan-teal: #287d78;
+  --pramaan-teal: #176a66;
   --pramaan-paper: #f7f3ec;
   --pramaan-card: #fffdf9;
-  --pramaan-line: #e2dacf;
-  --pramaan-muted: #66717d;
+  --pramaan-card-raised: #ffffff;
+  --pramaan-card-subtle: #f3eee6;
+  --pramaan-line: #c9bba8;
+  --pramaan-muted: #455463;
+  --pramaan-on-accent: #ffffff;
+  --pramaan-pass: #126b50;
+  --pramaan-pass-bg: #e5f1ec;
+  --pramaan-fail: #9b2948;
+  --pramaan-fail-bg: #f7e9eb;
+  --pramaan-pending: #67430f;
+  --pramaan-pending-bg: #f0e9dc;
+  --pramaan-checker: #ece7de;
+  --pramaan-shadow: #172f4a;
+  --pramaan-chart-1: #176a66;
+  --pramaan-chart-2: #a84436;
+  --pramaan-chart-3: #536272;
+  --pramaan-chart-4: #67430f;
+  --pramaan-chart-5: #5964a5;
+  --pramaan-chart-6: #47709a;
+}
+html.dark, body.dark, .dark {
+  color-scheme: dark;
+  --pramaan-indigo: #e8eef5;
+  --pramaan-ink: #e1e8ef;
+  --pramaan-text: #e1e8ef;
+  --pramaan-madder: #f09583;
+  --pramaan-teal: #75d0c5;
+  --pramaan-paper: #151b22;
+  --pramaan-card: #202a34;
+  --pramaan-card-raised: #293542;
+  --pramaan-card-subtle: #26313b;
+  --pramaan-line: #647383;
+  --pramaan-muted: #cbd6e0;
+  --pramaan-on-accent: #10272a;
+  --pramaan-pass: #83dfb6;
+  --pramaan-pass-bg: #173c32;
+  --pramaan-fail: #ff9bad;
+  --pramaan-fail-bg: #492531;
+  --pramaan-pending: #f2d18d;
+  --pramaan-pending-bg: #443820;
+  --pramaan-checker: #36424e;
+  --pramaan-shadow: #000000;
+  --pramaan-chart-1: #75d0c5;
+  --pramaan-chart-2: #f09583;
+  --pramaan-chart-3: #c0cad4;
+  --pramaan-chart-4: #f2d18d;
+  --pramaan-chart-5: #bbc1ff;
+  --pramaan-chart-6: #9fc9f0;
+}
+html.light, body.light {
+  color-scheme: light;
+  --pramaan-indigo: #172f4a;
+  --pramaan-ink: #26384b;
+  --pramaan-text: #26384b;
+  --pramaan-madder: #a84436;
+  --pramaan-teal: #176a66;
+  --pramaan-paper: #f7f3ec;
+  --pramaan-card: #fffdf9;
+  --pramaan-card-raised: #ffffff;
+  --pramaan-card-subtle: #f3eee6;
+  --pramaan-line: #c9bba8;
+  --pramaan-muted: #455463;
+  --pramaan-on-accent: #ffffff;
+  --pramaan-pass: #126b50;
+  --pramaan-pass-bg: #e5f1ec;
+  --pramaan-fail: #9b2948;
+  --pramaan-fail-bg: #f7e9eb;
+  --pramaan-pending: #67430f;
+  --pramaan-pending-bg: #f0e9dc;
+  --pramaan-checker: #ece7de;
+  --pramaan-shadow: #172f4a;
+  --pramaan-chart-1: #176a66;
+  --pramaan-chart-2: #a84436;
+  --pramaan-chart-3: #536272;
+  --pramaan-chart-4: #67430f;
+  --pramaan-chart-5: #5964a5;
+  --pramaan-chart-6: #47709a;
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark), body:not(.light):not(.dark) {
+    color-scheme: dark;
+    --pramaan-indigo: #e8eef5;
+    --pramaan-ink: #e1e8ef;
+    --pramaan-text: #e1e8ef;
+    --pramaan-madder: #f09583;
+    --pramaan-teal: #75d0c5;
+    --pramaan-paper: #151b22;
+    --pramaan-card: #202a34;
+    --pramaan-card-raised: #293542;
+    --pramaan-card-subtle: #26313b;
+    --pramaan-line: #647383;
+    --pramaan-muted: #cbd6e0;
+    --pramaan-on-accent: #10272a;
+    --pramaan-pass: #83dfb6;
+    --pramaan-pass-bg: #173c32;
+    --pramaan-fail: #ff9bad;
+    --pramaan-fail-bg: #492531;
+    --pramaan-pending: #f2d18d;
+    --pramaan-pending-bg: #443820;
+    --pramaan-checker: #36424e;
+    --pramaan-shadow: #000000;
+    --pramaan-chart-1: #75d0c5;
+    --pramaan-chart-2: #f09583;
+    --pramaan-chart-3: #c0cad4;
+    --pramaan-chart-4: #f2d18d;
+    --pramaan-chart-5: #bbc1ff;
+    --pramaan-chart-6: #9fc9f0;
+  }
 }
 .gradio-container {
-  background: radial-gradient(ellipse at 15% 0%, #eee4d5 0, transparent 36%),
-              linear-gradient(180deg, #f7f3ec 0%, #f3f5f4 100%) !important;
-  color: var(--pramaan-indigo) !important;
+  background: var(--pramaan-paper);
+  color: var(--pramaan-indigo);
   width: 100% !important;
   max-width: none !important;
   box-sizing: border-box !important;
@@ -1989,10 +2237,10 @@ PRAMAAN_CSS = """
   padding: 1.1rem 1.5rem;
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(226, 218, 207, .9);
+  border: 1px solid color-mix(in srgb, var(--pramaan-line) 90%, transparent);
   border-radius: 24px;
-  background: linear-gradient(115deg, rgba(255,253,249,.98), rgba(255,250,241,.92));
-  box-shadow: 0 14px 38px rgba(23,47,74,.08);
+  background: linear-gradient(115deg, color-mix(in srgb, var(--pramaan-card) 98%, transparent), color-mix(in srgb, var(--pramaan-card) 92%, transparent));
+  box-shadow: 0 14px 38px color-mix(in srgb, var(--pramaan-shadow) 8%, transparent);
 }
 .pramaan-logo {
   align-self: center;
@@ -2018,15 +2266,15 @@ PRAMAAN_CSS = """
   letter-spacing: -.045em; line-height: 1.08; margin: 0;
 }
 .pramaan-masthead h1 span { color: var(--pramaan-madder); font-weight: 500; }
-.pramaan-tagline { color: #596775; font-size: .98rem; margin: .55rem 0 .75rem; }
+.pramaan-tagline { color: var(--pramaan-muted); font-size: .98rem; margin: .55rem 0 .75rem; }
 .pramaan-pills { display: flex; flex-wrap: wrap; gap: .45rem; }
 .pramaan-pill {
-  background: #f0e9dc; border: 1px solid #e4d9c9; border-radius: 999px;
+  background: var(--pramaan-pending-bg); border: 1px solid var(--pramaan-line); border-radius: 999px;
   color: var(--pramaan-indigo); font-size: .72rem; font-weight: 650; padding: .28rem .68rem;
 }
 .pramaan-disclaimer {
   border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px;
-  background: rgba(255,253,249,.82); color: #596775; line-height: 1.55;
+  background: color-mix(in srgb, var(--pramaan-card) 82%, transparent); color: var(--pramaan-muted); line-height: 1.55;
   margin: .9rem 0 1.1rem; padding: .8rem 1rem;
 }
 .pramaan-disclaimer strong { color: var(--pramaan-indigo); }
@@ -2035,12 +2283,12 @@ PRAMAAN_CSS = """
   margin: 0 0 1.1rem;
 }
 .pramaan-method div {
-  align-items: center; background: rgba(255,253,249,.72); border: 1px solid var(--pramaan-line);
-  border-radius: 14px; color: #596775; display: flex; gap: .65rem; padding: .7rem .85rem;
+  align-items: center; background: color-mix(in srgb, var(--pramaan-card) 72%, transparent); border: 1px solid var(--pramaan-line);
+  border-radius: 14px; color: var(--pramaan-muted); display: flex; gap: .65rem; padding: .7rem .85rem;
 }
 .pramaan-method b { color: var(--pramaan-indigo); font-size: .88rem; }
 .pramaan-method span {
-  align-items: center; background: var(--pramaan-indigo); border-radius: 50%; color: white;
+  align-items: center; background: var(--pramaan-indigo); border-radius: 50%; color: var(--pramaan-card-raised);
   display: inline-flex; flex: 0 0 1.65rem; font-size: .72rem; height: 1.65rem; justify-content: center;
 }
 .pramaan-workspace {
@@ -2053,16 +2301,16 @@ PRAMAAN_CSS = """
 }
 .pramaan-workspace > .pramaan-panel { width: auto !important; min-width: 0 !important; }
 .pramaan-panel {
-  background: rgba(255,253,249,.86); border: 1px solid var(--pramaan-line);
-  border-radius: 20px; box-shadow: 0 9px 28px rgba(23,47,74,.055);
+  background: color-mix(in srgb, var(--pramaan-card) 86%, transparent); border: 1px solid var(--pramaan-line);
+  border-radius: 20px; box-shadow: 0 9px 28px color-mix(in srgb, var(--pramaan-shadow) 6%, transparent);
   padding: 1rem !important;
 }
 .pramaan-status { border-radius: 12px; }
 .pramaan-preview img { border: 1px solid var(--pramaan-line); border-radius: 16px; }
 .pramaan-benchmark-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .8rem; }
 .pramaan-benchmark-card, .pramaan-benchmark-empty {
-  background: rgba(255,253,249,.9); border: 1px solid var(--pramaan-line);
-  border-radius: 18px; box-shadow: 0 8px 24px rgba(23,47,74,.05); padding: 1rem 1.1rem;
+  background: color-mix(in srgb, var(--pramaan-card) 90%, transparent); border: 1px solid var(--pramaan-line);
+  border-radius: 18px; box-shadow: 0 8px 24px color-mix(in srgb, var(--pramaan-shadow) 5%, transparent); padding: 1rem 1.1rem;
 }
 .pramaan-benchmark-card h3 { color: var(--pramaan-indigo); font-size: 1rem; margin: 0 0 .65rem; }
 .pramaan-benchmark-card dl { display: grid; gap: .4rem; margin: 0; }
@@ -2071,99 +2319,173 @@ PRAMAAN_CSS = """
 .pramaan-benchmark-card dd { color: var(--pramaan-indigo); font-size: .9rem; font-variant-numeric: tabular-nums; font-weight: 700; margin: 0; text-align: right; }
 .pramaan-benchmark-empty { color: var(--pramaan-muted); }
 .pramaan-benchmark-kicker { color: var(--pramaan-teal); font-size: .72rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.pramaan-findings { background: color-mix(in srgb, var(--pramaan-card) 88%, transparent); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: .9rem 0; min-width: 0; padding: 1rem; }
+.pramaan-findings h2 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: 1.4rem; margin: 0 0 .6rem; }
+.pramaan-findings-grid { display: grid; gap: .65rem; grid-template-columns: repeat(3,minmax(0,1fr)); min-width: 0; }
+.pramaan-findings-grid article { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 12px; display: grid; gap: .2rem; min-width: 0; padding: .7rem; }
+.pramaan-findings-grid strong { color: var(--pramaan-indigo); }
+.pramaan-findings-grid span { font-size: 1.05rem; font-variant-numeric: tabular-nums; font-weight: 750; overflow-wrap: anywhere; }
+.pramaan-findings-grid small, .pramaan-findings-note { color: var(--pramaan-muted); font-size: .76rem; }
+.pramaan-findings-arms { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: .6rem 0 0; padding: 0; }
+.pramaan-findings-arms li { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 9px; display: grid; font-size: .72rem; gap: .1rem; min-width: 125px; padding: .35rem .5rem; }
+.pramaan-findings-arms li > span:first-child { color: var(--pramaan-indigo); font-weight: 750; }
+.pramaan-findings-arms [data-arm-state="partial"] { border-style: dashed; border-color: var(--pramaan-pending); }
+.pramaan-findings-arms [data-arm-state="pending"] { color: var(--pramaan-muted); }
+.pramaan-leaderboard-hero { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; margin: .8rem 0 1rem; min-width: 0; padding: .8rem; }
+.pramaan-leaderboard-hero h4 { color: var(--pramaan-indigo); margin: 0 0 .35rem; }
+.pramaan-leaderboard-hero > p { color: var(--pramaan-muted); font-size: .8rem; }
+.pramaan-leaderboard-hero-list { display: grid; gap: .55rem; list-style: none; margin: .65rem 0; padding: 0; }
+.pramaan-leaderboard-hero-list > li { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 10px; min-width: 0; padding: .55rem .65rem; }
+.pramaan-leaderboard-hero-label { display: flex; flex-wrap: wrap; gap: .2rem .65rem; justify-content: space-between; min-width: 0; }
+.pramaan-leaderboard-hero-label strong { color: var(--pramaan-indigo); }
+.pramaan-leaderboard-hero-label span, .pramaan-leaderboard-hero-list small { color: var(--pramaan-muted); font-size: .76rem; overflow-wrap: anywhere; }
+.pramaan-leaderboard-hero-track { background: var(--pramaan-line); border-radius: 99px; height: 13px; margin: .38rem 0 .16rem; overflow: visible; position: relative; width: 100%; }
+.pramaan-leaderboard-hero-bar { background: var(--pramaan-teal); border-radius: 99px; display: block; height: 100%; max-width: 100%; }
+.pramaan-leaderboard-hero-list > li:nth-child(2n) .pramaan-leaderboard-hero-bar { background: var(--pramaan-madder); }
+.pramaan-leaderboard-hero-list > li:nth-child(3n) .pramaan-leaderboard-hero-bar { background: var(--pramaan-muted); }
+.pramaan-leaderboard-hero-list > li:nth-child(4n) .pramaan-leaderboard-hero-bar { background: var(--pramaan-pending); }
+.pramaan-leaderboard-hero-interval { border-left: 2px solid var(--pramaan-indigo); border-right: 2px solid var(--pramaan-indigo); box-sizing: border-box; height: 21px; pointer-events: none; position: absolute; top: -4px; }
+.pramaan-leaderboard-hero-text-alt { background: var(--pramaan-card); border-left: 3px solid var(--pramaan-teal); padding: .45rem .6rem; }
+.pramaan-leaderboard-hero-list > li.is-partial { border-style: dashed; border-color: var(--pramaan-pending); }
 .pramaan-leaderboard-scroll { max-width: 100%; overflow-x: auto; }
 .pramaan-leaderboard { border-collapse: collapse; font-size: .83rem; min-width: 1040px; width: 100%; }
 .pramaan-leaderboard th, .pramaan-leaderboard td { border-bottom: 1px solid var(--pramaan-line); padding: .65rem .55rem; text-align: left; vertical-align: top; }
 .pramaan-leaderboard th { color: var(--pramaan-indigo); }
 .pramaan-leaderboard tbody th small, .pramaan-leaderboard td small { color: var(--pramaan-muted); display: block; font-size: .72rem; font-weight: 500; margin-top: .2rem; }
 .pramaan-grammar-heat { display: grid; gap: .2rem; grid-template-columns: repeat(7, minmax(30px, 1fr)); }
-.pramaan-grammar-cell { background: #edf2ee; border-radius: 6px; color: var(--pramaan-indigo); display: grid; font-size: .65rem; line-height: 1.2; padding: .2rem; text-align: center; }
+.pramaan-grammar-cell { background: var(--pramaan-card-subtle); border-radius: 6px; color: var(--pramaan-indigo); display: grid; font-size: .65rem; line-height: 1.2; padding: .2rem; text-align: center; }
 .pramaan-grammar-cell small { color: inherit !important; font-size: .6rem !important; margin: 0 !important; }
 .pramaan-canonical-leaderboard h3 { margin-top: 1.2rem; }
 .pramaan-canonical-leaderboard ul { color: var(--pramaan-muted); font-size: .85rem; padding-left: 1.2rem; }
 .pramaan-leaderboard-nav { display: flex; flex-wrap: wrap; gap: .45rem; margin: .75rem 0; }
-.pramaan-leaderboard-nav a { background: #fffdf9; border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-indigo); font-size: .82rem; font-weight: 700; padding: .38rem .7rem; text-decoration: none; }
-.pramaan-leaderboard-controls { align-items: end; background: #f5f1e9; border: 1px solid var(--pramaan-line); border-radius: 14px; display: flex; flex-wrap: wrap; gap: .65rem; margin: .8rem 0 1rem; padding: .75rem; }
+.pramaan-leaderboard-nav a { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-indigo); font-size: .82rem; font-weight: 700; padding: .38rem .7rem; text-decoration: none; }
+.pramaan-leaderboard-controls { align-items: end; background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; display: flex; flex-wrap: wrap; gap: .65rem; margin: .8rem 0 1rem; padding: .75rem; }
 .pramaan-leaderboard-controls label { color: var(--pramaan-indigo); display: grid; font-size: .76rem; font-weight: 700; gap: .25rem; min-width: 145px; }
-.pramaan-leaderboard-controls input, .pramaan-leaderboard-controls select { background: white; border: 1px solid #d8d0c5; border-radius: 9px; color: var(--pramaan-indigo); font: inherit; min-height: 40px; padding: .45rem .6rem; }
+.pramaan-leaderboard-controls input, .pramaan-leaderboard-controls select { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 9px; color: var(--pramaan-indigo); font: inherit; min-height: 40px; padding: .45rem .6rem; }
 .pramaan-leaderboard-controls [data-leaderboard-count] { color: var(--pramaan-muted); font-size: .78rem; padding: .5rem; }
 .pramaan-leaderboard-method { border-top: 1px solid var(--pramaan-line); margin-top: 1rem; padding-top: .8rem; }
 .pramaan-leaderboard-method p { color: var(--pramaan-muted); font-size: .86rem; }
+.pramaan-model-report { min-width: 0; }
+.pramaan-model-chart { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; margin: .9rem 0 1.1rem; padding: .9rem; }
+.pramaan-model-chart h4 { margin: .1rem 0 .3rem; }
+.pramaan-model-chart > p, .pramaan-model-chart-alt, .pramaan-model-chart li small { color: var(--pramaan-muted); font-size: .8rem; }
+.pramaan-model-chart ol { display: grid; gap: .55rem; list-style: none; margin: .7rem 0; padding: 0; }
+.pramaan-model-chart li { min-width: 0; }
+.pramaan-model-bar-label { display: flex; flex-wrap: wrap; gap: .2rem .7rem; justify-content: space-between; font-size: .82rem; }
+.pramaan-model-bar-track { background: var(--pramaan-line); border-radius: 99px; height: 13px; margin: .27rem 0 .12rem; overflow: hidden; position: relative; }
+.pramaan-model-bar { background: var(--pramaan-indigo); border-radius: 99px; display: block; height: 100%; }
+.pramaan-model-first-mark { border-left: 2px solid var(--pramaan-madder); bottom: -2px; position: absolute; top: -2px; z-index: 2; }
+.pramaan-model-wilson { border: 1px solid var(--pramaan-ink); border-radius: 99px; height: 5px; pointer-events: none; position: absolute; top: 4px; z-index: 3; }
+.pramaan-model-table { border-collapse: collapse; font-size: .84rem; min-width: 720px; width: 100%; }
+.pramaan-model-table th, .pramaan-model-table td { border-bottom: 1px solid var(--pramaan-line); padding: .65rem .55rem; text-align: left; vertical-align: top; }
+.pramaan-model-table tbody th small, .pramaan-model-table td small { color: var(--pramaan-muted); display: block; }
+.pramaan-model-footnote { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-arena-picker { margin: .7rem 0; }
+.pramaan-arena-picker fieldset { border: 1px solid var(--pramaan-line); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .4rem; padding: .7rem; }
 .pramaan-same-brief-wall { display: grid; gap: .8rem; }
-.pramaan-arena { background: rgba(255,253,249,.82); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: 1rem 0; min-width: 0; padding: 1rem; }
+.pramaan-arena { background: color-mix(in srgb, var(--pramaan-card) 82%, transparent); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: 1rem 0; min-width: 0; padding: 1rem; }
 .pramaan-arena h3 { color: var(--pramaan-indigo); margin: .2rem 0 .45rem; }
 .pramaan-arena-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit,minmax(min(100%,210px),1fr)); min-width: 0; }
-.pramaan-arena-arm { background: #fffdf9; border: 1px solid var(--pramaan-line); border-radius: 12px; min-width: 0; padding: .7rem; }
+.pramaan-arena-arm { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 12px; min-width: 0; padding: .7rem; }
 .pramaan-arena-arm h4 { color: var(--pramaan-indigo); margin: 0 0 .3rem; overflow-wrap: anywhere; }
 .pramaan-arena-status, .pramaan-arena-empty { color: var(--pramaan-muted); font-size: .82rem; }
 .pramaan-arena-attempts { display: grid; gap: .45rem; list-style: none; margin: .5rem 0; padding: 0; }
 .pramaan-arena-attempts li { align-items: center; border-top: 1px solid var(--pramaan-line); display: grid; gap: .35rem; grid-template-columns: auto minmax(0,1fr); min-width: 0; padding-top: .45rem; }
 .pramaan-arena-verdict { border-radius: 7px; font-size: .8rem; font-weight: 800; padding: .22rem .4rem; }
-.pramaan-arena-attempts [data-attempt-state="pass"] .pramaan-arena-verdict { background: #e5f1ec; color: #155b45; }
-.pramaan-arena-attempts [data-attempt-state="fail"] .pramaan-arena-verdict { background: #f7e9eb; color: #9b2948; }
+.pramaan-arena-attempts [data-attempt-state="pass"] .pramaan-arena-verdict { background: var(--pramaan-pass-bg); color: var(--pramaan-pass); }
+.pramaan-arena-attempts [data-attempt-state="fail"] .pramaan-arena-verdict { background: var(--pramaan-fail-bg); color: var(--pramaan-fail); }
 .pramaan-arena-tile { grid-column: 1 / -1; image-rendering: pixelated; max-height: 160px; max-width: 100%; object-fit: contain; width: 160px; }
 .pramaan-arena-attempts small { color: var(--pramaan-muted); grid-column: 1 / -1; overflow-wrap: anywhere; }
 .pramaan-arena-arm > a { margin-top: .4rem; }
 .pramaan-comparison-chart-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit,minmax(min(100%,420px),1fr)); }
-.pramaan-comparison-chart-grid article { background: rgba(255,253,249,.7); border: 1px solid var(--pramaan-line); border-radius: 12px; min-width: 0; padding: .7rem; }
+.pramaan-comparison-chart-grid article { background: color-mix(in srgb, var(--pramaan-card) 70%, transparent); border: 1px solid var(--pramaan-line); border-radius: 12px; min-width: 0; padding: .7rem; }
 .pramaan-comparison-chart-grid h5, .pramaan-comparison-charts h4 { color: var(--pramaan-indigo); margin: .3rem 0 .6rem; }
 .pramaan-comparison-chart-grid svg { display: block; height: auto; max-width: 100%; overflow: visible; }
-.pramaan-same-brief { background: rgba(255,253,249,.75); border: 1px solid var(--pramaan-line); border-radius: 14px; padding: .8rem; }
+.pramaan-same-brief { background: color-mix(in srgb, var(--pramaan-card) 75%, transparent); border: 1px solid var(--pramaan-line); border-radius: 14px; padding: .8rem; }
 .pramaan-same-brief h4 { color: var(--pramaan-indigo); margin: 0 0 .35rem; }
 .pramaan-same-brief-prompt, .pramaan-model-tile-card p { color: var(--pramaan-muted); font-size: .82rem; }
 .pramaan-model-tile-grid { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .pramaan-model-tile-card { border: 1px solid var(--pramaan-line); border-radius: 12px; min-width: 0; padding: .6rem; }
 .pramaan-model-tile-card h5 { color: var(--pramaan-indigo); margin: 0 0 .45rem; }
-.pramaan-model-tile { background-color: #fffdf9; background-image: linear-gradient(45deg,#ece7de 25%,transparent 25%),linear-gradient(-45deg,#ece7de 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ece7de 75%),linear-gradient(-45deg,transparent 75%,#ece7de 75%); background-size: 12px 12px; display: block; image-rendering: pixelated; max-height: 192px; max-width: 100%; object-fit: contain; width: 192px; }
-.pramaan-model-tile-placeholder { align-items: center; background: #f1ede6; color: var(--pramaan-muted); display: flex; font-size: .78rem; justify-content: center; min-height: 96px; text-align: center; }
-.pramaan-model-tile-status { color: var(--pramaan-teal) !important; font-weight: 700; }
+.pramaan-model-tile { background-color: var(--pramaan-card); background-image: linear-gradient(45deg,var(--pramaan-checker) 25%,transparent 25%),linear-gradient(-45deg,var(--pramaan-checker) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--pramaan-checker) 75%),linear-gradient(-45deg,transparent 75%,var(--pramaan-checker) 75%); background-size: 12px 12px; display: block; image-rendering: pixelated; max-height: 192px; max-width: 100%; object-fit: contain; width: 192px; }
+.pramaan-model-tile-placeholder { align-items: center; background: var(--pramaan-card-subtle); color: var(--pramaan-muted); display: flex; font-size: .78rem; justify-content: center; min-height: 96px; text-align: center; }
+.pramaan-model-tile-status { color: var(--pramaan-teal); font-weight: 700; }
 .pramaan-model-tile-card small { color: var(--pramaan-muted); display: block; font-size: .65rem; overflow-wrap: anywhere; }
 .gradio-container button.primary {
-  background: var(--pramaan-indigo) !important; border: 1px solid var(--pramaan-indigo) !important;
-  box-shadow: 0 6px 16px rgba(23,47,74,.18); font-weight: 700;
+  background: var(--pramaan-teal); border: 1px solid var(--pramaan-teal); color: var(--pramaan-on-accent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--pramaan-shadow) 18%, transparent); font-weight: 700;
 }
-.gradio-container button.primary:hover { background: #244b70 !important; }
+.gradio-container button.primary:hover { background: var(--pramaan-teal); }
 .gradio-container button:not(.primary) { border-radius: 12px !important; }
 .gradio-container input, .gradio-container textarea, .gradio-container select {
-  border-color: #d8d0c5 !important; border-radius: 11px !important;
+  border-color: var(--pramaan-line) !important; border-radius: 11px !important;
 }
 .gradio-container input:focus, .gradio-container textarea:focus {
-  border-color: var(--pramaan-teal) !important; box-shadow: 0 0 0 2px rgba(40,125,120,.16) !important;
+  border-color: var(--pramaan-teal) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--pramaan-teal) 16%, transparent) !important;
 }
 .cm-editor { max-height: 26rem !important; }
 .cm-editor .cm-scroller { overflow: auto !important; }
 .tabs { border-color: var(--pramaan-line) !important; }
-.tab-nav button { color: #536272 !important; font-weight: 650 !important; }
-.tab-nav button.selected { border-color: var(--pramaan-madder) !important; color: var(--pramaan-indigo) !important; }
+.tab-nav button { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); color: var(--pramaan-muted); font-weight: 650; }
+.tab-nav button.selected { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
 .prose a { color: var(--pramaan-teal) !important; }
 .pramaan-ui { color: var(--pramaan-indigo); font: 400 15px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; margin: 0 auto; max-width: 1480px; }
+.gradio-container .pramaan-ui p:not([class]),
+.gradio-container .pramaan-ui div:not([class]),
+.gradio-container .pramaan-ui li:not([class]),
+.gradio-container .pramaan-ui summary:not([class]),
+.gradio-container .pramaan-ui small:not([class]),
+.gradio-container .pramaan-ui strong:not([class]),
+.gradio-container .pramaan-ui em:not([class]),
+.gradio-container .pramaan-ui dd:not([class]),
+.gradio-container .pramaan-ui dt:not([class]) {
+  color: var(--pramaan-text) !important;
+}
+.gradio-container .pramaan-ui a:not([class]) { color: var(--pramaan-teal) !important; }
 .gradio-container #pramaan-hf-login-row { box-sizing: border-box; display: flex; justify-content: flex-end; margin: 0 auto .35rem; max-width: 1480px; padding: .25rem clamp(12px,3vw,24px); }
 .gradio-container #pramaan-hf-login { width: auto !important; }
-.gradio-container #pramaan-hf-login button { background: #fffdf9; border: 1px solid #e2dacf; border-radius: 999px; color: #172f4a; font-size: .82rem; min-height: 36px; padding: .35rem .8rem; }
+.gradio-container #pramaan-hf-login button { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-indigo); font-size: .82rem; min-height: 36px; padding: .35rem .8rem; }
 .pramaan-ui-masthead .pramaan-masthead { margin-top: 0; }
-.pramaan-ui-disclaimer { background: #fffdf9; border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px; color: #596775; margin: 0 0 1rem; padding: .8rem 1rem; }
+.pramaan-ui-disclaimer { background: var(--pramaan-card); border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px; color: var(--pramaan-muted); margin: 0 0 1rem; padding: .8rem 1rem; }
 .pramaan-ui-tabs, .pramaan-ui-subtabs { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 1rem; }
-.pramaan-ui-tab, .pramaan-ui-subtabs button, .pramaan-ui-button { align-items: center; background: var(--pramaan-indigo); border: 1px solid var(--pramaan-indigo); border-radius: 12px; color: white; cursor: pointer; display: inline-flex; font: inherit; font-weight: 700; justify-content: center; min-height: 42px; padding: .62rem .9rem; text-decoration: none; }
-.pramaan-ui-tab[aria-selected="true"], .pramaan-ui-subtabs button[aria-pressed="true"] { background: #287d78; border-color: #287d78; }
-.pramaan-ui-button.secondary, .pramaan-ui-subtabs button { background: #fffdf9; border-color: var(--pramaan-line); color: var(--pramaan-indigo); }
-.pramaan-ui-button:disabled { cursor: not-allowed; opacity: .48; }
+.pramaan-ui-tab, .pramaan-ui-subtabs button, .pramaan-ui-button { align-items: center; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 12px; color: var(--pramaan-indigo); cursor: pointer; display: inline-flex; font: inherit; font-weight: 700; justify-content: center; min-height: 42px; padding: .62rem .9rem; text-decoration: none; }
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab,
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab:visited,
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab:hover,
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab:focus-visible {
+  background-color: var(--pramaan-card) !important;
+  border-color: var(--pramaan-line);
+  color: var(--pramaan-indigo) !important;
+}
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab[aria-selected="true"],
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab[aria-selected="true"]:visited,
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab[aria-selected="true"]:hover,
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab[aria-selected="true"]:focus-visible {
+  background-color: var(--pramaan-teal) !important;
+  border-color: var(--pramaan-teal);
+  color: var(--pramaan-on-accent) !important;
+}
+.gradio-container .pramaan-ui .pramaan-ui-tabs > a.pramaan-ui-tab > span { color: inherit !important; }
+.pramaan-ui-subtabs button[aria-pressed="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
+.pramaan-ui-button.secondary, .pramaan-ui-subtabs button { background: var(--pramaan-card); border-color: var(--pramaan-line); color: var(--pramaan-indigo); }
+.pramaan-ui-button:disabled { background: var(--pramaan-pending-bg); border-color: var(--pramaan-pending); color: var(--pramaan-pending); cursor: not-allowed; opacity: 1; }
 .pramaan-ui-layout { align-items: start; display: grid; gap: 1rem; grid-template-columns: minmax(300px,.9fr) minmax(0,1.5fr); }
-.pramaan-ui-card { background: rgba(255,253,249,.92); border: 1px solid var(--pramaan-line); border-radius: 18px; box-shadow: 0 9px 28px rgba(23,47,74,.055); min-width: 0; padding: 1rem 1.1rem; }
+.pramaan-ui-card { background: color-mix(in srgb, var(--pramaan-card) 92%, transparent); border: 1px solid var(--pramaan-line); border-radius: 18px; box-shadow: 0 9px 28px color-mix(in srgb, var(--pramaan-shadow) 6%, transparent); min-width: 0; padding: 1rem 1.1rem; }
 .pramaan-ui-card h2 { color: var(--pramaan-indigo); font-size: 1.2rem; margin: 0 0 .55rem; }
 .pramaan-ui-card h3 { color: var(--pramaan-indigo); font-size: 1rem; }
 .pramaan-ui-eyebrow { color: var(--pramaan-teal); font-size: .72rem; font-weight: 750; letter-spacing: .12em; margin: 0 0 .35rem; text-transform: uppercase; }
 .pramaan-muted, .pramaan-ui-muted, .pramaan-ui-footnote { color: var(--pramaan-muted); font-size: .88rem; }
 .pramaan-ui-field { display: grid; gap: .32rem; margin: .75rem 0; }
 .pramaan-ui-field label, .pramaan-ui-result label { color: var(--pramaan-indigo); font-size: .86rem; font-weight: 700; }
-.pramaan-ui-field input, .pramaan-ui-field textarea, .pramaan-ui-field select, .pramaan-ui-result textarea { background: white; border: 1px solid #d8d0c5; border-radius: 10px; box-sizing: border-box; color: var(--pramaan-indigo); font: inherit; min-height: 42px; padding: .62rem .7rem; width: 100%; }
+.pramaan-ui-field input, .pramaan-ui-field textarea, .pramaan-ui-field select, .pramaan-ui-result textarea { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 10px; box-sizing: border-box; color: var(--pramaan-indigo); font: inherit; min-height: 42px; padding: .62rem .7rem; width: 100%; }
 .pramaan-ui-field textarea, .pramaan-ui-result textarea { min-height: 7rem; resize: vertical; }
-.pramaan-ui-field input:focus, .pramaan-ui-field textarea:focus, .pramaan-ui-field select:focus, .pramaan-ui-result textarea:focus, .pramaan-ui button:focus-visible { border-color: var(--pramaan-teal); box-shadow: 0 0 0 3px rgba(40,125,120,.17); outline: 2px solid transparent; }
+.pramaan-ui-field input:focus, .pramaan-ui-field textarea:focus, .pramaan-ui-field select:focus, .pramaan-ui-result textarea:focus, .pramaan-ui button:focus-visible { border-color: var(--pramaan-teal); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pramaan-teal) 17%, transparent); outline: 2px solid transparent; }
 .pramaan-ui-grid { display: grid; gap: .6rem; grid-template-columns: repeat(2,minmax(0,1fr)); }
 .pramaan-ui-check { align-items: center; display: flex; gap: .55rem; margin: .75rem 0; }
 .pramaan-ui-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
-.pramaan-ui-preview { background: white; border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; height: auto; margin: .75rem auto 1rem; max-width: 100%; }
-.pramaan-ui-placeholder { align-items: center; background: #f3eee6; border: 1px dashed #c9bba8; border-radius: 14px; color: var(--pramaan-muted); display: flex; justify-content: center; margin: .8rem 0; min-height: 230px; text-align: center; }
-.pramaan-ui-result pre, .pramaan-ui-card pre { background: #f3f0eb; border: 1px solid var(--pramaan-line); border-radius: 10px; max-height: 26rem; overflow: auto; padding: .8rem; white-space: pre-wrap; word-break: break-word; }
+.pramaan-ui-preview { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; height: auto; margin: .75rem auto 1rem; max-width: 100%; }
+.pramaan-ui-placeholder { align-items: center; background: var(--pramaan-card-subtle); border: 1px dashed var(--pramaan-line); border-radius: 14px; color: var(--pramaan-muted); display: flex; justify-content: center; margin: .8rem 0; min-height: 230px; text-align: center; }
+.pramaan-ui-result pre, .pramaan-ui-card pre { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 10px; max-height: 26rem; overflow: auto; padding: .8rem; white-space: pre-wrap; word-break: break-word; }
 .pramaan-ui-subpanel[hidden], .pramaan-ui-tabpanel[hidden] { display: none !important; }
 .pramaan-ui-gallery, .pramaan-ui-card-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); }
 .pramaan-ui-gallery figure { margin: 0; }
@@ -2171,15 +2493,15 @@ PRAMAAN_CSS = """
 .pramaan-ui-gallery figcaption { color: var(--pramaan-muted); font-size: .8rem; padding-top: .3rem; }
 .pramaan-state-mosaic-scroll { box-sizing: border-box; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; width: 100%; }
 .pramaan-state-mosaic { aspect-ratio: 10 / 9; display: grid; gap: clamp(2px,.35vw,5px); grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); margin: 1rem 0; max-width: 960px; min-width: 640px; width: 100%; }
-.pramaan-state-tile { align-items: center; aspect-ratio: 1; background: #fffdf9; border: 1px solid var(--pramaan-line); border-radius: clamp(4px, .7vw, 12px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; min-width: 0; min-height: 0; overflow: hidden; padding: clamp(2px,.45vw,7px); position: relative; text-align: center; }
-.pramaan-state-tile img { aspect-ratio: 1; background: #f7f3ec; border-radius: 8px; display: block; height: auto; max-width: 100%; object-fit: contain; width: 100%; }
+.pramaan-state-tile { align-items: center; aspect-ratio: 1; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: clamp(4px, .7vw, 12px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; min-width: 0; min-height: 0; overflow: hidden; padding: clamp(2px,.45vw,7px); position: relative; text-align: center; }
+.pramaan-state-tile img { aspect-ratio: 1; background: var(--pramaan-paper); border-radius: 8px; display: block; height: auto; max-width: 100%; object-fit: contain; width: 100%; }
 .pramaan-state-mosaic .pramaan-state-tile img { max-height: calc(100% - 1rem); }
-.pramaan-data-quilt-tile[data-tile-state="verified-first"] { border-color: #287d78; }
-.pramaan-data-quilt-tile[data-tile-state="verified-repaired"] { border: 3px double #287d78; }
-.pramaan-data-quilt-tile[data-tile-state="failed-all"] { background: repeating-linear-gradient(135deg,#fffdf9 0 8px,#f6e9e5 8px 10px); border-color: #a84436; }
+.pramaan-data-quilt-tile[data-tile-state="verified-first"] { border-color: var(--pramaan-teal); }
+.pramaan-data-quilt-tile[data-tile-state="verified-repaired"] { border: 3px double var(--pramaan-teal); }
+.pramaan-data-quilt-tile[data-tile-state="failed-all"] { background: repeating-linear-gradient(135deg,var(--pramaan-card) 0 8px,var(--pramaan-fail-bg) 8px 10px); border-color: var(--pramaan-madder); }
 .pramaan-data-quilt-tile[data-tile-state="accepted-other-model"] { border-style: dashed; }
-.pramaan-data-quilt-tile[data-tile-state="not-evaluated"] { border-color: #c9bba8; }
-.pramaan-data-quilt-tile[data-tile-state="community-run"] { box-shadow: inset -5px 5px 0 -2px #a84436; }
+.pramaan-data-quilt-tile[data-tile-state="not-evaluated"] { border-color: var(--pramaan-line); }
+.pramaan-data-quilt-tile[data-tile-state="community-run"] { box-shadow: inset -5px 5px 0 -2px var(--pramaan-madder); }
 .pramaan-state-tile figcaption { display: none; gap: .18rem; padding-top: .35rem; }
 .pramaan-state-tile:hover figcaption, .pramaan-state-tile:focus-within figcaption { display: grid; }
 .pramaan-state-tile > strong { color: var(--pramaan-indigo); font-size: clamp(.55rem,1vw,.78rem); line-height: 1.1; overflow-wrap: anywhere; }
@@ -2187,7 +2509,7 @@ PRAMAAN_CSS = """
 .pramaan-state-tile figcaption span, .pramaan-state-tile-empty span { color: var(--pramaan-muted); font-size: .68rem; line-height: 1.3; }
 .pramaan-state-tile[data-gallery-state-tile] { cursor: pointer; }
 .pramaan-state-tile[data-gallery-state-tile]:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 1; }
-.pramaan-state-tile[data-gallery-state-tile][aria-selected="true"] { border: 2px solid var(--pramaan-teal); box-shadow: 0 0 0 2px rgba(31,123,121,.14); }
+.pramaan-state-tile[data-gallery-state-tile][aria-selected="true"] { border: 2px solid var(--pramaan-teal); box-shadow: 0 0 0 2px color-mix(in srgb, var(--pramaan-teal) 14%, transparent); }
 .pramaan-state-tile-empty { gap: .4rem; }
 .pramaan-quilt-controls { align-items: end; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); margin: 1rem 0; }
 .pramaan-data-quilt-tile { justify-content: flex-start; gap: .3rem; }
@@ -2203,8 +2525,8 @@ PRAMAAN_CSS = """
 .pramaan-data-quilt-tile[data-quilt-state-tile] { cursor: pointer; }
 .pramaan-data-quilt-tile[data-quilt-state-tile]:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 2; }
 .pramaan-data-quilt-tile > .pramaan-quilt-details { display: none; }
-.pramaan-quilt-dialog { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 18px; box-shadow: 0 20px 80px rgba(23,47,74,.26); box-sizing: border-box; color: var(--pramaan-ink); max-height: min(82dvh,720px); max-width: min(680px,calc(100vw - 2rem)); overflow: auto; padding: 1rem 1.2rem; width: 100%; }
-.pramaan-quilt-dialog::backdrop { background: rgba(23,47,74,.42); }
+.pramaan-quilt-dialog { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 18px; box-shadow: 0 20px 80px color-mix(in srgb, var(--pramaan-shadow) 26%, transparent); box-sizing: border-box; color: var(--pramaan-ink); max-height: min(82dvh,720px); max-width: min(680px,calc(100vw - 2rem)); overflow: auto; padding: 1rem 1.2rem; width: 100%; }
+.pramaan-quilt-dialog::backdrop { background: color-mix(in srgb, var(--pramaan-shadow) 42%, transparent); }
 .pramaan-quilt-dialog-head { align-items: center; border-bottom: 1px solid var(--pramaan-line); display: flex; gap: .8rem; justify-content: space-between; margin-bottom: .8rem; padding-bottom: .6rem; }
 .pramaan-quilt-dialog-head h3 { color: var(--pramaan-indigo); margin: 0; overflow-wrap: anywhere; }
 .pramaan-quilt-dialog [data-quilt-sheet-content] { line-height: 1.45; overflow-wrap: anywhere; }
@@ -2218,26 +2540,26 @@ PRAMAAN_CSS = """
 .pramaan-quilt-hardness-count { color: var(--pramaan-ink); font-size: 1.2rem; font-weight: 750; }
 .pramaan-quilt-legend { display: flex; flex-wrap: wrap; gap: .45rem .8rem; list-style: none; margin: -.35rem 0 1rem; padding: 0; }
 .pramaan-quilt-legend li { align-items: center; color: var(--pramaan-muted); display: inline-flex; font-size: .74rem; gap: .35rem; }
-.pramaan-quilt-legend li span { background: #fffdf9; border: 2px solid #287d78; border-radius: 4px; height: 12px; width: 12px; }
+.pramaan-quilt-legend li span { background: var(--pramaan-card); border: 2px solid var(--pramaan-teal); border-radius: 4px; height: 12px; width: 12px; }
 .pramaan-quilt-legend [data-tile-state="verified-repaired"] span { border-style: double; border-width: 3px; }
-.pramaan-quilt-legend [data-tile-state="failed-all"] span { background: repeating-linear-gradient(135deg,#a84436 0 2px,#fffdf9 2px 4px); border-color: #a84436; }
+.pramaan-quilt-legend [data-tile-state="failed-all"] span { background: repeating-linear-gradient(135deg,var(--pramaan-madder) 0 2px,var(--pramaan-card) 2px 4px); border-color: var(--pramaan-madder); }
 .pramaan-quilt-legend [data-tile-state="accepted-other-model"] span { border-style: dashed; }
-.pramaan-quilt-legend [data-tile-state="not-evaluated"] span { background: transparent; border-color: #c9bba8; }
-.pramaan-quilt-legend [data-tile-state="community-run"] span { background: radial-gradient(circle at 80% 20%,#a84436 0 2px,transparent 3px),#fffdf9; }
-.pramaan-brandbar { align-items: center; background: linear-gradient(115deg,#fffdf9,#fffaf1); border: 1px solid #e2dacf; border-radius: 16px; box-shadow: 0 5px 20px rgba(23,47,74,.06); box-sizing: border-box; display: flex; gap: .65rem; height: 60px; margin: 0 0 .7rem; max-height: 64px; overflow: hidden; padding: .35rem .7rem; }
+.pramaan-quilt-legend [data-tile-state="not-evaluated"] span { background: transparent; border-color: var(--pramaan-line); }
+.pramaan-quilt-legend [data-tile-state="community-run"] span { background: radial-gradient(circle at 80% 20%,var(--pramaan-madder) 0 2px,transparent 3px),var(--pramaan-card); }
+.pramaan-brandbar { align-items: center; background: linear-gradient(115deg,var(--pramaan-card),var(--pramaan-card)); border: 1px solid var(--pramaan-line); border-radius: 16px; box-shadow: 0 5px 20px color-mix(in srgb, var(--pramaan-shadow) 6%, transparent); box-sizing: border-box; display: flex; gap: .65rem; height: 60px; margin: 0 0 .7rem; max-height: 64px; overflow: hidden; padding: .35rem .7rem; }
 .pramaan-brandbar .pramaan-logo { flex: 0 0 42px; height: 42px; object-fit: contain; width: 42px; }
 .pramaan-brand-name { color: var(--pramaan-indigo); font-size: 1.05rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin: 0; }
 .pramaan-brand-name em { color: var(--pramaan-madder); font-size: .92rem; font-style: normal; font-weight: 550; }
 .pramaan-ui-masthead .pramaan-masthead { margin-top: 0; }
-.pramaan-ui-disclaimer { align-items: center; background: #fffdf9; border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px; color: #596775; display: flex; font-size: .82rem; justify-content: space-between; margin: 0 0 .55rem; padding: .45rem .7rem; }
+.pramaan-ui-disclaimer { align-items: center; background: var(--pramaan-card); border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px; color: var(--pramaan-muted); display: flex; font-size: .82rem; justify-content: space-between; margin: 0 0 .55rem; padding: .45rem .7rem; }
 .pramaan-ui-disclaimer[hidden] { display: none !important; }
-.pramaan-ui-disclaimer button { background: transparent; border: 0; color: #596775; cursor: pointer; font-size: 1.25rem; line-height: 1; }
-.pramaan-ui-tabs { background: rgba(255,253,249,.96); display: flex; flex-wrap: nowrap; gap: .3rem; margin: 0 0 .8rem; overflow-x: auto; overscroll-behavior-inline: contain; padding: .25rem 0; position: sticky; top: 0; z-index: 20; }
+.pramaan-ui-disclaimer button { background: transparent; border: 0; color: var(--pramaan-muted); cursor: pointer; font-size: 1.25rem; line-height: 1; }
+.pramaan-ui-tabs { background: color-mix(in srgb, var(--pramaan-card) 96%, transparent); display: flex; flex-wrap: nowrap; gap: .3rem; margin: 0 0 .8rem; overflow-x: auto; overscroll-behavior-inline: contain; padding: .25rem 0; position: sticky; top: 0; z-index: 20; }
 .pramaan-ui-tab { flex: 0 0 auto; min-height: 38px; padding: .45rem .7rem; white-space: nowrap; }
-.pramaan-ui-tab:focus-visible { outline: 3px solid #287d78; outline-offset: 2px; }
+.pramaan-ui-tab:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; }
 .gradio-container footer, footer.svelte-1rjryqp { display: none !important; }
 .pramaan-state-mosaic.is-festival-lens [data-festival-linked="false"] { opacity: .24; filter: grayscale(.85); }
-.pramaan-state-mosaic.is-festival-lens [data-festival-linked="true"] { box-shadow: 0 0 .9rem rgba(242, 177, 74, .7); border-color: #d69b3e; }
+.pramaan-state-mosaic.is-festival-lens [data-festival-linked="true"] { box-shadow: 0 0 .9rem color-mix(in srgb, var(--pramaan-pending) 70%, transparent); border-color: var(--pramaan-pending); }
 @media (prefers-reduced-motion: no-preference) { .pramaan-state-tile { transition: opacity .25s ease, filter .25s ease, box-shadow .25s ease; } }
 @media (prefers-reduced-motion: reduce) { .pramaan-state-tile { transition: none; } }
 .pramaan-ui-card summary { cursor: pointer; font-weight: 700; }
@@ -2248,22 +2570,23 @@ PRAMAAN_CSS = """
 .pramaan-proof-replay h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2.25rem,6vw,4.8rem); letter-spacing: -.04em; line-height: .98; margin: .05rem 0 .65rem; }
 .pramaan-proof-context { color: var(--pramaan-teal); font-size: .8rem; font-weight: 700; overflow-wrap: anywhere; }
 .pramaan-proof-brief { font-size: .96rem; line-height: 1.45; margin: .65rem 0; }
-.pramaan-proof-stage { background: #f5f0e7; border: 1px solid var(--pramaan-line); border-radius: 14px; min-height: 120px; padding: .8rem; }
+.pramaan-proof-stage { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; min-height: 120px; padding: .8rem; }
 .pramaan-proof-step[hidden] { display: none !important; }
-.pramaan-proof-tile { aspect-ratio: 1; background: white; border: 1px solid var(--pramaan-line); border-radius: 10px; display: block; height: auto; max-height: 250px; max-width: 100%; object-fit: contain; width: min(100%,250px); }
+.pramaan-proof-tile { aspect-ratio: 1; background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 10px; display: block; height: auto; max-height: 250px; max-width: 100%; object-fit: contain; width: min(100%,250px); }
 .pramaan-proof-art { margin: 0; }
 .pramaan-proof-art .pramaan-proof-tile { margin-inline: auto; max-height: 340px; width: min(100%,340px); }
 .pramaan-proof-art figcaption { color: var(--pramaan-muted); font-size: .78rem; margin-top: .45rem; overflow-wrap: anywhere; text-align: center; }
 .pramaan-proof-checks { display: grid; gap: .32rem; list-style: none; margin: .45rem 0 0; padding: 0; }
 .pramaan-proof-checks li { align-items: start; display: grid; font-size: .76rem; gap: .35rem; grid-template-columns: 1rem minmax(90px,.35fr) minmax(0,1fr); line-height: 1.3; overflow-wrap: anywhere; }
-.pramaan-proof-checks .is-pass > span:first-child { color: #126b50; font-weight: 800; }
-.pramaan-proof-checks .is-fail > span:first-child { color: #a62058; font-weight: 900; }
+.pramaan-proof-checks .is-pass > span:first-child { color: var(--pramaan-pass); font-weight: 800; }
+.pramaan-proof-checks .is-fail > span:first-child { color: var(--pramaan-fail); font-weight: 900; }
 .pramaan-proof-controls { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0; }
 .pramaan-proof-controls .pramaan-ui-button, .pramaan-proof-copy > [data-proof-verify] { min-height: 40px; }
 .pramaan-proof-progress { color: var(--pramaan-muted); font-size: .78rem; }
 .pramaan-proof-digest { display: block; font-size: .76rem; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) { .pramaan-proof-step { scroll-behavior: auto; transition: none !important; } }
 @media (max-width: 820px) {
+  .pramaan-findings-grid { grid-template-columns: minmax(0,1fr); }
   .pramaan-masthead { grid-template-columns: 72px minmax(0, 1fr); align-items: flex-start; gap: .85rem; padding: .9rem; }
   .pramaan-logo { height: 68px; width: 68px; }
   .pramaan-tagline { font-size: .88rem; }
@@ -2278,6 +2601,7 @@ PRAMAAN_CSS = """
   .pramaan-proof-art { grid-row: 1; }
   .pramaan-proof-art .pramaan-proof-tile { max-height: 210px; width: min(100%,210px); }
   .pramaan-proof-stage { min-height: 100px; }
+  .pramaan-proof-step .pramaan-proof-tile { display: none; }
   .pramaan-proof-checks li { grid-template-columns: .9rem minmax(76px,.35fr) minmax(0,1fr); }
   .pramaan-brandbar { border-radius: 12px; gap: .45rem; height: 54px; padding: .3rem .5rem; }
   .pramaan-brandbar .pramaan-logo { flex-basis: 38px; height: 38px; width: 38px; }
@@ -2289,6 +2613,91 @@ PRAMAAN_CSS = """
   .pramaan-state-tile > strong { font-size: .52rem; }
   .pramaan-ui-tab { font-size: .78rem; min-height: 36px; padding: .38rem .55rem; }
   .pramaan-ui-disclaimer { font-size: .72rem; }
+}
+.pramaan-home-intro { color: var(--pramaan-text); font-size: clamp(1rem,2vw,1.2rem); line-height: 1.45; margin: .25rem auto .8rem; max-width: 920px; text-align: center; }
+.pramaan-home-intro h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2.3rem,6vw,4.5rem); letter-spacing: -.04em; line-height: 1; margin: .1rem 0 .5rem; }
+#pramaan-hf-login-row { display: none; }
+.pramaan-home-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .55rem; justify-content: center; margin-top: .6rem; }
+.pramaan-home-text-link { color: var(--pramaan-teal); font-size: .9rem; font-weight: 700; padding: .5rem; }
+.pramaan-home-metrics { display: grid; gap: .65rem; grid-template-columns: repeat(3,minmax(0,1fr)); margin: .8rem 0 1.25rem; }
+.pramaan-home-metrics article { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 14px; display: grid; gap: .2rem; padding: .8rem; text-align: center; }
+.pramaan-home-metrics strong { color: var(--pramaan-indigo); font-size: clamp(1.2rem,3vw,1.8rem); font-variant-numeric: tabular-nums; }
+.pramaan-home-metrics span { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-home-wall { margin: 1rem 0; }
+.pramaan-home-wall-heading { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; margin-bottom: .65rem; }
+.pramaan-home-wall-heading h2 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(1.8rem,4vw,2.6rem); margin: 0; }
+.pramaan-home-wall-heading p:last-child { color: var(--pramaan-muted); margin: .3rem 0; max-width: 68ch; }
+.pramaan-home-reference-note { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-wall-controls { align-items: start; display: grid; gap: .65rem; margin: .65rem 0; }
+.pramaan-wall-models { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pramaan-wall-model-chip { align-items: flex-start; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: .04rem; max-width: 100%; padding: .35rem .75rem; text-align: left; }
+.pramaan-wall-model-chip[aria-checked="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
+.pramaan-wall-model-chip small { color: inherit; font-size: .66rem; opacity: .92; }
+.pramaan-wall-mode-toggle { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: inline-flex; justify-self: start; overflow: hidden; }
+.pramaan-wall-mode { background: transparent; border: 0; color: var(--pramaan-text); cursor: pointer; font: inherit; font-size: .82rem; min-height: 38px; padding: .35rem .85rem; }
+.pramaan-wall-mode[aria-pressed="true"] { background: var(--pramaan-indigo); color: var(--pramaan-on-accent); }
+.pramaan-wall-legend { color: var(--pramaan-muted); display: flex; flex-wrap: wrap; gap: .3rem 1rem; list-style: none; margin: 0 0 .55rem; padding: 0; }
+.pramaan-wall-legend li { align-items: center; display: inline-flex; gap: .35rem; font-size: .78rem; }
+.pramaan-wall-legend [data-status="first"] { color: var(--pramaan-pass); }
+.pramaan-wall-legend [data-status="repair"] { color: var(--pramaan-pending); }
+.pramaan-wall-legend [data-status="fail"] { color: var(--pramaan-fail); }
+.pramaan-wall-legend [data-status="none"] { color: var(--pramaan-muted); }
+.pramaan-home-wall-grid { display: grid; gap: clamp(2px,.45vw,6px); grid-template-columns: repeat(10,minmax(0,1fr)); grid-template-rows: repeat(9,minmax(0,1fr)); margin: .6rem auto; max-width: 980px; width: 100%; }
+.pramaan-wall-state { aspect-ratio: 1; min-width: 0; position: relative; }
+.pramaan-wall-tile { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: clamp(3px,.6vw,9px); color: var(--pramaan-text); cursor: pointer; display: block; height: 100%; overflow: hidden; padding: 0; position: relative; text-align: left; width: 100%; }
+.pramaan-wall-tile:focus-visible, .pramaan-wall-model-chip:focus-visible, .pramaan-wall-mode:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 2; }
+.pramaan-wall-art { display: block; height: 100%; image-rendering: pixelated; object-fit: cover; width: 100%; }
+.pramaan-wall-empty-art, .pramaan-wall-placeholder { align-items: center; background: repeating-linear-gradient(135deg,var(--pramaan-card-subtle) 0 6px,var(--pramaan-line) 6px 7px); color: var(--pramaan-muted); display: flex; justify-content: center; min-height: 90px; text-align: center; }
+.pramaan-wall-state-name { background: color-mix(in srgb,var(--pramaan-card) 90%,transparent); bottom: 0; color: var(--pramaan-text); font-size: clamp(.52rem,.7vw,.72rem); font-weight: 750; left: 0; line-height: 1.1; overflow: hidden; padding: 2px 3px; position: absolute; right: 0; text-overflow: ellipsis; white-space: nowrap; }
+.pramaan-wall-marks { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: flex; gap: 2px; padding: 0 3px; position: absolute; right: 2px; top: 2px; }
+.pramaan-wall-mark { font-size: clamp(.48rem,.75vw,.8rem); font-weight: 900; line-height: 1.25; }
+.pramaan-wall-mark[data-status="first"] { color: var(--pramaan-pass); }
+.pramaan-wall-mark[data-status="repair"] { color: var(--pramaan-pending); }
+.pramaan-wall-mark[data-status="fail"] { color: var(--pramaan-fail); }
+.pramaan-wall-mark[data-status="none"] { color: var(--pramaan-muted); }
+.pramaan-wall-dialog { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 16px; color: var(--pramaan-text); max-height: min(90vh,900px); max-width: min(900px,calc(100vw - 24px)); overflow: auto; padding: clamp(.8rem,2vw,1.3rem); width: min(900px,calc(100vw - 24px)); }
+.pramaan-wall-dialog::backdrop { background: rgba(8,14,22,.65); }
+.pramaan-wall-dialog-head { align-items: center; border-bottom: 1px solid var(--pramaan-line); display: flex; justify-content: space-between; padding-bottom: .55rem; }
+.pramaan-wall-dialog-head h3 { color: var(--pramaan-indigo); font: 700 1.6rem Georgia,serif; margin: 0; }
+.pramaan-wall-task { border-bottom: 1px solid var(--pramaan-line); padding: .7rem 0 1rem; }
+.pramaan-wall-task h4 { margin: 0; }
+.pramaan-wall-brief { color: var(--pramaan-muted); }
+.pramaan-wall-pair { display: grid; gap: .75rem; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.pramaan-wall-pair figure { align-content: start; display: grid; gap: .35rem; margin: 0; min-width: 0; }
+.pramaan-wall-pair figcaption { font-weight: 750; }
+.pramaan-wall-pair img, .pramaan-wall-pair .pramaan-wall-placeholder { border: 1px solid var(--pramaan-line); border-radius: 8px; image-rendering: pixelated; max-height: 260px; object-fit: contain; width: min(100%,260px); }
+.pramaan-wall-model-list { margin-top: .7rem; }
+.pramaan-wall-model-list summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; }
+.pramaan-wall-model-list ul { display: grid; gap: .3rem; list-style: none; margin: .4rem 0 0; padding: 0; }
+.pramaan-wall-model-row { align-items: center; background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 9px; display: grid; gap: .6rem; grid-template-columns: minmax(70px,.25fr) minmax(0,1fr); min-width: 0; padding: .3rem .45rem; }
+.pramaan-wall-model-outcomes { display: grid; gap: .3rem; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.pramaan-wall-model-outcome { align-items: center; display: grid; gap: .3rem; grid-template-columns: 30px minmax(0,1fr); min-width: 0; }
+.pramaan-wall-model-outcome small { color: var(--pramaan-muted); grid-column: 1 / -1; }
+.pramaan-wall-model-outcome b { font-size: .72rem; overflow-wrap: anywhere; }
+.pramaan-wall-model-outcome b[data-outcome="first"] { color: var(--pramaan-pass); }
+.pramaan-wall-model-outcome b[data-outcome="repair"] { color: var(--pramaan-pending); }
+.pramaan-wall-model-outcome b[data-outcome="fail"] { color: var(--pramaan-fail); }
+.pramaan-wall-model-outcome b[data-outcome="none"] { color: var(--pramaan-muted); }
+.pramaan-wall-model-thumb { border-radius: 4px; height: 36px; image-rendering: pixelated; object-fit: cover; width: 36px; }
+.pramaan-wall-outcome { font-size: 1.1rem; font-weight: 900; }
+.pramaan-wall-outcome[data-outcome="first"] { color: var(--pramaan-pass); }
+.pramaan-wall-outcome[data-outcome="repair"] { color: var(--pramaan-pending); }
+.pramaan-wall-outcome[data-outcome="fail"] { color: var(--pramaan-fail); }
+.pramaan-wall-outcome[data-outcome="none"] { color: var(--pramaan-muted); }
+.pramaan-wall-care { color: var(--pramaan-muted); font-size: .85rem; margin-top: .75rem; }
+.pramaan-wall-task ol { color: var(--pramaan-muted); font-size: .82rem; padding-left: 1.2rem; }
+.pramaan-wall-task ol small { display: block; }
+.pramaan-ui-intro { color: var(--pramaan-muted); font-size: 1rem; margin: .2rem 0 .8rem; }
+@media (max-width: 600px) {
+  .pramaan-home-metrics { gap: .35rem; }
+  .pramaan-home-metrics article { border-radius: 10px; padding: .55rem .35rem; }
+  .pramaan-home-metrics span { font-size: .68rem; }
+  .pramaan-home-wall-grid { gap: 2px; }
+  .pramaan-wall-state-name { display: none; }
+  .pramaan-wall-marks { gap: 0; padding: 0 1px; right: 0; top: 0; }
+  .pramaan-wall-mark { font-size: .46rem; }
+  .pramaan-wall-pair { grid-template-columns: minmax(0,1fr); }
+  .pramaan-home-actions { gap: .35rem; }
 }
 """
 
@@ -2516,6 +2925,7 @@ function applyLeaderboardControls() {
   const search = (element.querySelector('[data-leaderboard-search]')?.value || '').trim().toLowerCase();
   const source = element.querySelector('[data-leaderboard-provenance]')?.value || 'all';
   const sortKey = element.querySelector('[data-leaderboard-sort]')?.value || 'pass3';
+  const dataKey = ({pass1:'scorePass1', pass3:'scorePass3', coverage:'coverage', cost:'cost'})[sortKey] || 'scorePass3';
   let visible = 0;
   let total = 0;
   element.querySelectorAll('[data-leaderboard-table]').forEach(table => {
@@ -2531,8 +2941,8 @@ function applyLeaderboardControls() {
     });
     const descending = ['pass1', 'pass3', 'coverage'].includes(sortKey);
     rows.sort((left, right) => {
-      const a = Number.parseFloat(left.dataset[sortKey]);
-      const b = Number.parseFloat(right.dataset[sortKey]);
+      const a = Number.parseFloat(left.dataset[dataKey]);
+      const b = Number.parseFloat(right.dataset[dataKey]);
       const aMissing = !Number.isFinite(a), bMissing = !Number.isFinite(b);
       if (aMissing !== bMissing) return aMissing ? 1 : -1;
       if (aMissing) return left.dataset.modelKey.localeCompare(right.dataset.modelKey);
@@ -2543,8 +2953,18 @@ function applyLeaderboardControls() {
   if (count) count.textContent = `${visible} of ${total} model rows shown`;
 }
 function activateTab(key) {
-  const valid = ['benchmark', 'leaderboard', 'gallery', 'studio', 'traditions', 'rl'];
+  const valid = ['benchmark', 'leaderboard', 'studio', 'rl'];
   if (!valid.includes(key)) key = 'benchmark';
+  const loginRow = document.querySelector('#pramaan-hf-login-row');
+  const communityDisclosure = element.querySelector('#leaderboard-full-results');
+  element.dataset.activeTab = key;
+  if (communityDisclosure && !communityDisclosure.dataset.loginVisibilityBound) {
+    communityDisclosure.dataset.loginVisibilityBound = 'true';
+    communityDisclosure.addEventListener('toggle', () => {
+      if (loginRow) loginRow.style.display = element.dataset.activeTab === 'leaderboard' && communityDisclosure.open ? 'flex' : 'none';
+    });
+  }
+  if (loginRow) loginRow.style.display = key === 'leaderboard' && communityDisclosure?.open ? 'flex' : 'none';
   element.querySelectorAll('[data-tab-button]').forEach(node => {
     const active = node.dataset.tabButton === key;
     node.setAttribute('aria-selected', String(active));
@@ -2557,8 +2977,7 @@ function applyRoute() {
   const [path, query = ''] = raw.slice(1).split('?');
   const params = new URLSearchParams(query);
   const key = path === '/leaderboard' ? 'leaderboard' : path === '/studio' ? 'studio' :
-    path === '/states' ? (params.get('view') === 'traditions' ? 'traditions' : 'gallery') :
-    path === '/rl' ? 'rl' : 'benchmark';
+    path === '/build' || path === '/rl' ? 'rl' : 'benchmark';
   activateTab(key);
   if (path === '/states' && params.has('state') && window.__pramaanAppliedHash !== raw) {
     window.__pramaanAppliedHash = raw;
@@ -2582,7 +3001,7 @@ if (proofReplay) {
   const proofProgress = proofReplay.querySelector('[data-proof-progress]');
   const proofArtwork = proofReplay.querySelector('[data-proof-active-tile]');
   const proofFigureCaption = proofReplay.querySelector('[data-proof-figure-caption]');
-  let proofIndex = 0;
+  let proofIndex = Math.max(0, proofSteps.findIndex(node => node.hasAttribute('data-proof-result') && !node.hidden));
   let proofTimer = null;
   function showProofStep(index) {
     proofIndex = Math.max(0, Math.min(index, proofSteps.length - 1));
@@ -2597,7 +3016,8 @@ if (proofReplay) {
     }
     const stepTitle = activeStep?.querySelector('b')?.textContent || 'Proof Replay';
     if (proofFigureCaption) proofFigureCaption.textContent = `${stepTitle} · ${proofReplay.querySelector('.pramaan-proof-context')?.textContent || ''}`;
-    if (proofProgress) proofProgress.textContent = `Step ${proofIndex + 1} of ${proofSteps.length}`;
+    if (proofProgress) proofProgress.textContent = activeStep?.hasAttribute('data-proof-result') && !proofReplay.dataset.proofStarted
+      ? 'Verified result · replay ready' : `Step ${proofIndex + 1} of ${proofSteps.length}`;
   }
   function stopProofPlayback() {
     if (proofTimer) window.clearInterval(proofTimer);
@@ -2605,6 +3025,7 @@ if (proofReplay) {
   }
   function playProof() {
     stopProofPlayback();
+    proofReplay.dataset.proofStarted = 'true';
     showProofStep(0);
     proofTimer = window.setInterval(() => {
       if (proofIndex >= proofSteps.length - 1) { stopProofPlayback(); return; }
@@ -2651,13 +3072,44 @@ if (proofReplay) {
       }, {threshold:0});
       proofVisibility.observe(proofReplay);
     }
-    proofTimer = window.setInterval(() => {
-      if (proofIndex >= proofSteps.length - 1) { stopProofPlayback(); return; }
-      showProofStep(proofIndex + 1);
-    }, 2000);
   }
 }
 element.addEventListener('click', async function(event) {
+  const wallChoice = event.target.closest('[data-wall-model-choice], [data-wall-mode-choice]');
+  if (wallChoice) {
+    const wall = wallChoice.closest('.pramaan-home-wall');
+    const fieldName = wallChoice.hasAttribute('data-wall-model-choice') ? 'wall_model' : 'wall_mode';
+    const field = wall?.querySelector(`[data-field="${fieldName}"]`);
+    if (field) {
+      field.value = wallChoice.dataset.wallModelChoice || wallChoice.dataset.wallModeChoice;
+      field.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+    return;
+  }
+  const wallClose = event.target.closest('[data-wall-dialog-close]');
+  if (wallClose) {
+    wallClose.closest('[data-wall-dialog]')?.close();
+    return;
+  }
+  const wallTile = event.target.closest('[data-home-wall-tile]');
+  if (wallTile) {
+    const wall = wallTile.closest('.pramaan-home-wall');
+    const dialog = wall?.querySelector('[data-wall-dialog]');
+    const template = wallTile.parentElement?.querySelector('template[data-wall-state-sheet]');
+    const title = dialog?.querySelector('[data-wall-dialog-title]');
+    const content = dialog?.querySelector('[data-wall-dialog-content]');
+    if (dialog && template && content) {
+      if (title) title.textContent = wallTile.dataset.state || 'State evidence';
+      content.replaceChildren(template.content.cloneNode(true));
+      dialog.showModal();
+    }
+    return;
+  }
+  const wallDialog = event.target.closest('[data-wall-dialog]');
+  if (wallDialog && event.target === wallDialog) {
+    wallDialog.close();
+    return;
+  }
   const dismiss = event.target.closest('[data-dismiss-disclaimer]');
   if (dismiss) {
     const note = dismiss.closest('[data-ui-disclaimer]');
@@ -2697,7 +3149,7 @@ element.addEventListener('click', async function(event) {
     const key = tab.dataset.tabButton;
     if (tab.getAttribute('href') === '/web/') return;
     event.preventDefault();
-    const route = tab.getAttribute('href') || ({gallery:'#/states?view=gallery'}[key] || '#/overview');
+    const route = tab.getAttribute('href') || '#/overview';
     if (window.location.hash !== route) history.pushState(null, '', route);
     applyRoute();
     return;
@@ -2716,7 +3168,7 @@ element.addEventListener('click', async function(event) {
     if (window.location.hash !== route) history.pushState(null, '', route);
     trigger('click', {
       action: 'gallery_state_select', gallery_state: galleryTile.dataset.state,
-      active_tab: 'gallery'
+      active_tab: 'benchmark'
     });
     return;
   }
@@ -2791,6 +3243,18 @@ element.addEventListener('click', async function(event) {
   }
 });
 element.addEventListener('keydown', function(event) {
+  const modelChip = event.target.closest('[data-wall-model-choice]');
+  if (modelChip && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+    const chips = Array.from(modelChip.closest('[data-wall-models], .pramaan-wall-models')
+      ?.querySelectorAll('[data-wall-model-choice]') || []);
+    const current = chips.indexOf(modelChip);
+    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? chips.length - 1 :
+      (current + (event.key === 'ArrowRight' ? 1 : -1) + chips.length) % chips.length;
+    event.preventDefault();
+    chips[nextIndex]?.focus();
+    chips[nextIndex]?.click();
+    return;
+  }
   const tab = event.target.closest('[role="tab"][data-tab-button]');
   if (tab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
     const tabs = Array.from(element.querySelectorAll('[role="tab"][data-tab-button]'))
@@ -2833,6 +3297,7 @@ element.addEventListener('change', function(event) {
   const action = key === 'state' ? 'state' : key === 'tradition' ? 'tradition' :
     key === 'about_state' ? 'about_state' : key === 'benchmark_state' ? 'benchmark_state' :
     key === 'gallery_model' ? 'gallery_model' : key === 'festival_lens' ? 'festival_lens' :
+    ['wall_model', 'wall_mode'].includes(key) ? key :
     ['quilt_model', 'quilt_level', 'quilt_mode', 'quilt_compare_model'].includes(key) ? key : null;
   if (!action) return;
   const values = {};
@@ -2849,6 +3314,15 @@ element.addEventListener('change', function(event) {
 });
 element.addEventListener('input', function(event) {
   if (event.target.matches('[data-leaderboard-search]')) applyLeaderboardControls();
+});
+element.addEventListener('change', function(event) {
+  const choice = event.target.closest('[data-arena-model-choice]');
+  if (!choice) return;
+  const selected = new Set(Array.from(element.querySelectorAll('[data-arena-model-choice]:checked'), node => node.dataset.arenaModelChoice));
+  selected.add('beam-hf');
+  const beamChoice = element.querySelector('[data-arena-model-choice="beam-hf"]');
+  if (beamChoice) beamChoice.checked = true;
+  element.querySelectorAll('[data-arena-model-card]').forEach(card => { card.hidden = !selected.has(card.dataset.arenaModelCard); });
 });
 applyLeaderboardControls();
 """
@@ -2872,12 +3346,43 @@ applyLeaderboardControls();
 
 def create_brand_theme():
     """Return Pramaan's theme for direct launches and FastAPI mounts."""
-    return gr.themes.Soft(
+    theme = gr.themes.Soft(
         primary_hue=gr.themes.colors.blue,
         secondary_hue=gr.themes.colors.teal,
         neutral_hue=gr.themes.colors.stone,
         spacing_size="md",
         radius_size="lg",
+    )
+    # Keep Gradio's native Blocks, labels, inputs and status components on the
+    # same tested palette as the custom HTML. The CSS tokens alone do not
+    # override the built-in theme variables used by those components.
+    return theme.set(
+        body_background_fill="#f7f3ec",
+        body_background_fill_dark="#151b22",
+        body_text_color="#172f4a",
+        body_text_color_dark="#e8eef5",
+        body_text_color_subdued="#455463",
+        body_text_color_subdued_dark="#cbd6e0",
+        background_fill_primary="#f7f3ec",
+        background_fill_primary_dark="#151b22",
+        background_fill_secondary="#fffdf9",
+        background_fill_secondary_dark="#202a34",
+        border_color_primary="#c9bba8",
+        border_color_primary_dark="#647383",
+        block_background_fill="#fffdf9",
+        block_background_fill_dark="#202a34",
+        block_label_background_fill="#f3eee6",
+        block_label_background_fill_dark="#26313b",
+        block_label_text_color="#172f4a",
+        block_label_text_color_dark="#e8eef5",
+        block_title_background_fill="#f3eee6",
+        block_title_background_fill_dark="#26313b",
+        block_title_text_color="#172f4a",
+        block_title_text_color_dark="#e8eef5",
+        input_background_fill="#ffffff",
+        input_background_fill_dark="#293542",
+        input_border_color="#c9bba8",
+        input_border_color_dark="#647383",
     )
 
 

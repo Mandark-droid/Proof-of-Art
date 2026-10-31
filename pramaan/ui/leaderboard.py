@@ -9,6 +9,154 @@ from pathlib import Path
 
 from html import escape as html_escape
 
+from .findings import wilson_interval
+
+
+_MODEL_LABELS = {
+    "beam-hf": "Beam",
+    "claude-haiku-5-5": "Claude Haiku 5.5",
+    "claude-sonnet-5-5": "Claude Sonnet 5.5",
+    "claude-opus-5-5": "Claude Opus 5.5",
+    "claude-fable-5-1": "Claude Fable 5.1",
+    "deepseek-v4.1-flash": "DeepSeek V4 Flash",
+    "gpt-6.1-sol": "GPT-6.1 Sol",
+    "gpt-6.1-terra": "GPT-6.1 Terra",
+    "gpt-6-luna": "GPT-6 Luna",
+    "gpt-6-astra": "GPT-6 Astra",
+}
+
+
+def _summary_rate(overall: dict, rate_key: str, count_key: str, n: int) -> int:
+    count = overall.get(count_key)
+    if type(count) is int and 0 <= count <= n:
+        return count
+    rate = overall.get(rate_key)
+    if isinstance(rate, (int, float)) and not isinstance(rate, bool) and math.isfinite(rate):
+        return max(0, min(n, round(rate * n)))
+    return 0
+
+
+def _usd_cost(overall: dict) -> str:
+    reported = overall.get("reported_cost_totals_by_currency")
+    estimated = overall.get("estimated_cost_totals_by_currency")
+    values = []
+    for label, costs in (("reported", reported), ("estimated", estimated)):
+        amount = costs.get("USD") if isinstance(costs, dict) else None
+        if isinstance(amount, (int, float)) and not isinstance(amount, bool) and math.isfinite(amount):
+            values.append(f"{label} USD {amount:.2f}")
+    return " · ".join(values) if values else "not reported"
+
+
+def _usd_cost_number(overall: dict) -> float | None:
+    for field in ("reported_cost_totals_by_currency", "estimated_cost_totals_by_currency"):
+        costs = overall.get(field)
+        amount = costs.get("USD") if isinstance(costs, dict) else None
+        if isinstance(amount, (int, float)) and not isinstance(amount, bool) and math.isfinite(amount):
+            return float(amount)
+    return None
+
+
+def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> str:
+    """Render the canonical model chart and single-row-per-model report from a summary."""
+    summary = summary if isinstance(summary, dict) else {}
+    published_expected = summary.get("expected_prompt_count")
+    if type(published_expected) is int and published_expected > 0:
+        expected_tasks = published_expected
+    source = summary.get("by_model")
+    models = source if isinstance(source, dict) else {}
+    records = []
+    for key, document in models.items():
+        if not isinstance(key, str) or not isinstance(document, dict):
+            continue
+        overall = document.get("overall") if isinstance(document.get("overall"), dict) else {}
+        study = document.get("study") if isinstance(document.get("study"), dict) else {}
+        n = overall.get("n")
+        if type(n) is not int or n < 0:
+            n = 0
+        n = min(n, expected_tasks)
+        first = _summary_rate(overall, "validity_at_1", "passed_at_1", n)
+        within = _summary_rate(overall, "validity_at_3", "accepted_designs", n)
+        label = str(document.get("label") or _MODEL_LABELS.get(key, key))
+        cap_reached = any(value is True for value in (
+            document.get("cap_reached"), study.get("cap_reached"), study.get("budget_cap_reached"),
+            study.get("stopped_at_cap"), overall.get("cap_reached"), overall.get("stopped_at_cap"),
+        ))
+        stop_reason = study.get("stop_reason")
+        cap_reached = cap_reached or (isinstance(stop_reason, str) and stop_reason in {"budget_cap", "spend_cap", "usd_cap"})
+        cost_ledger = document.get("cost_ledger") if isinstance(document.get("cost_ledger"), dict) else {}
+        cap_usd = cost_ledger.get("cap_usd")
+        if not isinstance(cap_usd, (int, float)) or isinstance(cap_usd, bool) or not math.isfinite(cap_usd) or cap_usd <= 0:
+            cap_usd = 10.0 if cap_reached else None
+        records.append({"key": key, "label": label, "n": n, "first": first,
+                        "within": within, "cost": _usd_cost(overall), "cost_number": _usd_cost_number(overall),
+                        "cap": cap_reached, "cap_usd": cap_usd})
+
+    # Rank only arms with complete coverage. A high score on a smaller subset
+    # must not displace models evaluated on the full frozen suite.
+    ranked = sorted((row for row in records if row["n"] == expected_tasks),
+                    key=lambda row: (-(row["within"] / row["n"]), -(row["first"] / row["n"]), row["label"].casefold()))
+    rank_by_key = {}
+    previous = None
+    current_rank = 0
+    for position, row in enumerate(ranked, 1):
+        score = (row["within"] / row["n"], row["first"] / row["n"])
+        if score != previous:
+            current_rank = position
+            previous = score
+        rank_by_key[row["key"]] = current_rank
+
+    chart_rows = []
+    for row in sorted(records, key=lambda item: (rank_by_key.get(item["key"], expected_tasks + 1), item["label"].casefold())):
+        label = html_escape(row["label"], quote=True)
+        if row["n"] <= 0:
+            chart_rows.append(f'<li data-model-key="{html_escape(row["key"], quote=True)}"><strong>{label}</strong><span>No evaluated tasks yet</span></li>')
+            continue
+        rate = row["within"] / row["n"]
+        first_rate = row["first"] / row["n"]
+        low, high = wilson_interval(row["within"], row["n"])
+        chart_rows.append(
+            f'<li data-model-key="{html_escape(row["key"], quote=True)}" data-testid="model-chart-{html_escape(row["key"], quote=True)}">'
+            f'<div class="pramaan-model-bar-label"><strong>{label}</strong><span>{row["within"]}/{row["n"]} · {rate:.1%} within three · first try {row["first"]}/{row["n"]}</span></div>'
+            f'<div class="pramaan-model-bar-track" role="img" aria-label="{label}: within three {row["within"]} of {row["n"]}, {rate:.1%}; first try {row["first"]} of {row["n"]}, {first_rate:.1%}; 95 percent Wilson interval {low:.1%} to {high:.1%}">'
+            f'<span class="pramaan-model-bar" style="width:{rate * 100:.3f}%"></span>'
+            f'<span class="pramaan-model-first-mark" style="left:{first_rate * 100:.3f}%"></span>'
+            f'<span class="pramaan-model-wilson" style="left:{low * 100:.3f}%;width:{(high - low) * 100:.3f}%"></span></div>'
+            f'<small>95% Wilson {low:.1%}–{high:.1%}</small></li>')
+
+    table_rows = []
+    for row in sorted(records, key=lambda item: (rank_by_key.get(item["key"], expected_tasks + 1), item["label"].casefold())):
+        n = row["n"]
+        first_pct = f"{row['first'] / n:.1%}" if n else "—"
+        within_pct = f"{row['within'] / n:.1%}" if n else "—"
+        rank = f"Tie · rank {rank_by_key[row['key']]}" if rank_by_key.get(row["key"]) is not None and sum(value == rank_by_key[row["key"]] for value in rank_by_key.values()) > 1 else (f"Rank {rank_by_key[row['key']]}" if row["key"] in rank_by_key else "Not ranked · incomplete coverage")
+        cap_note = (f' <small title="Independent evaluation spending ceiling">USD {row["cap_usd"]:g} cap</small>'
+                    if row["cap_usd"] is not None else "")
+        p1_rate = row["first"] / n if n else None
+        p3_rate = row["within"] / n if n else None
+        table_rows.append(
+            f'<tr data-leaderboard-row data-source="official" data-testid="model-report-row-{html_escape(row["key"], quote=True)}" data-model-key="{html_escape(row["key"], quote=True)}" '
+            f'data-score-pass1="{leaderboard_numeric_attr(p1_rate)}" data-score-pass3="{leaderboard_numeric_attr(p3_rate)}" '
+            f'data-coverage="{n}" data-cost="{leaderboard_numeric_attr(row["cost_number"])}">'
+            f'<td>{html_escape(rank)}</td><th scope="row">{html_escape(row["label"])}</th>'
+            f'<td>{row["first"]} / {n} <small>{first_pct}</small></td>'
+            f'<td>{row["within"]} / {n} <small>{within_pct}</small></td>'
+            f'<td>{n} of {expected_tasks} evaluated{cap_note}</td><td>{html_escape(row["cost"])}</td></tr>')
+
+    body = ("".join(table_rows) if table_rows else '<tr><td colspan="6">No model results have been published.</td></tr>')
+    chart = ("".join(chart_rows) if chart_rows else '<li role="status">No model results have been published.</li>')
+    return (
+        '<section class="pramaan-model-report" data-testid="model-report" aria-label="Canonical model results">'
+        '<h3>Model results</h3><p>Quality is measured by the deterministic geometric verifier. Provider errors are excluded from evaluated counts and scores.</p>'
+        '<section class="pramaan-model-chart" data-testid="model-report-chart" aria-label="Within-three success by model">'
+        '<h4>Verified within three proposals</h4><p>Bars show the share of evaluated tasks accepted within three proposals; the vertical mark shows first-try success and the line shows the 95% Wilson interval.</p>'
+        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: each model’s first-try and within-three counts, percentages, evaluated denominator, rank, and Wilson interval are printed next to its bar.</p></section>'
+        '<div class="pramaan-leaderboard-scroll"><table class="pramaan-model-table" data-testid="model-report-table" data-leaderboard-table>'
+        '<caption>One result row per model; missing provider answers are not scored as failures.</caption>'
+        '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Evaluated</th><th scope="col">Cost</th></tr></thead>'
+        '<tbody>' + body + '</tbody></table></div>'
+        '<p class="pramaan-model-footnote">One benchmark task has a documented unsatisfiable constraint. Rows were collected in two sittings; the task definitions and evaluation protocol stayed frozen.</p>'
+        '</section>')
+
 
 def leaderboard_numeric_attr(value) -> str:
     if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
@@ -253,7 +401,9 @@ def render_canonical_leaderboard(index: dict | None = None, *, root: Path, suite
         baseline_rows.append(f"<li>{name}: {passed_text} tasks passed ({rate_text} pass@1, full suite)</li>")
     baseline_html = ("<h4>Verifier baselines · full suite, shown for calibration</h4><ul>"
                      + "".join(baseline_rows) + "</ul>" if baseline_rows else "")
+    hero_html = _leaderboard_hero(records, common_ids, wilson_interval)
     body = ("<p>Ranks use only the intersection of completed prompt IDs. Confidence intervals are 95% Wilson intervals; partial arms stay visible without a cross-model rank.</p>"
+            + hero_html +
             '<div class="pramaan-leaderboard-scroll"><table class="pramaan-leaderboard" data-leaderboard-table><thead><tr>'
             '<th scope="col">Model</th><th scope="col">Coverage / rank</th><th scope="col">Pass@1</th>'
             '<th scope="col">Pass@3</th><th scope="col">G1–G7 pass@3</th><th scope="col">Output cleanup</th><th scope="col">Telemetry</th>'
@@ -263,3 +413,68 @@ def render_canonical_leaderboard(index: dict | None = None, *, root: Path, suite
             f'<h3>Canonical model results · {html_escape(suite_id)}</h3>'
             f'<p>Shared questions: {len(common_ids)} · suite digest {html_escape(str(suite_sha256)[:12])}…</p>'
             + body + '</section>')
+
+
+def _leaderboard_hero(records: list[dict], common_ids: list[str], wilson_interval) -> str:
+    """Render the shared-completion pass@3 chart, keeping partial arms visible and unranked."""
+    complete = [row for row in records if row.get("complete") is True and row.get("n", 0) > 0]
+    complete.sort(key=lambda row: (-row["passed3"], -row["passed1"], row["label"].casefold()))
+    rank_by_key: dict[str, int] = {}
+    tied: set[str] = set()
+    for row in complete:
+        score = (row["passed3"], row["passed1"])
+        group = [item for item in complete if (item["passed3"], item["passed1"]) == score]
+        rank_by_key[row["key"]] = min(i for i, item in enumerate(complete, 1)
+                                       if (item["passed3"], item["passed1"]) == score)
+        if len(group) > 1:
+            tied.update(item["key"] for item in group)
+
+    items = []
+    for row in complete:
+        n = row["n"]
+        successes = row["passed3"]
+        rate = successes / n
+        lo, hi = wilson_interval(successes, n)
+        low_pct, high_pct = max(0, lo * 100), min(100, hi * 100)
+        if len(complete) < 2:
+            rank = "Baseline · no other complete arm"
+        elif row["key"] in tied:
+            rank = f"Tie · rank {rank_by_key[row['key']]}"
+        else:
+            rank = f"Rank {rank_by_key[row['key']]}"
+        label = html_escape(row["label"], quote=True)
+        items.append(
+            f'<li data-testid="leaderboard-hero-{html_escape(row["key"], quote=True)}" '
+            f'data-model-key="{html_escape(row["key"], quote=True)}" data-coverage="{n}/{len(common_ids)}">'
+            f'<div class="pramaan-leaderboard-hero-label"><strong>{label}</strong>'
+            f'<span>{rank} · {successes}/{n} on shared questions · Pass@3 {rate:.1%}</span></div>'
+            '<div class="pramaan-leaderboard-hero-track" role="img" '
+            f'aria-label="{label}: pass at three {successes} of {n}, {rate:.1%}; 95 percent Wilson interval {lo:.1%} to {hi:.1%}">'
+            f'<span class="pramaan-leaderboard-hero-bar" style="width:{rate * 100:.3f}%"></span>'
+            f'<span class="pramaan-leaderboard-hero-interval" style="left:{low_pct:.3f}%;width:{high_pct - low_pct:.3f}%"></span>'
+            f'</div><small>95% Wilson interval {lo:.1%}–{hi:.1%}</small></li>'
+        )
+    for row in records:
+        if row.get("complete") is True:
+            continue
+        if row.get("n", 0) <= 0:
+            continue
+        label = html_escape(row["label"], quote=True)
+        items.append(
+            f'<li class="is-partial" data-testid="leaderboard-hero-{html_escape(row["key"], quote=True)}" '
+            f'data-model-key="{html_escape(row["key"], quote=True)}" data-coverage="{row["n"]}/{len(common_ids)}">'
+            f'<div class="pramaan-leaderboard-hero-label"><strong>{label}</strong>'
+            f'<span>Partial coverage {row["n"]}/{len(common_ids)}; not ranked until shared coverage is complete</span></div>'
+            '</li>'
+        )
+    if not items:
+        content = '<p role="status">No completed model results yet. Arms appear here as results land.</p>'
+    else:
+        content = '<ol class="pramaan-leaderboard-hero-list">' + ''.join(items) + '</ol>'
+    return ('<section class="pramaan-leaderboard-hero" data-testid="leaderboard-hero" '
+            'aria-label="Pass at three on shared completed questions">'
+            '<h4>Pass@3 on shared questions</h4>'
+            f'<p>Each bar compares the same {len(common_ids)} completed questions. Lines show 95% Wilson intervals. '
+            'Partial arms remain visible but are not ranked.</p>' + content +
+            '<p class="pramaan-leaderboard-hero-text-alt">Text alternative: the model, pass count, rate, coverage, '
+            'rank or tie, and confidence interval are printed beside each bar.</p></section>')

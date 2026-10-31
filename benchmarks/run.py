@@ -38,6 +38,15 @@ MODEL_SPEND_CAP_USD = 10.0
 DEFAULT_INPUT_TOKEN_OVERHEAD = 256
 
 
+def output_token_limit(request_params):
+    """Return the single configured output cap across provider API field names."""
+    values = [request_params[key] for key in ("max_tokens", "max_completion_tokens")
+              if key in request_params]
+    if len(values) != 1 or type(values[0]) is not int or values[0] < 1:
+        raise ValueError("request parameters must set exactly one positive output token limit")
+    return values[0]
+
+
 class BudgetExceeded(BaseException):
     """Stop a model before spending beyond its cap; do not persist a partial prompt pair."""
 
@@ -67,7 +76,7 @@ def preflight_cost(models, *, prompts, attempts_per_prompt, max_input_bytes,
         raise ValueError("preflight counts and caps must be non-negative integers")
     calls = prompts * attempts_per_prompt
     input_bound = max_input_bytes + input_token_overhead
-    totals = {"anthropic": 0.0, "cometapi": 0.0}
+    totals = {"anthropic": 0.0, "cometapi": 0.0, "openai": 0.0}
     model_totals = {}
     for model in models:
         amount = calls * (input_bound * model.input_per_million
@@ -86,6 +95,7 @@ def preflight_cost(models, *, prompts, attempts_per_prompt, max_input_bytes,
         "model_usd": model_totals,
         "anthropic_usd": round(totals["anthropic"], 8),
         "cometapi_usd": round(totals["cometapi"], 8),
+        "openai_usd": round(totals["openai"], 8),
         "model_cap_usd": model_caps,
         "model_fits": model_fits,
         "anthropic_fits": all(model_fits[item.key] for item in models if item.provider == "anthropic"),
@@ -161,13 +171,30 @@ class CostLedger:
                     "provider": event.get("provider"),
                     "model_key": event.get("model_key", event.get("provider")),
                     "amount": event.get("amount_usd"),
+                    "state": "pending",
                 }
-            elif event.get("event") == "settle" and rid in reservations:
+            elif event.get("event") in {"settle", "release"} and rid in reservations:
+                reservation = reservations[rid]
                 if event.get("provider") != reservations[rid]["provider"]:
                     raise RuntimeError("spend ledger provider changed during settlement")
                 if event.get("model_key", reservations[rid]["model_key"]) != reservations[rid]["model_key"]:
                     raise RuntimeError("spend ledger model changed during settlement")
-                reservations[rid].update(amount=event.get("amount_usd"), settled=True)
+                if reservation["state"] != "pending":
+                    raise RuntimeError("spend ledger reservation has multiple terminal events")
+                if event.get("event") == "settle":
+                    reservation.update(amount=event.get("amount_usd"), state="settled")
+                else:
+                    evidence = event.get("evidence")
+                    if (not isinstance(event.get("reason"), str) or not event["reason"]
+                            or not isinstance(evidence, dict)
+                            or not isinstance(evidence.get("elapsed_ms"), int)
+                            or isinstance(evidence.get("elapsed_ms"), bool)
+                            or not 0 <= evidence["elapsed_ms"] < 50
+                            or evidence.get("usage_reported") is not False
+                            or evidence.get("provider_error") is not True
+                            or event.get("released_amount_usd") != reservation["amount"]):
+                        raise RuntimeError("spend ledger release is missing valid evidence")
+                    reservation.update(amount=0.0, state="released")
             else:
                 raise RuntimeError("spend ledger contains an invalid event")
         totals = {}
@@ -200,15 +227,16 @@ class CostLedger:
     def committed_by_scope_usd(self, provider):
         with _ledger_lock(self.path):
             events = self._events()
-            settles = {event["reservation_id"]: event for event in events if event.get("event") == "settle"}
+            terminals = {event["reservation_id"]: event for event in events
+                         if event.get("event") in {"settle", "release"}}
             result = {}
             for reserve in events:
                 if reserve.get("event") != "reserve" or reserve.get("provider") != provider:
                     continue
                 model_key = reserve.get("model_key", provider)
                 scope = reserve.get("scope", "current-scope")
-                settle = settles.get(reserve["reservation_id"])
-                amount = float(settle["amount_usd"] if settle else reserve["amount_usd"])
+                terminal = terminals.get(reserve["reservation_id"])
+                amount = float(terminal.get("amount_usd", 0.0) if terminal else reserve["amount_usd"])
                 result.setdefault(scope, {})[model_key] = result.setdefault(scope, {}).get(model_key, 0.0) + amount
             return result
 
@@ -232,6 +260,35 @@ class CostLedger:
                 event["scope"] = scope
             self._append(event)
 
+    def release(self, reservation_id, *, provider, model_key=None, reason, evidence):
+        """Release a reservation only with explicit evidence the call never reached a provider."""
+        if (not isinstance(provider, str) or not provider or not isinstance(reason, str) or not reason
+                or not isinstance(evidence, dict) or evidence.get("usage_reported") is not False
+                or evidence.get("provider_error") is not True
+                or not isinstance(evidence.get("elapsed_ms"), int)
+                or isinstance(evidence.get("elapsed_ms"), bool)
+                or not 0 <= evidence["elapsed_ms"] < 50):
+            raise ValueError("release requires a failed provider call under 50 ms with no usage")
+        with _ledger_lock(self.path):
+            events = self._events()
+            self._totals(events)
+            reserve = next((item for item in events
+                            if item.get("event") == "reserve" and item.get("reservation_id") == reservation_id), None)
+            if not reserve or reserve.get("provider") != provider:
+                raise ValueError("cannot release an unknown reservation")
+            if model_key is not None and reserve.get("model_key", provider) != model_key:
+                raise ValueError("cannot release a reservation for another model")
+            if any(item.get("reservation_id") == reservation_id and item.get("event") in {"settle", "release"}
+                   for item in events):
+                raise ValueError("cannot release a completed reservation")
+            event = {"event": "release", "reservation_id": reservation_id,
+                     "provider": provider, "model_key": model_key or reserve.get("model_key", provider),
+                     "released_amount_usd": reserve["amount_usd"], "reason": reason,
+                     "evidence": evidence}
+            if reserve.get("scope"):
+                event["scope"] = reserve["scope"]
+            self._append(event)
+
     def reconcile(self, reservation_id, *, provider, actual_usd, estimated_usd, usage_reported,
                   model_key=None, scope=None):
         if not usage_reported and actual_usd is None:
@@ -242,9 +299,11 @@ class CostLedger:
                 reserve = reserves.get(reservation_id)
                 if not reserve or reserve.get("provider") != provider:
                     raise ValueError("cannot reconcile unknown reservation")
-                existing = next((event for event in events if event.get("event") == "settle"
+                existing = next((event for event in events if event.get("event") in {"settle", "release"}
                                  and event.get("reservation_id") == reservation_id), None)
                 if existing:
+                    if existing.get("event") == "release":
+                        raise ValueError("cannot settle a released reservation")
                     return float(existing["amount_usd"])
                 amount = float(reserve["amount_usd"])
                 event = {"event": "settle", "reservation_id": reservation_id,
@@ -262,7 +321,12 @@ class CostLedger:
         with _ledger_lock(self.path):
             events = self._events()
             reserves = {event["reservation_id"]: event for event in events if event.get("event") == "reserve"}
-            if any(event.get("event") == "settle" and event.get("reservation_id") == reservation_id for event in events):
+            existing = next((event for event in events
+                             if event.get("event") in {"settle", "release"}
+                             and event.get("reservation_id") == reservation_id), None)
+            if existing:
+                if existing.get("event") == "release":
+                    raise ValueError("cannot settle a released reservation")
                 return settled
             reserve = reserves.get(reservation_id)
             if not reserve or reserve.get("provider") != provider:
@@ -285,6 +349,8 @@ class CostLedger:
                     if event.get("event") == "reserve" and event.get("provider") == source_provider}
         settles = {event["reservation_id"]: event for event in events
                    if event.get("event") == "settle" and event.get("provider") == source_provider}
+        releases = {event["reservation_id"]: event for event in events
+                    if event.get("event") == "release" and event.get("provider") == source_provider}
         for reservation_id, event in reserves.items():
             imported_id = f"prior:{model_key}:{reservation_id}"
             self.reserve(imported_id, provider=budget_key, model_key=model_key,
@@ -297,6 +363,10 @@ class CostLedger:
                     estimated_usd=settlement.get("estimated_usd"),
                     usage_reported=bool(settlement.get("usage_reported")),
                 )
+            elif reservation_id in releases:
+                release = releases[reservation_id]
+                self.release(imported_id, provider=budget_key, model_key=model_key,
+                             reason=release["reason"], evidence=release["evidence"])
         return len(reserves)
 
 class GuardedCompletionClient:
@@ -308,22 +378,47 @@ class GuardedCompletionClient:
         self.max_input_bytes, self.input_token_overhead = max_input_bytes, input_token_overhead
         self.max_output_tokens = max_output_tokens
 
-    def can_reserve_complete_question(self, max_attempts=3):
-        max_request = ((self.max_input_bytes + self.input_token_overhead)
-                       * self.model_price.input_per_million
-                       + self.max_output_tokens * self.model_price.output_per_million) / 1_000_000
-        return self.ledger.available_usd(self.budget_key) + 1e-12 >= max_attempts * max_request
-
-    def complete(self, system, prompt):
+    def _request_reservation(self, system, prompt):
         input_bytes = len(system.encode("utf-8")) + len(prompt.encode("utf-8"))
         if input_bytes > self.max_input_bytes:
             raise BudgetExceeded(f"request needs {input_bytes} UTF-8 bytes; cap is {self.max_input_bytes}")
         input_bound = input_bytes + self.input_token_overhead
         reserve = (input_bound * self.model_price.input_per_million
                    + self.max_output_tokens * self.model_price.output_per_million) / 1_000_000
+        return input_bytes, input_bound, reserve
+
+    def can_reserve_complete_question(self, system, prompt, max_attempts=3):
+        if type(max_attempts) is not int or max_attempts < 1:
+            raise ValueError("max_attempts must be a positive integer")
+        _input_bytes, _input_bound, request_reserve = self._request_reservation(system, prompt)
+        return self.ledger.available_usd(self.budget_key) + 1e-12 >= max_attempts * request_reserve
+
+    def complete(self, system, prompt):
+        input_bytes, input_bound, reserve = self._request_reservation(system, prompt)
         rid = str(uuid.uuid4())
         self.ledger.reserve(rid, provider=self.budget_key, model_key=self.model_key, amount_usd=reserve)
-        content, metadata = self.client.complete(system, prompt)
+        call_started = time.perf_counter()
+        try:
+            content, metadata = self.client.complete(system, prompt)
+        except Exception as exc:
+            elapsed = getattr(exc, "provider_elapsed_ms", None)
+            if not isinstance(elapsed, int) or isinstance(elapsed, bool) or elapsed < 0:
+                elapsed = round((time.perf_counter() - call_started) * 1000)
+            usage_reported = bool(getattr(exc, "usage_reported", False))
+            if elapsed < 50 and not usage_reported:
+                evidence = {
+                    "elapsed_ms": elapsed,
+                    "usage_reported": False,
+                    "provider_error": True,
+                    "provider_error_type": getattr(exc, "provider_error_type", type(exc).__name__),
+                    "status_code": getattr(exc, "status_code", None),
+                }
+                self.ledger.release(
+                    rid, provider=self.budget_key, model_key=self.model_key,
+                    reason="provider_call_failed_before_send", evidence=evidence)
+                exc.budget_guard = {"reservation_id": rid, "released": True,
+                                    "released_amount_usd": reserve, "elapsed_ms": elapsed}
+            raise
         metadata = dict(metadata or {})
         usage = metadata.get("usage") if isinstance(metadata.get("usage"), dict) else {}
         reported = usage.get("cost_usd", metadata.get("cost_usd"))
@@ -441,20 +536,28 @@ class CometOpenAICompatibleClient:
         from openai import OpenAI
         self.model_id, self.provider = model_id, provider
         self.request_params, self.pricing = dict(request_params), pricing
-        self.client = OpenAI(base_url=base_url, api_key=token, timeout=timeout, max_retries=0)
+        self._openai_client_factory = OpenAI
+        self._client_kwargs = {"base_url": base_url, "api_key": token,
+                               "timeout": timeout, "max_retries": 0}
         self.call_budget = ModelCallBudget(daily_limit)
 
     def complete(self, system, prompt):
         self.call_budget.reserve()
         started = time.perf_counter()
+        client = self._openai_client_factory(**self._client_kwargs)
         try:
-            response = self.client.chat.completions.create(
+            response = client.chat.completions.create(
                 model=self.model_id, messages=[{"role": "system", "content": system},
                                                {"role": "user", "content": prompt}], **self.request_params)
         except Exception as exc:
             exc.provider_attempts = 1
             exc.provider_elapsed_ms = round((time.perf_counter() - started) * 1000)
+            exc.provider_error_type = type(exc).__name__
             raise
+        finally:
+            close = getattr(client, "close", None)
+            if callable(close):
+                close()
         elapsed = round((time.perf_counter() - started) * 1000)
         choice = response.choices[0]
         usage = response.usage.model_dump() if response.usage else {}
@@ -473,7 +576,7 @@ PAID_MODELS = [
      "budget_group": "claude-haiku-5-5",
      "api_style": "anthropic-messages", "model_id": "claude-haiku-5-5", "base_url": "https://api.anthropic.com",
      "api_key_env": "ANTHROPIC_API_KEY", "request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
-     "budget": {"cap_usd": 10.0, "max_input_bytes": 16000, "input_token_overhead": 256},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
      "pricing": {"currency": "USD", "per_million_tokens": {"input": .1, "output": .5},
                  "source": "Anthropic first-party standard pricing; prompt <=100k tokens",
                  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-10-29"}},
@@ -481,7 +584,7 @@ PAID_MODELS = [
      "budget_group": "claude-sonnet-5-5",
      "api_style": "anthropic-messages", "model_id": "claude-sonnet-5-5", "base_url": "https://api.anthropic.com",
      "api_key_env": "ANTHROPIC_API_KEY", "request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
-     "budget": {"cap_usd": 10.0, "max_input_bytes": 16000, "input_token_overhead": 256},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
      "pricing": {"currency": "USD", "per_million_tokens": {"input": 2., "output": 10.},
                  "source": "Anthropic first-party standard pricing",
                  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-10-29"}},
@@ -489,7 +592,7 @@ PAID_MODELS = [
      "budget_group": "claude-opus-5-5",
      "api_style": "anthropic-messages", "model_id": "claude-opus-5-5", "base_url": "https://api.anthropic.com",
      "api_key_env": "ANTHROPIC_API_KEY", "request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
-     "budget": {"cap_usd": 10.0, "max_input_bytes": 16000, "input_token_overhead": 256},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
      "pricing": {"currency": "USD", "per_million_tokens": {"input": 4., "output": 20.},
                  "source": "Anthropic first-party standard pricing",
                  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-10-29"}},
@@ -497,7 +600,7 @@ PAID_MODELS = [
      "budget_group": "claude-fable-5-1",
      "api_style": "anthropic-messages", "model_id": "claude-fable-5-1", "base_url": "https://api.anthropic.com",
      "api_key_env": "ANTHROPIC_API_KEY", "request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
-     "budget": {"cap_usd": 10.0, "max_input_bytes": 16000, "input_token_overhead": 256},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
      "pricing": {"currency": "USD", "per_million_tokens": {"input": 10., "output": 50.},
                  "source": "Anthropic first-party standard pricing",
                  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-10-29"}},
@@ -507,10 +610,42 @@ PAID_MODELS = [
      "base_url": "https://api.cometapi.com/v1", "api_key_env": "COMETAPI_KEY",
      "request_params": {"temperature": .4, "max_tokens": 4096,
                         "extra_body": {"thinking": {"type": "disabled"}}},
-     "budget": {"cap_usd": 10.0, "max_input_bytes": 16000, "input_token_overhead": 256},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
      "pricing": {"currency": "USD", "per_million_tokens": {"input": .24, "output": .96},
                  "source": "CometAPI public base rate doubled for weekday peak windows; account card unconfirmed",
                  "source_url": "https://www.cometapi.com/models/deepseek/deepseek-v4-1-flash/", "observed_at": "2026-10-29"}},
+    {"key": "gpt-6.1-sol", "provider": "OpenAI", "budget_provider": "openai", "budget_group": "gpt-6.1-sol",
+     "api_style": "openai-compatible-chat-completions", "model_id": "gpt-6.1-sol",
+     "base_url": "https://api.openai.com/v1", "api_key_env": "OPENAI_API_KEY",
+     "request_params": {"reasoning_effort": "low", "max_completion_tokens": 4096},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
+     "pricing": {"currency": "USD", "per_million_tokens": {"input": 2.0, "cached_input": 0.10, "output": 10.0},
+                 "source": "OpenAI standard API pricing, short context; cached credit ignored in cap guard",
+                 "source_url": "https://developers.openai.com/api/docs/pricing", "observed_at": "2026-10-31"}},
+    {"key": "gpt-6.1-terra", "provider": "OpenAI", "budget_provider": "openai", "budget_group": "gpt-6.1-terra",
+     "api_style": "openai-compatible-chat-completions", "model_id": "gpt-6.1-terra",
+     "base_url": "https://api.openai.com/v1", "api_key_env": "OPENAI_API_KEY",
+     "request_params": {"reasoning_effort": "none", "max_completion_tokens": 4096},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
+     "pricing": {"currency": "USD", "per_million_tokens": {"input": 1.0, "cached_input": 0.05, "output": 5.0},
+                 "source": "OpenAI standard API pricing, short context; cached credit ignored in cap guard",
+                 "source_url": "https://developers.openai.com/api/docs/pricing", "observed_at": "2026-10-31"}},
+    {"key": "gpt-6-luna", "provider": "OpenAI", "budget_provider": "openai", "budget_group": "gpt-6-luna",
+     "api_style": "openai-compatible-chat-completions", "model_id": "gpt-6-luna",
+     "base_url": "https://api.openai.com/v1", "api_key_env": "OPENAI_API_KEY",
+     "request_params": {"reasoning_effort": "none", "max_completion_tokens": 4096},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
+     "pricing": {"currency": "USD", "per_million_tokens": {"input": 0.10, "cached_input": 0.01, "output": 0.50},
+                 "source": "OpenAI standard API pricing, short context; cached credit ignored in cap guard",
+                 "source_url": "https://developers.openai.com/api/docs/pricing", "observed_at": "2026-10-31"}},
+    {"key": "gpt-6-astra", "provider": "OpenAI", "budget_provider": "openai", "budget_group": "gpt-6-astra",
+     "api_style": "openai-compatible-chat-completions", "model_id": "gpt-6-astra",
+     "base_url": "https://api.openai.com/v1", "api_key_env": "OPENAI_API_KEY",
+     "request_params": {"reasoning_effort": "low", "max_completion_tokens": 4096},
+     "budget": {"cap_usd": 10.0, "max_input_bytes": 100000, "input_token_overhead": 256},
+     "pricing": {"currency": "USD", "per_million_tokens": {"input": 10.0, "cached_input": 1.0, "output": 50.0},
+                 "source": "OpenAI standard API pricing, short context; cached credit ignored in cap guard",
+                 "source_url": "https://developers.openai.com/api/docs/pricing", "observed_at": "2026-10-31"}},
 ]
 
 
@@ -545,7 +680,7 @@ def load_model_registry(path, *, include_paid=False):
             raise ValueError(f"Anthropic Messages does not accept temperature for {key}")
         pricing = entry.get("pricing")
         budget_provider = entry.get("budget_provider")
-        if budget_provider is not None and budget_provider not in {"anthropic", "cometapi"}:
+        if budget_provider is not None and budget_provider not in {"anthropic", "cometapi", "openai"}:
             raise ValueError(f"budget_provider is unsupported for {key}")
         budget = entry.get("budget")
         if budget_provider is not None:
@@ -558,8 +693,12 @@ def load_model_registry(path, *, include_paid=False):
                     or isinstance(budget["cap_usd"], bool) or budget["cap_usd"] <= 0
                     or budget["cap_usd"] > MODEL_SPEND_CAP_USD):
                 raise ValueError(f"budget settings are invalid for {key}")
-            if pricing is None or entry["request_params"].get("max_tokens") != 4096:
-                raise ValueError(f"guarded model {key} needs pricing and max_tokens=4096")
+            try:
+                output_limit = output_token_limit(entry["request_params"])
+            except ValueError as exc:
+                raise ValueError(f"guarded model {key} needs one 4096-token output cap") from exc
+            if pricing is None or output_limit != 4096:
+                raise ValueError(f"guarded model {key} needs pricing and an output cap of 4096")
         if pricing is not None:
             if (not isinstance(pricing, dict) or not isinstance(pricing.get("currency"), str)
                     or not isinstance(pricing.get("source"), str) or not isinstance(pricing.get("observed_at"), str)
@@ -607,16 +746,17 @@ class SecretRedactingClient:
             message = str(exc)
             if self.secret:
                 message = message.replace(self.secret, "[REDACTED]")
-            safe = RuntimeError(message[:1000])
-            safe.provider_error_type = type(exc).__name__
+            safe = RuntimeError(message[:300])
+            safe.provider_error_type = getattr(exc, "provider_error_type", type(exc).__name__)
             for name in ("provider_attempts", "provider_elapsed_ms"):
                 if hasattr(exc, name):
                     setattr(safe, name, getattr(exc, name))
-            for source_name, safe_name in (("status_code", "http_status_code"),
-                                           ("request_id", "request_id")):
-                value = getattr(exc, source_name, None)
+            for name in ("status_code", "request_id", "usage_reported", "category"):
+                value = getattr(exc, name, None)
                 if isinstance(value, (str, int)) and not isinstance(value, bool):
-                    setattr(safe, safe_name, value)
+                    setattr(safe, name, value)
+                    if name == "status_code":
+                        safe.http_status_code = value
             raise safe from None
 
 
@@ -667,7 +807,7 @@ def make_client(model_config, ledger: CostLedger | None = None, *, api_key=None)
             ),
             max_input_bytes=budget["max_input_bytes"],
             input_token_overhead=budget.get("input_token_overhead", DEFAULT_INPUT_TOKEN_OVERHEAD),
-            max_output_tokens=model_config["request_params"]["max_tokens"],
+            max_output_tokens=output_token_limit(model_config["request_params"]),
             budget_key=budget_key,
         )
     return client
@@ -698,6 +838,50 @@ def paid_run_freeze(model_configs, suite_sha256):
     }
 
 
+def _input_guard_limits(freeze: dict) -> dict[str, int]:
+    models = freeze.get("models") if isinstance(freeze, dict) else None
+    if not isinstance(models, dict):
+        return {}
+    return {key: config["budget"]["max_input_bytes"]
+            for key, config in models.items()
+            if isinstance(config, dict) and isinstance(config.get("budget"), dict)
+            and type(config["budget"].get("max_input_bytes")) is int
+            and config["budget"]["max_input_bytes"] > 0}
+
+
+def _compatible_input_guard_increase(previous: dict, current: dict) -> dict[str, int] | None:
+    """Allow only a non-decreasing input-safety ceiling change during resume."""
+    try:
+        old = json.loads(json.dumps(previous))
+        new = json.loads(json.dumps(current))
+    except (TypeError, ValueError):
+        return None
+    old_models, new_models = old.get("models"), new.get("models")
+    if not isinstance(old_models, dict) or not isinstance(new_models, dict) or old_models.keys() != new_models.keys():
+        return None
+    limits = {}
+    for key in old_models:
+        old_budget = old_models[key].get("budget") if isinstance(old_models[key], dict) else None
+        new_budget = new_models[key].get("budget") if isinstance(new_models[key], dict) else None
+        old_limit = old_budget.get("max_input_bytes") if isinstance(old_budget, dict) else None
+        new_limit = new_budget.get("max_input_bytes") if isinstance(new_budget, dict) else None
+        if type(old_limit) is not int or type(new_limit) is not int or new_limit < old_limit:
+            return None
+        limits[key] = new_limit
+        new_budget["max_input_bytes"] = old_limit
+    return limits if new == old and any(
+        limits[key] > _input_guard_limits(previous).get(key, 0) for key in limits) else None
+
+
+def _write_paid_manifest(path: Path, manifest: dict) -> None:
+    temporary = path.with_name(path.name + ".tmp")
+    with temporary.open("w", encoding="utf-8", newline="\n") as target:
+        target.write(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        target.flush()
+        os.fsync(target.fileno())
+    os.replace(temporary, path)
+
+
 def save_or_validate_paid_freeze(path: Path, freeze: dict, preflight: dict, *, resume: bool) -> str:
     """Durably save settings before the first paid call and require them on resume."""
     if resume:
@@ -705,11 +889,32 @@ def save_or_validate_paid_freeze(path: Path, freeze: dict, preflight: dict, *, r
             previous = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise ValueError("paid --resume requires its saved preflight freeze manifest") from exc
-        if previous.get("freeze") != freeze:
+        original_freeze = previous.get("freeze")
+        if not isinstance(original_freeze, dict):
             raise ValueError("paid resume settings differ from the saved preflight freeze")
-        freeze_hash = hashlib.sha256(json.dumps(freeze, sort_keys=True).encode("utf-8")).hexdigest()
+        freeze_hash = hashlib.sha256(json.dumps(original_freeze, sort_keys=True).encode("utf-8")).hexdigest()
         if previous.get("freeze_sha256") != freeze_hash:
             raise ValueError("saved preflight freeze manifest failed its SHA-256 check")
+        if original_freeze != freeze:
+            new_limits = _compatible_input_guard_increase(original_freeze, freeze)
+            if new_limits is None:
+                raise ValueError("paid resume settings differ from the saved preflight freeze")
+            old_limits = previous.get("effective_input_guard_bytes_by_model") or _input_guard_limits(original_freeze)
+            if any(new_limits.get(key, 0) < old_limits.get(key, 0) for key in new_limits):
+                raise ValueError("paid resume cannot reduce the effective input safety ceiling")
+            if new_limits != old_limits:
+                previous.setdefault("input_guard_updates", []).append({
+                    "from_bytes_by_model": old_limits,
+                    "to_bytes_by_model": new_limits,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                    "reason": "safety ceiling increase only; request text and model settings are unchanged",
+                })
+                previous["effective_input_guard_bytes_by_model"] = new_limits
+                previous.setdefault("resume_preflights", []).append({
+                    "input_guard_bytes_by_model": new_limits, "preflight": preflight,
+                    "recorded_at": datetime.now(timezone.utc).isoformat(),
+                })
+                _write_paid_manifest(path, previous)
         return freeze_hash
     if path.exists():
         raise ValueError(f"refusing to overwrite paid-run freeze manifest: {path}")
@@ -718,6 +923,8 @@ def save_or_validate_paid_freeze(path: Path, freeze: dict, preflight: dict, *, r
         "freeze": freeze,
         "freeze_sha256": freeze_hash,
         "prepared_at": datetime.now(timezone.utc).isoformat(),
+        "effective_input_guard_bytes_by_model": _input_guard_limits(freeze),
+        "input_guard_updates": [],
         "preflight": preflight,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -744,7 +951,7 @@ def preflight_selected_models(model_configs, prompt_counts, ledger: CostLedger):
         budget = config.get("budget")
         if not budget:
             continue
-        output_limit = config["request_params"].get("max_tokens")
+        output_limit = output_token_limit(config["request_params"])
         if output_limit != 4096:
             raise ValueError(f"{key} must keep the frozen 4096-token output limit")
         count = prompt_counts.get(key, 0)
@@ -804,7 +1011,7 @@ def preflight_selected_models(model_configs, prompt_counts, ledger: CostLedger):
         })
     model_fits = {key: bool(groups[group_key]["fits"])
                   for key, group_key in model_budget_groups.items()}
-    providers = {"anthropic", "cometapi"}
+    providers = {"anthropic", "cometapi", "openai"}
     provider_groups = {provider: [key for key, group in groups.items()
                                   if group["provider"] == provider]
                        for provider in providers}
@@ -820,14 +1027,17 @@ def preflight_selected_models(model_configs, prompt_counts, ledger: CostLedger):
         "model_usd": {key: round(value, 8) for key, value in by_model.items()},
         "anthropic_future_usd": future_totals["anthropic"],
         "cometapi_future_usd": future_totals["cometapi"],
+        "openai_future_usd": future_totals["openai"],
         "model_committed_usd": {key: round(value, 8) for key, value in committed_by_model.items()},
         "model_cap_usd": model_caps,
         "model_fits_full_suite": model_fits,
         "model_fits_standalone": standalone_model_fits,
         "anthropic_committed_usd": committed_totals["anthropic"],
         "cometapi_committed_usd": committed_totals["cometapi"],
+        "openai_committed_usd": committed_totals["openai"],
         "anthropic_fits": fits["anthropic"],
         "cometapi_fits": fits["cometapi"],
+        "openai_fits": fits["openai"],
         "budget_groups": groups,
         "assumptions": assumptions,
         "cost_source": "conservative published rate-card preflight; one UTF-8 byte counts as one input token; cache credits ignored",
@@ -852,6 +1062,23 @@ def bound_parse_errors(result):
         for check in attempt.get("report", {}).get("checks", []):
             if check.get("id") == "candidate_parse" and isinstance(check.get("message"), str):
                 check["message"] = check["message"][:1000]
+
+
+def initial_request_for_prompt(prompt):
+    """Rebuild the exact first provider request used for this task's task-start budget check."""
+    from pramaan.dsl import Constraints
+    from pramaan.prompts import SYSTEM_PROMPT, design_prompt, design_prompt_for_task, system_prompt_for_task
+
+    if prompt.get("grammar") and prompt.get("suite_id"):
+        from pramaan.tasks import Task
+        task = Task.model_validate(prompt)
+        return system_prompt_for_task(task), design_prompt_for_task(task)
+    palette = prompt.get("palette", PALETTE)
+    profile = Constraints(symmetry=prompt.get("symmetry", "D4"), max_colours=4, max_primitives=100,
+                          min_gap=0, min_coverage=0.02, max_coverage=0.70,
+                          exclusive_layer_pairs=[])
+    profile_json = {**profile.model_dump(mode="json"), "exclusive_ink_layers": False}
+    return SYSTEM_PROMPT, design_prompt(prompt["brief"], palette, profile_json)
 
 
 def run_prompt(prompt, client=None, suite_sha256=None, model_config=None, via_env=False):
@@ -1210,7 +1437,8 @@ def run_community_evaluation(model_key: str, api_key: str, *, task_limit: int = 
                             caps={model_key: MODEL_SPEND_CAP_USD})
         client = _make_litellm_community_client(config, api_key=api_key, ledger=ledger)
         for prompt in prompts:
-            if not client.can_reserve_complete_question():
+            system, first_prompt = initial_request_for_prompt(prompt)
+            if not client.can_reserve_complete_question(system, first_prompt):
                 break
             try:
                 row = run_prompt(prompt, client=client, suite_sha256=suite_sha256,
@@ -1230,9 +1458,10 @@ def run_community_evaluation(model_key: str, api_key: str, *, task_limit: int = 
 
 
 def load_resume_pairs(path, model_configs, prompt_ids, suite_sha256):
-    """Validate existing rows before an explicit append-only resume."""
+    """Validate saved rows; provider-error rows are not completed evaluations."""
     expected = {(key, prompt_id): config for key, config in model_configs.items() for prompt_id in prompt_ids}
     completed = set()
+    seen_success = set()
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
         for line_number, line in enumerate(lines, 1):
@@ -1243,8 +1472,6 @@ def load_resume_pairs(path, model_configs, prompt_ids, suite_sha256):
             config = expected.get(pair)
             if config is None:
                 raise ValueError(f"resume row {line_number} is outside the selected model/prompt set")
-            if pair in completed:
-                raise ValueError(f"resume file has duplicate model/prompt row: {pair[0]}/{pair[1]}")
             expected_fields = {
                 "benchmark_version": BENCHMARK_VERSION,
                 "validator_version": VALIDATOR_VERSION,
@@ -1258,10 +1485,101 @@ def load_resume_pairs(path, model_configs, prompt_ids, suite_sha256):
                 raise ValueError(f"resume row {line_number} has a mismatched benchmark or model configuration")
             if "pricing" in row and row.get("pricing") != config.get("pricing"):
                 raise ValueError(f"resume row {line_number} has a mismatched pricing rate card")
-            completed.add(pair)
+            if not row.get("provider_error"):
+                if pair in seen_success:
+                    raise ValueError(f"resume file has duplicate successful model/prompt row: {pair[0]}/{pair[1]}")
+                seen_success.add(pair)
+                completed.add(pair)
     except json.JSONDecodeError as exc:
         raise ValueError(f"resume file contains invalid JSON: {exc}") from exc
     return completed
+
+
+def release_fast_failed_call_reservations(results_path, ledger, model_configs):
+    """Release only unmatched reservations proven by a sub-50 ms, no-usage failure row."""
+    rows = [json.loads(line) for line in Path(results_path).read_text(encoding="utf-8").splitlines() if line.strip()]
+    events = ledger._events()
+    terminals = {event.get("reservation_id") for event in events
+                 if event.get("event") in {"settle", "release"}}
+    released_rows = {
+        (event.get("model_key"), (event.get("evidence") or {}).get("prompt_id"),
+         (event.get("evidence") or {}).get("result_created_at"))
+        for event in events if event.get("event") == "release"
+    }
+    released_count = 0
+    for model_key, config in model_configs.items():
+        budget_key = config.get("budget_group", model_key)
+        failed_rows = []
+        for row in rows:
+            if row.get("model_key") != model_key or not row.get("provider_error"):
+                continue
+            if (model_key, row.get("prompt_id"), row.get("created_at")) in released_rows:
+                continue
+            row_errors = [call for call in row.get("model_calls", []) if call.get("error")]
+            already_released = (len(row_errors) == 1
+                                and (row_errors[0]["error"].get("budget_guard") or {}).get("released") is True)
+            if not already_released:
+                failed_rows.append(row)
+        pending = [event for event in events if event.get("event") == "reserve"
+                   and event.get("reservation_id") not in terminals
+                   and event.get("provider") == budget_key
+                   and event.get("model_key", budget_key) == model_key]
+        if len(pending) < len(failed_rows):
+            raise ValueError(f"cannot safely match {len(pending)} pending reservations to "
+                             f"{len(failed_rows)} provider-error rows for {model_key}")
+        # An interrupted run can reserve a request and die before flushing its result row.
+        # Keep such extra reservations pending; only pair the ordered prefix with known rows.
+        for row, reservation in zip(failed_rows, pending):
+            failed_calls = [call for call in row.get("model_calls", []) if call.get("error")]
+            if len(failed_calls) != 1:
+                raise ValueError(f"provider-error row {model_key}/{row.get('prompt_id')} "
+                                 "does not identify exactly one failed call")
+            call = failed_calls[0]
+            telemetry = call.get("telemetry") or {}
+            elapsed = row.get("elapsed_ms")
+            usage = telemetry.get("token_usage") or {}
+            usage_reported = any(isinstance(usage.get(field), int) and not isinstance(usage.get(field), bool)
+                                 for field in ("prompt_tokens", "completion_tokens", "total_tokens"))
+            if not isinstance(elapsed, int) or isinstance(elapsed, bool) or elapsed >= 50 or usage_reported:
+                continue
+            error = row.get("provider_error") or {}
+            evidence = {
+                "result_file": Path(results_path).name,
+                "prompt_id": row.get("prompt_id"),
+                "result_created_at": row.get("created_at"),
+                "phase": error.get("phase"),
+                "elapsed_ms": elapsed,
+                "usage_reported": False,
+                "provider_error": True,
+                "provider_error_type": error.get("type"),
+                "status_code": error.get("status_code"),
+            }
+            ledger.release(
+                reservation.get("reservation_id"), provider=budget_key, model_key=model_key,
+                reason="provider_call_failed_before_send", evidence=evidence)
+            released_count += 1
+    return released_count
+
+
+def validate_paid_eval_suite(prompts: list[dict]) -> str | None:
+    """Recognize only the frozen common47 set or its exact ordered delta25."""
+    suite_dir = ROOT / "benchmarks" / "suites"
+    try:
+        full = [json.loads(line) for line in (suite_dir / "eval-v2.1.jsonl").read_text(encoding="utf-8").splitlines() if line]
+        common = [json.loads(line) for line in (suite_dir / "eval-v2.1-common47.jsonl").read_text(encoding="utf-8").splitlines() if line]
+    except (OSError, json.JSONDecodeError):
+        return None
+    if len(full) != 72 or len({row.get("id") for row in full}) != 72:
+        return None
+    common_ids = {row.get("id") for row in common}
+    delta = [row for row in full if row.get("id") not in common_ids]
+    if prompts == full:
+        return "eval-v2.1"
+    if prompts == common and len(common) == 47:
+        return "eval-v2.1-common47"
+    if prompts == delta and len(delta) == 25:
+        return "eval-v2.1-delta25"
+    return None
 
 
 def main():
@@ -1325,12 +1643,16 @@ def main():
             config["budget"] = {**config["budget"], "cap_usd": args.cap_usd}
     if paid_models and (not args.suite or args.prompts):
         parser.error("guarded model runs require the frozen task suite via --suite")
-    if paid_models and (len(prompts) != 47 or any(prompt.get("suite_id") != "eval-v2.1" for prompt in prompts)
-                        or args.start != 0 or args.limit is not None):
-        parser.error("guarded evaluations must use one frozen 47-task eval-v2.1-common47 pass")
+    if paid_models:
+        artifact = validate_paid_eval_suite(prompts)
+        first_five_probe = (artifact == "eval-v2.1" and args.start == 0 and args.limit == 5
+                            and args.managed_paid_run and not args.resume)
+        if (any(prompt.get("suite_id") != "eval-v2.1" for prompt in prompts) or artifact is None
+                or args.start != 0 or (args.limit is not None and not first_five_probe)):
+            parser.error("guarded evaluations require one canonical eval-v2.1 suite; only the managed first-five probe may be segmented")
     if args.preflight_only and not paid_models:
         parser.error("--preflight-only requires one or more budgeted paid models")
-    if paid_models and any(registry[key]["request_params"].get("max_tokens") != 4096 for key in selected):
+    if paid_models and any(output_token_limit(registry[key]["request_params"]) != 4096 for key in selected):
         parser.error("all paid evaluation models must keep the frozen 4096-token output limit")
     budget_caps = {config.get("budget_group", key): config["budget"].get("cap_usd", MODEL_SPEND_CAP_USD)
                    for key, config in paid_models.items()}
@@ -1342,7 +1664,7 @@ def main():
         plan["suite_path"] = str(prompt_path)
         plan["suite_sha256"] = suite_sha256
         plan["selected_model_ids"] = {key: registry[key]["model_id"] for key in paid_models}
-        plan["output_limits"] = {key: registry[key]["request_params"]["max_tokens"] for key in paid_models}
+        plan["output_limits"] = {key: output_token_limit(registry[key]["request_params"]) for key in paid_models}
         print(json.dumps(plan, indent=2, sort_keys=True))
         return 0
     prompts = prompts[args.start:args.start + args.limit if args.limit is not None else None]
@@ -1359,6 +1681,14 @@ def main():
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     ledger = CostLedger(args.ledger, caps=budget_caps)
+    if args.resume and paid_models:
+        try:
+            released = release_fast_failed_call_reservations(args.output, ledger, paid_models)
+            if released:
+                print(f"Released {released} reservation(s) for failed calls proven to stop before provider send.")
+            completed = load_resume_pairs(args.output, registry, all_prompt_ids, suite_sha256)
+        except (OSError, ValueError, RuntimeError) as exc:
+            parser.error(str(exc))
     preflight = None
     if paid_models:
         prompt_counts = {
@@ -1369,7 +1699,8 @@ def main():
         print(json.dumps(preflight, indent=2, sort_keys=True))
         blocked_groups = [key for key, group in preflight.get("budget_groups", {}).items()
                           if not group.get("fits")]
-        if blocked_groups:
+        # Managed paid arms run through the per-call cap guard and stop at task boundaries.
+        if blocked_groups and not args.managed_paid_run:
             parser.error("conservative full-suite reservations exceed budget group(s): " + ", ".join(blocked_groups))
     missing_tokens = [registry[key]["api_key_env"] for key in selected
                       if not configured_token(registry[key]["api_key_env"])]
@@ -1397,9 +1728,11 @@ def main():
                 continue
             client = make_client(model_config, ledger=ledger)
             for prompt in remaining:
-                if isinstance(client, GuardedCompletionClient) and not client.can_reserve_complete_question():
-                    print(f"Stopped before starting {model_key}/{prompt['id']}: less than three maximum request reservations remain.")
-                    break
+                if isinstance(client, GuardedCompletionClient):
+                    system, first_prompt = initial_request_for_prompt(prompt)
+                    if not client.can_reserve_complete_question(system, first_prompt):
+                        print(f"Stopped before starting {model_key}/{prompt['id']}: less than three actual-request reservations remain.")
+                        break
                 try:
                     record = run_prompt(prompt, client=client, suite_sha256=suite_sha256,
                                         model_config=model_config, via_env=args.via_env)

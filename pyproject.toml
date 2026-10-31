@@ -32,6 +32,10 @@ where = ["."]
 include = ["pramaan*", "pramaan_env*", "server*"]
 exclude = ["tests*", "benchmarks*", "scripts*"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["browser: rendered UI checks that require a local Edge installation"]
+
 
 [dependency-groups]
 dev = ["pytest==9.2.0"]

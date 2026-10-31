@@ -37,17 +37,22 @@ class OpenAICompatibleClient:
         self.request_params = dict(request_params)
         self.pricing = dict(pricing) if pricing else None
         self.max_transient_retries = max_transient_retries
-        self.client = OpenAI(base_url=base_url, api_key=token, timeout=timeout, max_retries=0)
+        self.call_budget = None
+        self._openai_client_factory = OpenAI
+        self._client_kwargs = {"base_url": base_url, "api_key": token,
+                               "timeout": timeout, "max_retries": 0}
 
     def complete(self, system: str, prompt: str) -> tuple[str, dict]:
         response = None
         provider_attempts = 0
         started = time.perf_counter()
         for attempt in range(self.max_transient_retries + 1):
-            MODEL_CALL_BUDGET.reserve()
+            if self.call_budget is not None:
+                self.call_budget.reserve()
             provider_attempts += 1
+            client = self._openai_client_factory(**self._client_kwargs)
             try:
-                response = self.client.chat.completions.create(
+                response = client.chat.completions.create(
                     model=self.model_id,
                     messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
                     **self.request_params,
@@ -57,12 +62,17 @@ class OpenAICompatibleClient:
                 status = getattr(exc, "status_code", None)
                 if status not in (429, 500, 502, 503, 504) or attempt == self.max_transient_retries:
                     try:
+                        exc.provider_error_type = type(exc).__name__
                         exc.provider_attempts = provider_attempts
                         exc.provider_elapsed_ms = round((time.perf_counter() - started) * 1000)
                     except Exception:
                         pass
                     raise
                 time.sleep(2 ** attempt)
+            finally:
+                close = getattr(client, "close", None)
+                if callable(close):
+                    close()
         if response is None:
             raise RuntimeError("Beam request did not return a response")
         choice = response.choices[0]
@@ -107,3 +117,4 @@ class BeamClient(OpenAICompatibleClient):
                 "observed_at": "2026-10-29",
             },
         )
+        self.call_budget = MODEL_CALL_BUDGET

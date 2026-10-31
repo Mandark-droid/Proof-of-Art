@@ -1,0 +1,7 @@
+assets/pramaan-mark.png -text
+assets/demo.gif -text
+assets/pramaan_beam_repair_walkthrough.gif -text
+benchmarks/** -text
+pramaan/data/** -text
+examples/** -text
+validation/** -text

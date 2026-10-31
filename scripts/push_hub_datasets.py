@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 from datetime import datetime, timezone
 
-from huggingface_hub import HfApi, get_token
+from huggingface_hub import HfApi, get_token, hf_hub_download
 import numpy as np
 from PIL import Image
 from pramaan.checks.core import all_pass, verify_pattern
@@ -21,6 +21,8 @@ from pramaan.dsl import parse_pattern
 from pramaan.orchestrate import _run_telemetry
 from pramaan.render import render
 from pramaan.reward import reward_for_report
+from pramaan.tasks import canonical_jsonl_bytes
+from pramaan.ui.findings import wilson_interval
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_REPO = "kshitijthakkar/pramaan-proof-of-art-eval-v2"
@@ -116,7 +118,7 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
         except KeyError as exc:
             raise ValueError("community run must identify a supported frozen evaluation suite") from exc
     suite_bytes = suite_path.read_bytes()
-    suite_sha = hashlib.sha256(suite_bytes).hexdigest()
+    suite_sha = hashlib.sha256(canonical_jsonl_bytes(suite_bytes)).hexdigest()
     if expected_suite_sha256 is not None and expected_suite_sha256 != suite_sha:
         raise ValueError("community results must use the digest of their identified frozen suite")
     task_rows = read_jsonl(suite_path)
@@ -441,7 +443,7 @@ def export_openenv_episodes(rows: list[dict], *, suite_path: Path, output_path: 
         raise FileExistsError(f"refusing to overwrite existing dataset: {output_path}")
     tasks = read_jsonl(suite_path)
     task_by_id = {task["id"]: task for task in tasks}
-    suite_sha = hashlib.sha256(suite_path.read_bytes()).hexdigest()
+    suite_sha = hashlib.sha256(canonical_jsonl_bytes(suite_path.read_bytes())).hexdigest()
     if not isinstance(rows, list) or not rows:
         raise ValueError("OpenEnv export needs at least one benchmark result")
     prompt_ids = [row.get("prompt_id") for row in rows]
@@ -544,10 +546,10 @@ def export_openenv_episodes(rows: list[dict], *, suite_path: Path, output_path: 
 
 
 def openenv_dataset_card() -> str:
-    eval_sha = hashlib.sha256((ROOT / "benchmarks/suites/eval-v2.jsonl").read_bytes()).hexdigest()
-    eval_v21_sha = hashlib.sha256((ROOT / "benchmarks/suites/eval-v2.1.jsonl").read_bytes()).hexdigest()
-    train_sha = hashlib.sha256((ROOT / "benchmarks/suites/train-v1.jsonl").read_bytes()).hexdigest()
-    train_v12_sha = hashlib.sha256((ROOT / "benchmarks/suites/train-v1.2.jsonl").read_bytes()).hexdigest()
+    eval_sha = hashlib.sha256(canonical_jsonl_bytes((ROOT / "benchmarks/suites/eval-v2.jsonl").read_bytes())).hexdigest()
+    eval_v21_sha = hashlib.sha256(canonical_jsonl_bytes((ROOT / "benchmarks/suites/eval-v2.1.jsonl").read_bytes())).hexdigest()
+    train_sha = hashlib.sha256(canonical_jsonl_bytes((ROOT / "benchmarks/suites/train-v1.jsonl").read_bytes())).hexdigest()
+    train_v12_sha = hashlib.sha256(canonical_jsonl_bytes((ROOT / "benchmarks/suites/train-v1.2.jsonl").read_bytes())).hexdigest()
     eval_overall = json.loads((ROOT / "benchmarks/data/eval-v2.1-summary.json").read_text(encoding="utf-8"))[
         "by_model"]["beam-hf"]["overall"]
     return ("---\nlanguage:\n  - en\nlicense: cc-by-4.0\ntask_categories:\n  - reinforcement-learning\n"
@@ -729,7 +731,7 @@ def export_suite_trajectories(results_path: Path, suite_path: Path, output_path:
         raise FileExistsError(f"refusing to overwrite existing dataset: {output_path}")
     tasks = read_jsonl(suite_path)
     task_by_id = {task["id"]: task for task in tasks}
-    suite_sha = hashlib.sha256(suite_path.read_bytes()).hexdigest()
+    suite_sha = hashlib.sha256(canonical_jsonl_bytes(suite_path.read_bytes())).hexdigest()
     rows = read_jsonl(results_path)
     if len(rows) != len(task_by_id) or {row.get("prompt_id") for row in rows} != set(task_by_id):
         raise ValueError("trajectory export requires complete, duplicate-free suite coverage")
@@ -761,7 +763,7 @@ def export_suite_trajectories(results_path: Path, suite_path: Path, output_path:
             replayed += 1
         trajectories.append(make_suite_trajectory(row, task, role))
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("x", encoding="utf-8") as stream:
+    with output_path.open("x", encoding="utf-8", newline="\n") as stream:
         for record in trajectories:
             stream.write(json.dumps(record, ensure_ascii=False) + "\n")
     return {"output": str(output_path), "records": len(trajectories),
@@ -784,13 +786,80 @@ def enforce_data_role(path: Path, repository_kind: str) -> None:
             raise ValueError(f"{path}:{line_number}: training rows must explicitly set training_eligible=true")
 
 
+def validate_eval_v21_rows(path: Path, *, trajectories: bool) -> dict[str, int]:
+    """Require the complete ten-model release and the correct row shape."""
+    rows = read_jsonl(path)
+    counts: dict[str, int] = {}
+    seen: set[tuple[str, str]] = set()
+    for index, row in enumerate(rows, 1):
+        model_key, prompt_id = row.get("model_key"), row.get("prompt_id")
+        if not isinstance(model_key, str) or not model_key or not isinstance(prompt_id, str) or not prompt_id:
+            raise ValueError(f"{path}:{index}: model_key and prompt_id are required")
+        identity = (model_key, prompt_id)
+        if identity in seen:
+            raise ValueError(f"{path}:{index}: duplicate model/task row {identity}")
+        seen.add(identity)
+        counts[model_key] = counts.get(model_key, 0) + 1
+        if (row.get("suite_id") != "eval-v2.1" or row.get("data_role") != "benchmark_evaluation"
+                or row.get("training_eligible") is not False):
+            raise ValueError(f"{path}:{index}: row is not evaluation-only eval-v2.1 data")
+        if trajectories:
+            calls = row.get("calls")
+            if row.get("trajectory_schema_version") != "1.1" or not isinstance(calls, list) or not calls:
+                raise ValueError(f"{path}:{index}: expected a schema 1.1 trajectory with calls")
+            if "attempts" in row:
+                raise ValueError(f"{path}:{index}: trajectory row unexpectedly contains compact attempts")
+            for call in calls:
+                if (call.get("phase") not in {"proposal", "repair"}
+                        or not isinstance(call.get("messages"), list) or len(call["messages"]) != 2
+                        or not isinstance(call.get("metadata"), dict)
+                        or not isinstance(call.get("verifier_report"), dict)):
+                    raise ValueError(f"{path}:{index}: trajectory call lacks request, model metadata, or verifier evidence")
+        elif not isinstance(row.get("attempts"), list) or "calls" in row:
+            raise ValueError(f"{path}:{index}: expected compact attempts without trajectory calls")
+    if len(rows) != 720 or len(counts) != 10 or any(count != 72 for count in counts.values()):
+        raise ValueError(f"{path}: expected 720 rows across ten models (72 each), got {len(rows)} rows: {counts}")
+    return dict(sorted(counts.items()))
+
+
+def validate_eval_v21_pair(compact_path: Path, trajectories_path: Path) -> tuple[dict[str, int], dict[str, int]]:
+    if compact_path.resolve() == trajectories_path.resolve():
+        raise ValueError("compact and trajectories inputs must be different files")
+    if hashlib.sha256(compact_path.read_bytes()).digest() == hashlib.sha256(trajectories_path.read_bytes()).digest():
+        raise ValueError("compact and trajectories inputs must contain distinct datasets")
+    compact_counts = validate_eval_v21_rows(compact_path, trajectories=False)
+    trajectory_counts = validate_eval_v21_rows(trajectories_path, trajectories=True)
+    if compact_counts != trajectory_counts:
+        raise ValueError("compact and trajectories model/task coverage differs")
+    return compact_counts, trajectory_counts
+
+
+def verify_uploaded_eval_v21(repo_id: str, token: str) -> dict:
+    """Force-download resolve/main after upload and re-check both published payloads."""
+    compact = Path(hf_hub_download(repo_id=repo_id, repo_type="dataset", filename="compact/test.jsonl",
+                                   revision="main", force_download=True, token=token))
+    trajectories = Path(hf_hub_download(repo_id=repo_id, repo_type="dataset", filename="trajectories/test.jsonl",
+                                        revision="main", force_download=True, token=token))
+    compact_counts, trajectory_counts = validate_eval_v21_pair(compact, trajectories)
+    return {
+        "compact_rows": sum(compact_counts.values()), "compact_by_model": compact_counts,
+        "trajectories_rows": sum(trajectory_counts.values()), "trajectories_by_model": trajectory_counts,
+        "compact_sha256": hashlib.sha256(compact.read_bytes()).hexdigest(),
+        "trajectories_sha256": hashlib.sha256(trajectories.read_bytes()).hexdigest(),
+    }
+
+
 def dataset_card(repository_kind: str, *, include_community: bool = False,
-                 suite_name: str | None = None) -> str:
+                 include_references: bool = False, suite_name: str | None = None) -> str:
     if repository_kind == "eval":
         suite_name = suite_name or "eval-v2"
         name = f"Pramaan Proof of Art — Evaluation {suite_name.removeprefix('eval-')}"
         roles = "Benchmark evaluation data. Keep it held out from training, prompt tuning, model selection, and any report that presents the same scores as held-out performance."
-        config_names = ["trajectories", "compact", "summary"]
+        config_names = ["trajectories", "compact", "leaderboard" if suite_name == "eval-v2.1" else "summary"]
+        if include_references:
+            if suite_name != "eval-v2.1":
+                raise ValueError("procedural references are published only with eval-v2.1")
+            config_names.append("references")
         repo_id = EVAL_V21_REPO if suite_name == "eval-v2.1" else EVAL_REPO
     else:
         name = "Pramaan Proof of Art — Training v1"
@@ -799,7 +868,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         suite_name = "train-v1"
         repo_id = "kshitijthakkar/pramaan-proof-of-art-train-v1"
     suite_path = ROOT / "benchmarks" / "suites" / f"{suite_name}.jsonl"
-    suite_digest = hashlib.sha256(suite_path.read_bytes()).hexdigest()
+    suite_digest = hashlib.sha256(canonical_jsonl_bytes(suite_path.read_bytes())).hexdigest()
     split = "test" if repository_kind == "eval" else "train"
     configs = "\n".join(
         f"  - config_name: {config}\n    data_files:\n      - split: {split}\n        path: {config}/{split}.jsonl"
@@ -809,17 +878,49 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         configs += "\n  - config_name: community\n    data_files:\n      - split: test\n        path: community/test/*.jsonl"
     evaluation_version_note = ""
     if repository_kind == "eval" and suite_name == "eval-v2.1":
-        overall = json.loads((ROOT / "benchmarks/data/eval-v2.1-summary.json").read_text(encoding="utf-8"))["by_model"]["beam-hf"]["overall"]
+        merged = json.loads((ROOT / "benchmarks/data/eval-v2.1-summary.json").read_text(encoding="utf-8"))
+        overall = merged["by_model"]["beam-hf"]["overall"]
+        model_lines = []
+        for key, model in sorted(merged["by_model"].items()):
+            metrics = model["overall"]
+            label = model.get("label", key)
+            model_lines.append(
+                f"- {label}: {metrics['n']}/72 tasks; pass@1 {metrics['validity_at_1']:.1%}; "
+                f"pass@3 {metrics['validity_at_3']:.1%}."
+            )
+        fable = merged["by_model"].get("claude-fable-5-1")
+        fable_ledger = fable.get("cost_ledger") if fable else None
+        common_sha = merged.get("source_suite_digests", {}).get("eval-v2.1-common47", "unavailable")
+        delta_sha = merged.get("source_suite_digests", {}).get("eval-v2.1-delta25", "unavailable")
         evaluation_version_note = (
             "This is the current corrected held-out suite. The older eval-v2 is historical and superseded; do not combine its results with eval-v2.1.\n\n"
             f"Current one-run Beam baseline: {overall['n']}/72 tasks, schema-valid @1 {overall['valid_schema_at_1']:.1%}, "
             f"pass@1 {overall['validity_at_1']:.1%}, pass@3 {overall['validity_at_3']:.1%}. Estimated cost USD 0.4382; "
             "provider-reported billed cost was unavailable.\n\n"
+            + (
+                "## Frozen cross-model report\n\n"
+                "Ten model arms were evaluated on the same 72 task records and verifier. The freeze sets a 4,096-token output cap, "
+                "up to three proposals per task, and zero provider retries; provider-specific sampling settings are listed per row.\n\n"
+                + "\n".join(model_lines) + "\n\n"
+                "Claude and DeepSeek results were collected in two sittings: the shared common47 subset, then its exact delta25 complement. "
+                "Together these subsets equal the canonical ordered 72-task suite. Rows retain their source `prompt_suite_sha256` and also "
+                f"record the canonical suite digest `{suite_digest}`; common47 digest `{common_sha}`, delta25 digest `{delta_sha}`.\n\n"
+                + (
+                    "Claude Fable 5.1 completed 72/72 under its USD 22 cap. Conservative rate-card exposure was USD "
+                    f"{fable_ledger['conservative_exposure_usd']:.6f}; provider-billed cost was unavailable.\n\n"
+                    if fable_ledger else ""
+                )
+                + "Each other paid model arm had an independent USD 10 cap. The full aggregate summary is available as "
+                "[`summary/eval-v2.1-summary.json`](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1/blob/main/summary/eval-v2.1-summary.json).\n\n"
+                + "Third-party model outputs are evaluation-only, carry `data_role=benchmark_evaluation` and "
+                "`training_eligible=false`, and remain governed by their providers' terms. They are not training data.\n\n"
+                if fable_ledger and len(merged["by_model"]) == 10 else ""
+            )
         )
     elif repository_kind == "eval" and suite_name == "eval-v2":
         evaluation_version_note = "**Historical and superseded by eval-v2.1.** [Open the current dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1).\n\n"
     elif repository_kind == "train" and suite_name == "train-v1":
-        current_train_sha = hashlib.sha256((ROOT / "benchmarks/suites/train-v1.2.jsonl").read_bytes()).hexdigest()
+        current_train_sha = hashlib.sha256(canonical_jsonl_bytes((ROOT / "benchmarks/suites/train-v1.2.jsonl").read_bytes())).hexdigest()
         evaluation_version_note = (
             "**Superseded by the [train-v1.2 prompt suite](https://github.com/Mandark-droid/Proof-of-Art/blob/main/benchmarks/suites/train-v1.2.jsonl).**\n\n"
             f"The corrected train-v1.2 prompts have SHA-256 `{current_train_sha}` but have not yet been evaluated or exported.\n\n"
@@ -830,7 +931,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         f"pretty_name: {name}\nconfigs:\n{configs}\n---\n\n"
         f"# {name}\n\n"
         "## Summary\n\n"
-        "Pramaan evaluates geometric patterns using a deterministic verifier. Beam is the generative model; the verifier reports exact declared-constraint outcomes. "
+        "Pramaan evaluates geometric patterns from generative models using a deterministic verifier that reports exact declared-constraint outcomes. "
         "Patterns are original designs inspired by South Asian craft vocabularies, not artisan-authentic works or substitutes for practitioners.\n\n"
         + evaluation_version_note
         + "## Fields\n\n"
@@ -846,7 +947,15 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         f"rows = load_dataset(\"{repo_id}\", \"compact\", split=\"{split}\")\n"
         "```\n\n"
         "## Intended use\n\n" + roles + "\n\n"
-        "Evaluation rows use `data_role=benchmark_evaluation` and `training_eligible=false`; training rows use `data_role=training` and `training_eligible=true`. "
+        + ("## Procedural references\n\n"
+           "The `references` config contains verifier-certified procedural examples, with thumbnail PNGs in `references/thumbnails/`. "
+           "It includes one or more examples for each of the 36 states and union territories represented by the suite. "
+           "Each row has `data_role=reference` and `training_eligible=false`; these are illustrative verifier witnesses, not model results, "
+           "not artisan-authentic works, and not benchmark scores. One Puducherry task is unsatisfiable under its frozen constraints and has no accepted reference.\n\n"
+           if repository_kind == "eval" and include_references else "")
+        + "Evaluation rows use `data_role=benchmark_evaluation` and `training_eligible=false`; training rows use `data_role=training` and `training_eligible=true`. "
+        "SFT and repair examples include the full system, user, and assistant turn sequence in `messages`; the assistant text is also retained in `completion` for compatibility. "
+        "Preference examples retain the prompt separately and provide full `chosen_messages` and `rejected_messages` conversations. "
         "Repairs remain linked to their task and preceding verifier feedback. Keep the declared suite split and digest attached to any result.\n\n"
         "## Limitations\n\n"
         "The verifier checks declared schema and geometric constraints; it does not measure aesthetic quality, cultural authority, artisan authenticity, or practitioner endorsement. "
@@ -859,10 +968,78 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
     )
 
 
+def _leaderboard_rows(summary_path: Path) -> list[dict]:
+    """Flatten the merged summary into small viewer-friendly rows."""
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    models = summary.get("by_model")
+    if not isinstance(models, dict) or len(models) != 10:
+        raise ValueError("eval-v2.1 leaderboard export requires all ten model arms")
+    rows = []
+    for key, document in sorted(models.items()):
+        overall = document.get("overall") or {}
+        profile = document.get("request_profile") or {}
+        params = profile.get("request_params") or {}
+        n = overall.get("n")
+        if type(n) is not int or n < 0:
+            raise ValueError(f"{key}: invalid evaluated task count")
+        first = overall.get("passed_at_1")
+        if type(first) is not int:
+            first = round(float(overall.get("validity_at_1", 0)) * n)
+        within = overall.get("accepted_designs")
+        if type(within) is not int:
+            within = round(float(overall.get("validity_at_3", 0)) * n)
+        first_ci = wilson_interval(first, n)
+        within_ci = wilson_interval(within, n)
+        ledger = document.get("cost_ledger") or {}
+        estimated = (overall.get("estimated_cost_totals_by_currency") or {}).get("USD")
+        output_limit = params.get("max_tokens", params.get("max_completion_tokens"))
+        effort = params.get("reasoning_effort") or (params.get("output_config") or {}).get("effort")
+        temperature = params.get("temperature")
+        profile_summary = "; ".join(
+            value for value in (
+                f"output cap {output_limit}" if output_limit else None,
+                f"effort {effort}" if effort else None,
+                f"temperature {temperature:g}" if isinstance(temperature, (int, float)) else None,
+            ) if value
+        ) or "provider defaults"
+        rows.append({
+            "model": key, "label": document.get("label", key), "evaluated": n,
+            "first_try": first, "first_try_rate": round(first / n, 6) if n else 0.0,
+            "first_try_ci_low": first_ci[0] if first_ci else None,
+            "first_try_ci_high": first_ci[1] if first_ci else None,
+            "within_three": within, "within_three_rate": round(within / n, 6) if n else 0.0,
+            "within_three_ci_low": within_ci[0] if within_ci else None,
+            "within_three_ci_high": within_ci[1] if within_ci else None,
+            "estimated_cost_usd": estimated, "cap_usd": ledger.get("cap_usd"),
+            "stopped_at_cap": bool(document.get("stopped_at_cap") or document.get("cap_reached")),
+            "stop_reason": document.get("stop_reason", "complete"),
+            "provider_error_count": overall.get("provider_error_count", 0),
+            "provider": profile.get("provider", ""), "model_id": profile.get("model_id", ""),
+            "api_style": profile.get("api_style", ""), "request_profile_summary": profile_summary,
+            "data_role": "benchmark_evaluation", "training_eligible": False,
+        })
+    return rows
+
+
 def stage_repository(repository_kind: str, inputs: dict[str, Path], previews: Path | None = None,
-                     *, include_community: bool = False, suite_name: str | None = None) -> Path:
+                     *, include_community: bool = False, include_references: bool = False,
+                     suite_name: str | None = None) -> Path:
+    if repository_kind == "eval" and suite_name == "eval-v2.1":
+        if "compact" not in inputs or "trajectories" not in inputs:
+            raise ValueError("eval-v2.1 publication requires compact and trajectories files")
+        validate_eval_v21_pair(inputs["compact"], inputs["trajectories"])
     stage = Path(tempfile.mkdtemp(prefix=f"pramaan-{repository_kind}-"))
     for config, source in inputs.items():
+        if repository_kind == "eval" and suite_name == "eval-v2.1" and config == "summary":
+            summary_target = stage / "summary" / "eval-v2.1-summary.json"
+            summary_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, summary_target)
+            leaderboard = stage / "leaderboard" / "test.jsonl"
+            leaderboard.parent.mkdir(parents=True, exist_ok=True)
+            with leaderboard.open("x", encoding="utf-8", newline="\n") as output:
+                for row in _leaderboard_rows(source):
+                    output.write(json.dumps(row, ensure_ascii=False) + "\n")
+            continue
         enforce_data_role(source, repository_kind)
         split = "test" if repository_kind == "eval" else "train"
         target = stage / config / f"{split}.jsonl"
@@ -873,14 +1050,77 @@ def stage_repository(repository_kind: str, inputs: dict[str, Path], previews: Pa
             for row in read_jsonl(source):
                 row.setdefault("data_role", expected_role)
                 row.setdefault("training_eligible", expected_eligibility)
+                if repository_kind == "train" and config in {"sft", "repair"}:
+                    messages = row.get("messages")
+                    completion = row.get("completion")
+                    if (not isinstance(messages, list) or not messages
+                            or not isinstance(completion, str) or not completion):
+                        raise ValueError(f"{config} training rows need messages and assistant completion")
+                    if messages[-1].get("role") != "assistant":
+                        messages = [*messages, {"role": "assistant", "content": completion}]
+                        row["messages"] = messages
+                    if messages[-1].get("content") != completion:
+                        raise ValueError(f"{config} assistant message must match completion")
+                if repository_kind == "train" and config == "preference":
+                    prompt = row.get("prompt")
+                    if not isinstance(prompt, list) or not prompt:
+                        raise ValueError("preference rows need a prompt message list")
+                    for choice in ("chosen", "rejected"):
+                        response = row.get(choice)
+                        name = f"{choice}_messages"
+                        conversation = row.get(name)
+                        expected = [*prompt, {"role": "assistant", "content": response}]
+                        if conversation is None:
+                            row[name] = expected
+                        elif conversation != expected:
+                            raise ValueError(f"preference {name} must include its assistant candidate")
                 output.write(json.dumps(row, ensure_ascii=False) + "\n")
     if repository_kind == "eval" and previews:
         if not previews.is_dir():
             raise ValueError(f"preview directory does not exist: {previews}")
         shutil.copytree(previews, stage / "previews", dirs_exist_ok=True)
     (stage / "README.md").write_text(dataset_card(repository_kind, include_community=include_community,
+                                                    include_references=include_references,
                                                     suite_name=suite_name),
                                       encoding="utf-8")
+    return stage
+
+
+def stage_reference_bundle(references_path: Path, suite_path: Path, thumbnails_path: Path,
+                           *, include_community: bool = False) -> Path:
+    """Stage verified procedural references and require coverage of all 36 suite states."""
+    suite = read_jsonl(suite_path)
+    references = read_jsonl(references_path)
+    suite_digest = hashlib.sha256(canonical_jsonl_bytes(suite_path.read_bytes())).hexdigest()
+    suite_by_id = {row.get("id"): row for row in suite if isinstance(row.get("id"), str)}
+    expected_states = {row.get("state") for row in suite if isinstance(row.get("state"), str)}
+    seen_ids: set[str] = set()
+    reference_states: set[str] = set()
+    thumbnail_names = {path.stem for path in thumbnails_path.glob("*.png")} if thumbnails_path.is_dir() else set()
+    for index, row in enumerate(references, 1):
+        task_id = row.get("task_id")
+        task = suite_by_id.get(task_id)
+        if (not isinstance(task_id, str) or task is None or task_id in seen_ids
+                or row.get("suite_id") != "eval-v2.1" or row.get("suite_sha256") != suite_digest
+                or row.get("data_role") != "reference" or row.get("training_eligible") is not False
+                or row.get("all_hard_constraints_pass") is not True or row.get("state") != task.get("state")):
+            raise ValueError(f"reference row {index} is not a unique, verifier-passing eval-v2.1 reference")
+        seen_ids.add(task_id)
+        reference_states.add(row["state"])
+    if not references or len(expected_states) != 36 or reference_states != expected_states:
+        raise ValueError("references must cover all 36 states and union territories in eval-v2.1")
+    if seen_ids != thumbnail_names:
+        raise ValueError("reference thumbnails must match reference task IDs exactly")
+    stage = Path(tempfile.mkdtemp(prefix="pramaan-eval-v2.1-references-"))
+    target = stage / "references" / "test.jsonl"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("x", encoding="utf-8") as output:
+        for row in references:
+            output.write(json.dumps(row, ensure_ascii=False) + "\n")
+    shutil.copytree(thumbnails_path, stage / "references" / "thumbnails")
+    (stage / "README.md").write_text(
+        dataset_card("eval", suite_name="eval-v2.1", include_references=True,
+                     include_community=include_community), encoding="utf-8")
     return stage
 
 
@@ -897,8 +1137,33 @@ def main() -> None:
     parser.add_argument("--openenv-eval-transitions", type=Path)
     parser.add_argument("--openenv-train-transitions", type=Path)
     parser.add_argument("--repo", choices=("eval", "eval-v2.1", "train", "both", "openenv"), default="both")
+    parser.add_argument("--references-only", action="store_true",
+                        help="publish the validated eval-v2.1 references and card without restaging result data")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.references_only:
+        token = os.getenv("HF_TOKEN") or get_token()
+        if not args.dry_run and not token:
+            parser.error("set HF_TOKEN before publishing")
+        api = HfApi(token=token) if not args.dry_run else None
+        include_community = False
+        if api is not None:
+            api.create_repo(repo_id=EVAL_V21_REPO, repo_type="dataset", exist_ok=True, private=False)
+            existing_files = api.list_repo_files(repo_id=EVAL_V21_REPO, repo_type="dataset")
+            include_community = any(path.startswith("community/test/") and path.endswith(".jsonl")
+                                    for path in existing_files)
+        stage = stage_reference_bundle(ROOT / "benchmarks/data/eval-v2.1-references.jsonl",
+                                       ROOT / "benchmarks/suites/eval-v2.1.jsonl",
+                                       ROOT / "assets/reference-thumbnails",
+                                       include_community=include_community)
+        if args.dry_run:
+            print(json.dumps({"repo_id": EVAL_V21_REPO, "staged_path": str(stage),
+                              "references": 71, "states": 36}, indent=2))
+        else:
+            api.upload_folder(repo_id=EVAL_V21_REPO, repo_type="dataset", folder_path=str(stage),
+                              commit_message="Publish verified references for all 36 states")
+            print(f"Published references at https://huggingface.co/datasets/{EVAL_V21_REPO}")
+        return
     eval_inputs = (args.eval_trajectories, args.eval_compact, args.eval_summary, args.eval_previews)
     train_inputs = (args.train_trajectories, args.train_sft, args.train_repair, args.train_preference)
     if args.repo in {"eval", "eval-v2.1", "both"} and any(value is None for value in eval_inputs):
@@ -931,12 +1196,16 @@ def main() -> None:
                 include_community = any(path.startswith("community/test/") and path.endswith(".jsonl")
                                         for path in existing_files)
         stage = stage_repository(kind, inputs, previews, include_community=include_community,
+                                 include_references=suite_name == "eval-v2.1",
                                  suite_name=suite_name)
         if args.dry_run:
             print(json.dumps({"repo_id": repo_id, "staged_path": str(stage), "configs": list(inputs)}, indent=2))
             continue
         api.upload_folder(repo_id=repo_id, repo_type="dataset", folder_path=str(stage),
                           commit_message="Add Pramaan dataset configs")
+        if suite_name == "eval-v2.1":
+            print(json.dumps({"repo_id": repo_id, "revision": "main",
+                              **verify_uploaded_eval_v21(repo_id, token)}, sort_keys=True))
         print(f"Published https://huggingface.co/datasets/{repo_id}")
     if args.openenv_eval_transitions or args.openenv_train_transitions:
         if args.dry_run:

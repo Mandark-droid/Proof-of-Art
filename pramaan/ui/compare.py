@@ -10,7 +10,7 @@ from pathlib import Path
 from numbers import Real
 
 
-_COLORS = ("#287d78", "#a84436", "#536272", "#916f2b", "#5964a5", "#47709a")
+_COLORS = tuple(f"var(--pramaan-chart-{index})" for index in range(1, 7))
 
 _ARM_KEY = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9._-]{0,100}\Z")
 _BASE64_PNG = re.compile(r"[A-Za-z0-9+/]+={0,2}\Z")
@@ -26,6 +26,7 @@ def render_arena(
     suite_sha256: str,
     prompt_id: str,
     replay_prompt_id: str,
+    selected_model_keys: list[str] | None = None,
 ) -> str:
     """Show all available model attempts for one frozen, identical benchmark brief."""
     if (not isinstance(index, dict) or index.get("suite_id") != suite_id
@@ -50,6 +51,13 @@ def render_arena(
         return ('<section class="pramaan-arena" data-testid="arena" aria-label="Same-brief model Arena">'
                 '<h3>Arena</h3><p role="status">No model has published attempts for the selected brief yet.</p></section>')
 
+    chosen = set(selected_model_keys or [key for key, _label, _task in available[:4]])
+    chosen.add("beam-hf")
+    selector = ('<details class="pramaan-arena-picker"><summary>Choose models to show</summary><fieldset>' +
+                ''.join(f'<label><input type="checkbox" data-arena-model-choice="{html.escape(key, quote=True)}"'
+                         f'{" checked" if key in chosen else ""}> {html.escape(label)}</label>'
+                         for key, label, _task in selected) + '</fieldset></details>')
+
     briefs = {task.get("brief") for _key, _label, task in available
               if isinstance(task.get("brief"), str)}
     missing_brief = any(not isinstance(task.get("brief"), str) for _key, _label, task in available)
@@ -64,7 +72,8 @@ def render_arena(
         safe_key, safe_label = html.escape(key, quote=True), html.escape(label)
         if not isinstance(task, dict):
             cards.append(f'<article class="pramaan-arena-arm" data-testid="arena-arm-{safe_key}" '
-                         'data-arm-state="not-run"><h4>' + safe_label + '</h4>'
+                         f'data-arena-model-card="{safe_key}" data-arm-state="not-run"'
+                         + ('' if key in chosen else ' hidden') + '><h4>' + safe_label + '</h4>'
                          '<p class="pramaan-arena-empty">Not run on this brief yet</p></article>')
             continue
         attempts = task.get("attempts") if isinstance(task.get("attempts"), list) else []
@@ -104,7 +113,8 @@ def render_arena(
                   if prompt_id == replay_prompt_id else "")
         cards.append(
             f'<article class="pramaan-arena-arm" data-testid="arena-arm-{safe_key}" '
-            f'data-arm-state="{"verified" if type(passed_at) is int else "attempted" if attempts else "not-run"}">'
+            f'data-arena-model-card="{safe_key}" data-arm-state="{"verified" if type(passed_at) is int else "attempted" if attempts else "not-run"}"'
+            + ('' if key in chosen else ' hidden') + '>'
             f'<h4>{safe_label}</h4><p class="pramaan-arena-status">{html.escape(status)}</p>'
             + ('<ol class="pramaan-arena-attempts">' + "".join(attempt_rows) + '</ol>'
                if attempt_rows else '<p class="pramaan-arena-empty">No recorded attempts</p>')
@@ -114,7 +124,7 @@ def render_arena(
             '<p class="pramaan-ui-eyebrow">Same brief · same checker</p><h3>Arena</h3>'
             f'<p class="pramaan-same-brief-prompt">{brief}</p>'
             '<p>Each attempt is replay evidence from the saved benchmark record. A check or cross reports the geometric verifier outcome.</p>'
-            '<div class="pramaan-arena-grid">' + "".join(cards) + '</div></section>')
+              + selector + '<div class="pramaan-arena-grid">' + "".join(cards) + '</div></section>')
 
 
 def render_same_brief_wall(
@@ -231,11 +241,11 @@ def _axes(aria_label: str, title: str, y_label: str) -> str:
     return (
         f'<svg viewBox="0 0 640 260" role="img" aria-label="{aria_label}" focusable="false">'
         f'<title>{title}</title>'
-        '<g fill="none" stroke="#d8d0c5" stroke-width="1">'
+        '<g fill="none" stroke="var(--pramaan-line)" stroke-width="1">'
         '<line x1="92" y1="32" x2="92" y2="210"/><line x1="92" y1="210" x2="570" y2="210"/>'
         '<line x1="92" y1="121" x2="570" y2="121" stroke-dasharray="4 5"/>'
         '<line x1="92" y1="32" x2="570" y2="32" stroke-dasharray="4 5"/>'
-        '</g><g fill="#596775" font-size="12" font-family="system-ui,sans-serif">'
+        '</g><g fill="var(--pramaan-muted)" font-size="12" font-family="system-ui,sans-serif">'
         '<text x="52" y="214">0%</text><text x="43" y="125">50%</text><text x="43" y="36">100%</text>'
         f'<text transform="translate(18 145) rotate(-90)">{y_label}</text>'
         '</g>'
@@ -259,7 +269,7 @@ def _repair_arc(rows: list[dict]) -> str:
             f'<text x="505" y="{y3 + 4:.2f}" fill="{color}" font-size="12">{label}</text>'
         )
     chart.append(
-        '<g fill="#26384b" font-size="13" font-family="system-ui,sans-serif">'
+        '<g fill="var(--pramaan-ink)" font-size="13" font-family="system-ui,sans-serif">'
         '<text x="120" y="238">Pass@1</text><text x="458" y="238">Pass@3</text></g></svg>'
     )
     return "".join(chart)
@@ -288,7 +298,7 @@ def _cost_quality(rows: list[dict]) -> str | None:
             f'<text x="{min(x + 10, 500):.2f}" y="{y + 4:.2f}" fill="{color}" font-size="12">{label}</text>'
         )
     chart.append(
-        f'<g fill="#26384b" font-size="13" font-family="system-ui,sans-serif">'
+        f'<g fill="var(--pramaan-ink)" font-size="13" font-family="system-ui,sans-serif">'
         f'<text x="92" y="238">USD 0</text><text x="500" y="238">USD {maximum_cost:.4g}</text>'
         '<text x="284" y="255">Estimated cost per verified result</text></g></svg>'
     )
