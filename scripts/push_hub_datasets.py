@@ -864,7 +864,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
     else:
         name = "Pramaan Proof of Art — Training v1"
         roles = "Training-eligible records from the separately versioned train-v1 suite. This historical export is superseded; do not reuse it for current training runs."
-        config_names = ["trajectories", "sft", "repair", "preference"]
+        config_names = ["sft", "trajectories", "repair", "preference"]
         suite_name = "train-v1"
         repo_id = "kshitijthakkar/pramaan-proof-of-art-train-v1"
     suite_path = ROOT / "benchmarks" / "suites" / f"{suite_name}.jsonl"
@@ -944,7 +944,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         + "\n\n"
         "## How to load\n\n"
         "```python\nfrom datasets import load_dataset\n"
-        f"rows = load_dataset(\"{repo_id}\", \"compact\", split=\"{split}\")\n"
+        f"rows = load_dataset(\"{repo_id}\", \"{'sft' if repository_kind == 'train' else 'compact'}\", split=\"{split}\")\n"
         "```\n\n"
         "## Intended use\n\n" + roles + "\n\n"
         + ("## Procedural references\n\n"
@@ -956,6 +956,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         + "Evaluation rows use `data_role=benchmark_evaluation` and `training_eligible=false`; training rows use `data_role=training` and `training_eligible=true`. "
         "SFT and repair examples include the full system, user, and assistant turn sequence in `messages`; the assistant text is also retained in `completion` for compatibility. "
         "Preference examples retain the prompt separately and provide full `chosen_messages` and `rejected_messages` conversations. "
+        "In training trajectories, `calls[].messages` preserves the exact request and `calls[].conversation` appends the assistant response as an explicit assistant-role turn; calls without a model response have no assistant turn. "
         "Repairs remain linked to their task and preceding verifier feedback. Keep the declared suite split and digest attached to any result.\n\n"
         "## Limitations\n\n"
         "The verifier checks declared schema and geometric constraints; it does not measure aesthetic quality, cultural authority, artisan authenticity, or practitioner endorsement. "
@@ -1061,6 +1062,17 @@ def stage_repository(repository_kind: str, inputs: dict[str, Path], previews: Pa
                         row["messages"] = messages
                     if messages[-1].get("content") != completion:
                         raise ValueError(f"{config} assistant message must match completion")
+                if repository_kind == "train" and config == "trajectories":
+                    for call in row.get("calls", []):
+                        messages = call.get("messages")
+                        response = call.get("raw_response")
+                        if isinstance(response, str) and response:
+                            if not isinstance(messages, list):
+                                raise ValueError("trajectory calls with assistant output need request messages")
+                            conversation = [*messages, {"role": "assistant", "content": response}]
+                            if call.get("conversation") not in (None, conversation):
+                                raise ValueError("trajectory conversation must match exact request and response")
+                            call["conversation"] = conversation
                 if repository_kind == "train" and config == "preference":
                     prompt = row.get("prompt")
                     if not isinstance(prompt, list) or not prompt:
