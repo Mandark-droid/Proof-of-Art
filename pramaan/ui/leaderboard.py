@@ -26,6 +26,13 @@ _MODEL_LABELS = {
 }
 
 
+def model_display_name(key: str, label: object = None) -> str:
+    """Use the leaderboard's canonical name whenever an artifact stores its raw key."""
+    if isinstance(label, str) and label and label != key:
+        return label
+    return _MODEL_LABELS.get(key, label if isinstance(label, str) and label else key)
+
+
 def _summary_rate(overall: dict, rate_key: str, count_key: str, n: int) -> int:
     count = overall.get(count_key)
     if type(count) is int and 0 <= count <= n:

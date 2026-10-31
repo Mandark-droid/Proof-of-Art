@@ -2657,7 +2657,7 @@ html.light, body.light {
 .pramaan-wall-model-chip { align-items: flex-start; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: .04rem; max-width: 100%; padding: .35rem .75rem; text-align: left; }
 .pramaan-wall-model-chip[aria-checked="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
 .pramaan-wall-model-chip small { color: var(--pramaan-muted); font-size: 12px; opacity: 1; }
-.pramaan-wall-model-chip[aria-checked="true"] small { color: var(--pramaan-on-accent); }
+.gradio-container .pramaan-ui .pramaan-wall-model-chip[aria-checked="true"] small { color: var(--pramaan-on-accent) !important; font-size: 12px !important; opacity: 1 !important; }
 .pramaan-wall-mode-toggle { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: inline-flex; justify-self: start; overflow: hidden; }
 .pramaan-wall-mode { background: transparent; border: 0; color: var(--pramaan-text); cursor: pointer; font: inherit; font-size: .82rem; min-height: 38px; padding: .35rem .85rem; }
 .pramaan-wall-mode[aria-pressed="true"] { background: var(--pramaan-indigo); color: var(--pramaan-on-accent); }

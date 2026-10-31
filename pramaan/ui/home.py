@@ -8,6 +8,7 @@ import re
 
 from .quilt import STATE_GRID
 from .check_labels import check_label, check_labels
+from .leaderboard import model_display_name
 
 
 _SAFE_B64 = re.compile(r"[A-Za-z0-9+/]+={0,2}\Z")
@@ -109,7 +110,7 @@ def _state_model_list(model_keys: list[tuple[str, str]], model_tasks: dict[str, 
         rows.append(f'<li class="pramaan-wall-model-row" data-model-row="{html.escape(key, quote=True)}">'
                     + f'<strong>{html.escape(label)}</strong><div class="pramaan-wall-model-outcomes">'
                     + "".join(outcomes) + '</div></li>')
-    return ('<details class="pramaan-wall-model-list"><summary>Other model results ('
+    return ('<details class="pramaan-wall-model-list"><summary>All model results ('
             + str(len(model_keys)) + ')</summary><ul>' + "".join(rows) + '</ul></details>')
 
 
@@ -164,11 +165,11 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
             task_by_state.setdefault(task["state"], {})[task["level"]] = task
     state_metadata = {row.get("state"): row for row in state_rows if isinstance(row, dict)
                       and isinstance(row.get("state"), str)}
-    model_keys = [(row.get("key"), str(row.get("label") or row.get("key"))) for row in arms
+    model_keys = [(row.get("key"), model_display_name(row.get("key"), row.get("label"))) for row in arms
                   if isinstance(row, dict) and isinstance(row.get("key"), str)
                   and row["key"] in arm_documents]
     if not model_keys:
-        model_keys = [(key, key) for key, document in arm_documents.items()
+        model_keys = [(key, model_display_name(key)) for key, document in arm_documents.items()
                       if isinstance(key, str) and isinstance(document.get("tasks"), dict)]
     model_tasks = {key: (arm_documents[key].get("tasks") if isinstance(arm_documents[key].get("tasks"), dict) else {})
                    for key, _label in model_keys}

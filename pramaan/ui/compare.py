@@ -10,6 +10,7 @@ from pathlib import Path
 from numbers import Real
 
 from .check_labels import check_labels
+from .leaderboard import model_display_name
 
 
 _COLORS = tuple(f"var(--pramaan-chart-{index})" for index in range(1, 7))
@@ -47,7 +48,7 @@ def render_arena(
         document = arm_documents.get(key)
         tasks = document.get("tasks") if isinstance(document, dict) else None
         task = tasks.get(prompt_id) if isinstance(tasks, dict) else None
-        selected.append((key, str(arm.get("label") or key), task))
+        selected.append((key, model_display_name(key, arm.get("label")), task))
     available = [(key, label, task) for key, label, task in selected if isinstance(task, dict)]
     if not available:
         return ('<section class="pramaan-arena" data-testid="arena" aria-label="Same-brief model Arena">'
@@ -180,8 +181,8 @@ def render_same_brief_wall(
 
         brief = next(iter(briefs), "")
         cards = []
-        for arm, task in sorted(rows, key=lambda item: str(
-                item[0].get("label", item[0].get("key", ""))).casefold()):
+        for arm, task in sorted(rows, key=lambda item: model_display_name(
+                str(item[0].get("key", "")), item[0].get("label")).casefold()):
             attempts = task.get("attempts") if isinstance(task.get("attempts"), list) else []
             passed_at = task.get("passed_at") if type(task.get("passed_at")) is int else None
             passed_attempt = attempts[passed_at - 1] if passed_at is not None and 1 <= passed_at <= len(attempts) else {}
@@ -196,14 +197,15 @@ def render_same_brief_wall(
                 except (ValueError, base64.binascii.Error):
                     decoded = b""
                 if decoded.startswith(b"\x89PNG\r\n\x1a\n"):
-                    label = html.escape(str(arm.get("label", arm.get("key", "model"))), quote=True)
+                    label = html.escape(model_display_name(
+                        str(arm.get("key", "model")), arm.get("label")), quote=True)
                     safe_prompt = html.escape(prompt_id, quote=True)
                     verification = "Verified" if accepted else "Unverified"
                     image_html = (f'<img class="pramaan-model-tile" src="data:image/png;base64,{tile}" '
                                   'loading="lazy" decoding="async" '
                                   f'alt="{verification} tile for {label} · {safe_prompt}">')
 
-            label = html.escape(str(arm.get("label", arm.get("key", "model"))))
+            label = html.escape(model_display_name(str(arm.get("key", "model")), arm.get("label")))
             status = f"Verified · passed on attempt {passed_at}" if accepted else (
                 "Not run" if task.get("status") == "not_run" else "Not verified · no passing attempt")
             checks = attempt.get("failing_checks") if isinstance(attempt.get("failing_checks"), list) else []
