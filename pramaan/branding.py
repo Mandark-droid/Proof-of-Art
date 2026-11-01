@@ -1,3 +1,3 @@
 """Shared public-facing Pramaan copy."""
 
-HEADLINE = "Art you can prove."
+HEADLINE = "AI drew it. Math checked it."

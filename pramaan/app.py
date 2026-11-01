@@ -189,11 +189,23 @@ def _tradition_markdown_for_state(state: str | None):
         return f"No sourced tradition records are available for **{state or 'this state'}** yet."
     lines = [f"## {state}", "Craft notes describe sources and cautions; they do not certify cultural authenticity."]
     for item in traditions:
-        lines.extend([f"### {item.name}", f"Grammar: `{item.grammar}` · confidence: **{item.confidence}** · tier: **{item.tier}**",
+        lines.extend([f"### {item.name}", f"Pattern type: {_grammar_label(item.grammar)} · confidence: **{item.confidence}** · tier: **{item.tier}**",
                       f"Caution: {item.cautions}"])
         for source in list(item.sources) + list(item.sources_unverified):
             lines.append(f"- [{source.title}]({source.url}) · {source.publisher} — {source.supports}")
     return "\n\n".join(lines)
+
+
+def _grammar_label(grammar: object) -> str:
+    labels = {
+        "counted_grid": "Counted grid", "dot_field": "Dot field",
+        "jaali_lattice": "Jaali lattice", "kolam_loop": "Kolam loops",
+        "periodic_raster": "Repeat geometry", "rotational_field": "Rotational pattern",
+        "stripe_band": "Stripe band",
+    }
+    if not isinstance(grammar, str) or not grammar:
+        return "Pattern"
+    return labels.get(grammar, grammar.replace("_", " ").replace("-", " ").title())
 
 
 def _benchmark_summary():
@@ -371,8 +383,7 @@ def _publish_community_archive(archive_path: str) -> str:
     runtime = _community_submission_archive_runtime()
     if runtime is None:
         return "Archive validation is not available in this Space build. No archive was published."
-    _, publisher = runtime
-    publish = getattr(publisher, "publish_community_submission_archive", None)
+    _, publish = runtime
     if not callable(publish):
         return "Archive validation is not available in this Space build. No archive was published."
     try:
@@ -719,6 +730,19 @@ def _community_model_config_is_eligible(config: dict) -> bool:
 
 _COMMUNITY_DAILY_RUNS: set[tuple[str, str]] = set()
 _COMMUNITY_DAILY_RUNS_LOCK = threading.Lock()
+_COMMUNITY_PROVIDER_ID_RE = re.compile(r"[a-z][a-z0-9_-]{0,31}")
+_COMMUNITY_MODEL_SEGMENT_RE = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+
+
+def _valid_community_model_id(model_name: object) -> bool:
+    """Accept LiteLLM's provider/model ID, including nested routed model paths."""
+    if not isinstance(model_name, str) or len(model_name) > 256:
+        return False
+    parts = model_name.split("/")
+    return (2 <= len(parts) <= 8
+            and _COMMUNITY_PROVIDER_ID_RE.fullmatch(parts[0]) is not None
+            and all(part not in {".", ".."} and _COMMUNITY_MODEL_SEGMENT_RE.fullmatch(part)
+                    for part in parts[1:]))
 
 
 def _community_daily_identity(oauth_profile, request) -> str | None:
@@ -807,8 +831,7 @@ def _run_community_evaluation(model_name: str, provider_api_key: str, consent: b
         return "Public community uploads are not configured in this Space. No provider request was made."
     if not isinstance(provider_api_key, str) or not provider_api_key.strip() or len(provider_api_key) > 4096:
         return "Enter a valid provider key. No provider request or upload was made."
-    if (not isinstance(model_name, str) or len(model_name) > 256
-            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}/[A-Za-z0-9][A-Za-z0-9._:/-]{0,190}", model_name)):
+    if not _valid_community_model_id(model_name):
         return "Enter a valid provider/model identifier. No provider request was made."
     runtime = _community_runtime()
     if runtime is None:
@@ -816,7 +839,12 @@ def _run_community_evaluation(model_name: str, provider_api_key: str, consent: b
     runner, publisher = runtime
     try:
         config = runner.community_litellm_model_config(model_name)
-    except (ValueError, RuntimeError):
+    except ValueError as exc:
+        if "priced catalog" in str(exc).casefold():
+            return ("This model has no current LiteLLM price. Run it locally, then upload the "
+                    "replay-audited ZIP. No provider request was made.")
+        return "Model or pricing validation failed during no-call preflight. No provider request was made."
+    except RuntimeError:
         return "Model or pricing validation failed during no-call preflight. No provider request was made."
     except Exception:
         return "Community preflight failed. No provider request was made."
@@ -1301,7 +1329,7 @@ def _tradition_html_for_state(state_name: str) -> str:
             sources.append(f'<li><a href="{url}" target="_blank" rel="noopener noreferrer">{title}</a> · {publisher} — {supports}</li>')
         cards.append(
             '<article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">'
-            f'{html_escape(str(item.grammar))} · {html_escape(str(item.confidence))} confidence</p>'
+            f'{html_escape(_grammar_label(item.grammar))} · {html_escape(str(item.confidence))} confidence</p>'
             f'<h3>{html_escape(str(item.name))}</h3>'
             f'<p>{html_escape(str(item.cautions))}</p>'
             f'<ul>{"".join(sources)}</ul></article>'
@@ -1352,7 +1380,7 @@ def _proof_replay_html() -> str:
             content, re.S,
         )
         first_image = re.search(
-            r'<img class="pramaan-proof-tile" src="([^"]+)" alt="([^"]+)"',
+            r'<img class="pramaan-proof-tile" src="([^"]+)"[^>]*alt="([^"]+)"',
             first_step.group(1) if first_step else "",
         )
         if first_image:
@@ -1488,19 +1516,26 @@ def _render_proof_replay_html_from_data() -> str:
             continue
         if accepted and len(set(int(value) for value in grid.flat)) < 2:
             continue
-        failure = next((item for item in checks if item.get("status") == "FAIL"
-                        and isinstance((item.get("counterexample") or {}).get("pixel"), list)), None)
-        pixel = ((failure or {}).get("counterexample") or {}).get("pixel")
-        markers = [(pixel[0], pixel[1], "#d12f8a")] if (
-            isinstance(pixel, list) and len(pixel) == 2
-            and all(type(value) is int and 0 <= value < 64 for value in pixel)) else []
+        failure = next((item for item in checks if item.get("status") == "FAIL"), None)
+        witness = (failure or {}).get("counterexample") or {}
+        pixel = witness.get("pixel")
+        markers = []
+        if (isinstance(pixel, list) and len(pixel) == 2
+                and all(type(value) is int and 0 <= value < 64 for value in pixel)):
+            markers.append((pixel[0], pixel[1], "#d12f8a"))
+        centers = witness.get("centers")
+        if isinstance(centers, list):
+            markers.extend((point[0], point[1], "#d12f8a") for point in centers
+                           if isinstance(point, list) and len(point) == 2
+                           and all(type(value) is int and 0 <= value < 64 for value in point))
         image = render_highlighted_png(grid, pattern.palette, markers, scale=3, repeats=2)
         buffer = BytesIO()
         image.save(buffer, format="PNG", optimize=True)
         certificate = make_certificate(pattern, checks, masks, grid) if accepted else None
         attempts.append({
             "phase": str(call.get("phase") or "attempt"), "accepted": accepted,
-            "checks": checks, "pixel": pixel if markers else None,
+            "checks": checks, "pixel": pixel if isinstance(pixel, list) else None,
+            "witness_marks": markers,
             "image": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
             "pattern": pattern.model_dump(mode="json"), "certificate": certificate,
         })
@@ -1515,12 +1550,19 @@ def _render_proof_replay_html_from_data() -> str:
     safe = html_escape
     brief = safe(str(selected.get("brief", "Saved evaluation task")))
     state = safe(str(selected.get("state", "")))
-    tradition = safe(str(selected.get("tradition_id", "")))
-    grammar = safe(str(selected.get("grammar", "")))
+    tradition_id = str(selected.get("tradition_id", ""))
+    selected_tradition = _tradition_by_id(tradition_id)
+    tradition_label = selected_tradition.name if selected_tradition else tradition_id
+    tradition_parts = tradition_label.replace("-", "_").split("_")
+    if selected_tradition is None and len(tradition_parts) > 1 and len(tradition_parts[0]) == 2:
+        tradition_parts = tradition_parts[1:]
+    tradition = safe(" ".join(part.capitalize() for part in tradition_parts if part))
+    grammar = safe(str(selected.get("grammar", "pattern")).replace("_", " ").title())
     first_checks = [item for item in first_failed["checks"] if isinstance(item, dict)]
 
     def image_html(row: dict, alt: str) -> str:
-        return (f'<img class="pramaan-proof-tile" src="{row["image"]}" alt="{safe(alt)}" '
+        witness_attr = ' data-proof-witness-mark' if row.get("witness_marks") else ''
+        return (f'<img class="pramaan-proof-tile" src="{row["image"]}"{witness_attr} alt="{safe(alt)}" '
                 'width="384" height="384" decoding="async">')
 
     def check_list(rows: list[dict]) -> str:
@@ -1543,7 +1585,11 @@ def _render_proof_replay_html_from_data() -> str:
     pattern_b64 = base64.b64encode(pattern_json.encode("utf-8")).decode("ascii")
     steps = [
         f'<div class="pramaan-proof-step" data-proof-step="0" hidden><p><b>The brief</b></p><p>{brief}</p></div>',
-        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>{image_html(first_failed, "First failed attempt tile")}</div>',
+        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>'
+        + ''.join('<p class="pramaan-proof-failure-summary" data-proof-witness-mark><strong>'
+                  + safe(plain_check_label(check)) + ': failed</strong></p>'
+                  for check in first_checks if check.get("status") == "FAIL")
+        + image_html(first_failed, "First failed attempt tile with the failing witness marked") + '</div>',
         f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>What needs attention · attempt 1</b></p>{check_list(first_checks)}</div>',
     ]
     if counterexample:
@@ -1608,7 +1654,7 @@ def _render_custom_app(ui_state: dict) -> str:
     tradition_id = form.get("tradition", "")
     item = _tradition_by_id(tradition_id)
     traditions = _tradition_choices(state_name)
-    tradition_options = [(row.id, f"{row.name} · {row.id}") for row in traditions]
+    tradition_options = [(row.id, row.name) for row in traditions]
     palettes = item.palette_presets if item else {}
     palette_options = [(name, name.replace("_", " ").title()) for name in palettes]
     symmetry_options = ["None", "D2", "D4"] if item and item.grammar == "periodic_raster" else ["None", "D2", "D4", "C2", "C4"]
@@ -1677,7 +1723,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + ("" if beam_available else ' disabled title="Beam is not configured in this build"')
         + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck my edit</button></div>'
         + _field("Pattern brief", "brief", form.get("brief", ""), kind="textarea", attrs=f'maxlength="{MAX_BRIEF_CHARS}" rows="3"')
-        + (f'<p class="pramaan-muted">Grammar: <code>{html_escape(grammar or "select a tradition")}</code></p>')
+        + (f'<p class="pramaan-muted">Pattern type: {html_escape(_grammar_label(grammar) if grammar else "select a tradition")}</p>')
         + '<details class="pramaan-ui-advanced-rules"><summary>Advanced rules</summary>'
         + _field("Palette preset", "palette", form.get("palette", ""), options=palette_options)
         + _field("Symmetry", "symmetry", form.get("symmetry", "D2"), options=[(value, value) for value in symmetry_options])
@@ -1837,7 +1883,7 @@ def _render_custom_app(ui_state: dict) -> str:
     benchmark = (
         '<section class="pramaan-home" aria-label="Home"><div class="pramaan-home-intro">'
         f'<h1>{html_escape(HEADLINE)}</h1>'
-        '<p>AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
+        '<p>Proof of art that you can verify. AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
         + _proof_replay_html()
         + '<nav class="pramaan-home-actions" aria-label="Start exploring">'
         '<a class="pramaan-ui-button" href="#proof-replay">Watch a proof</a>'
@@ -1875,8 +1921,8 @@ def _render_custom_app(ui_state: dict) -> str:
         '<h3>Run one model on frozen eval-v2.1</h3>'
         '<p>Run 12 tasks, or estimate the full 72-task suite before confirming. Both use a 4,096-token cap and up to three proposals per task. Sampling: Beam/DeepSeek 0.4; Anthropic default with low effort. '
         'Only priced models are accepted. The hard USD 10 run cap permits one capped run per account or browser session per UTC day. The in-memory limit resets on restart. Provider charges may differ. Early stops show coverage; different task sets are not ranked together.</p>'
-        + _field("LiteLLM model (provider/model)", "community_model", "",
-                 attrs=("placeholder=\"e.g. anthropic/claude-haiku-5-5\" autocapitalize=\"none\" spellcheck=\"false\"" + ("" if community_ready else " disabled")))
+        + _field("LiteLLM model ID (provider/model or nested route)", "community_model", "",
+                 attrs=("placeholder=\"e.g. huggingface/together/meta-llama/Llama-3.3-70B-Instruct\" autocapitalize=\"none\" spellcheck=\"false\"" + ("" if community_ready else " disabled")))
         + _field("Run size", "community_task_limit", "12",
                  options=[("12", "Quick run · 12 questions"), ("72", "Full suite · 72 questions")],
                  attrs=("" if community_ready else "disabled"))
@@ -1958,7 +2004,9 @@ def _render_custom_app(ui_state: dict) -> str:
         '<a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener noreferrer">Open the collection</a></article>'
         '</div><article class="pramaan-ui-card pramaan-builder-runner">'
         '<h3>Add and run a model</h3><p>Add its provider and model key in <code>benchmarks/models.json</code>, then select it on the command line:</p>'
-        '<pre><code>python scripts/run_arms.py --suite benchmarks/suites/eval-v2.1.jsonl --models benchmarks/models.json --model your-model-key --output artifacts/my-run.jsonl</code></pre>'
+        '<pre><code>benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --model your-model-key --limit 12 --output benchmarks/results/my-run.jsonl</code></pre>'
+        '<p>Package the replay-audited rows for community submission:</p>'
+        '<pre><code>scripts/pack_submission.py benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip</code></pre>'
         '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Open the source repository</a></article>'
         '</section>'
     )
@@ -2157,7 +2205,7 @@ def _tradition_defaults(tradition_id: str | None):
     if symmetry not in symmetry_choices:
         symmetry = "D2" if "D2" in symmetry_choices else symmetry_choices[0]
     return (
-        f"**Grammar:** `{item.grammar}` · **Default profile:** `{json.dumps(profile, sort_keys=True)}`",
+        f"**Pattern type:** {_grammar_label(item.grammar)} · **Default profile:** `{json.dumps(profile, sort_keys=True)}`",
         gr.update(choices=choices, value=default_palette), gr.update(choices=symmetry_choices, value=symmetry),
         int(profile.get("max_colours", 4)), float(profile.get("min_coverage", 0.02)),
         float(profile.get("max_coverage", 0.70)), int(profile.get("min_gap", 0)),
@@ -2779,6 +2827,7 @@ html.light, body.light {
 .pramaan-home-wall-grid { display: grid; gap: clamp(2px,.45vw,6px); grid-template-columns: repeat(10,minmax(0,1fr)); grid-template-rows: repeat(9,minmax(0,1fr)); margin: .6rem auto; max-width: 980px; width: 100%; }
 .pramaan-wall-state { aspect-ratio: 1; min-width: 0; position: relative; }
 .pramaan-wall-tile { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: clamp(3px,.6vw,9px); color: var(--pramaan-text); cursor: pointer; display: block; height: 100%; overflow: hidden; padding: 0; position: relative; text-align: left; width: 100%; }
+.pramaan-wall-state-sheet-source { display: none !important; }
 .pramaan-wall-tile:focus-visible, .pramaan-wall-model-chip:focus-visible, .pramaan-wall-mode:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 2; }
 .pramaan-wall-art { display: block; height: 100%; image-rendering: pixelated; object-fit: cover; width: 100%; }
 .pramaan-wall-empty-art, .pramaan-wall-placeholder { align-items: center; background: repeating-linear-gradient(135deg,var(--pramaan-card-subtle) 0 6px,var(--pramaan-line) 6px 7px); color: var(--pramaan-muted); display: flex; justify-content: center; min-height: 90px; text-align: center; }
@@ -3251,12 +3300,12 @@ element.addEventListener('click', async function(event) {
   if (wallTile) {
     const wall = wallTile.closest('.pramaan-home-wall');
     const dialog = wall?.querySelector('[data-wall-dialog]');
-    const template = wallTile.parentElement?.querySelector('template[data-wall-state-sheet]');
+    const sheetSource = wallTile.parentElement?.querySelector('[data-wall-state-sheet]');
     const title = dialog?.querySelector('[data-wall-dialog-title]');
     const content = dialog?.querySelector('[data-wall-dialog-content]');
-    if (dialog && template && content) {
+    if (dialog && sheetSource && content) {
       if (title) title.textContent = wallTile.dataset.state || 'State evidence';
-      content.replaceChildren(template.content.cloneNode(true));
+      content.replaceChildren(...Array.from(sheetSource.childNodes, node => node.cloneNode(true)));
       dialog.showModal();
     }
     return;

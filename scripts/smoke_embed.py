@@ -41,13 +41,6 @@ def validate_home_wall_rendering(*, state_count: int, art_count: int, loaded_art
         raise AssertionError("Home Wall Beam results must include at least one non-ring status mark")
 
 
-def select_rl_code_snippet(snippets: list[str]) -> str:
-    """Use the first documented Python example if the panel has multiple code blocks."""
-    if not snippets:
-        raise AssertionError("RL panel contains no code examples")
-    return snippets[0]
-
-
 def validate_visitor_panels(*, proof_step_count: int, repaired_tile_loaded: bool,
                             model_keys: list[str], fable_cap_visible: bool,
                             models_signin_bar_present: bool,
@@ -188,8 +181,7 @@ async def check_browser(base_url: str, embed_url: str, output_dir: Path, browser
                     await route_page.evaluate("window.location.hash = '#/build'")
                     build_panel = route_page.locator('[data-tab-panel="rl"]')
                     await build_panel.wait_for(state="visible", timeout=5_000)
-                    rl_snippets = await build_panel.locator("pre code").all_text_contents()
-                    rl_snippet = select_rl_code_snippet(rl_snippets)
+                    rl_snippet = await build_panel.locator("pre code").inner_text()
                     validate_visitor_panels(
                         proof_step_count=proof_step_count,
                         repaired_tile_loaded=repaired_tile_loaded,

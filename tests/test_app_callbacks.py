@@ -451,7 +451,9 @@ def test_home_proof_first_paint_shows_failed_attempt_then_replays_the_repair():
     assert "hidden" in passing_step.group(1)
     assert active_image.group(1) == re.search(r'<img[^>]+src="([^"]+)"', first_step.group(2)).group(1)
     assert 'data-proof-step="1"' in rendered
-    assert "Gujarat · gj_bandhani · dot_field" in rendered
+    assert "Gujarat · Bandhani (bandhej) tie Dye dot fields · Dot Field" in rendered
+    assert "gj_bandhani" not in rendered
+    assert "dot_field" not in rendered
     assert "dark red field with a diamond of 12 small white dots" in rendered
     assert "Repair · all checks pass" in rendered
 
@@ -551,6 +553,43 @@ def test_community_run_rejects_non_provider_model_before_loading_runtime(monkeyp
     assert "valid provider/model identifier" in status
     assert "No provider request was made" in status
     assert "visitor-secret" not in status
+
+
+def test_community_run_accepts_nested_provider_model_and_guides_unpriced_models_to_zip(monkeypatch):
+    model_id = "huggingface/together/meta-llama/Llama-3.3-70B-Instruct"
+    seen = []
+
+    def no_call_preflight(received):
+        seen.append(received)
+        raise ValueError("model is not in LiteLLM's priced catalog; run it locally and upload its replay-audited ZIP instead")
+
+    runner = SimpleNamespace(
+        community_litellm_model_config=no_call_preflight,
+        run_community_evaluation=lambda *_args, **_kwargs: pytest.fail("unpriced model was dispatched"),
+    )
+    monkeypatch.setattr(app, "_community_runtime", lambda: (runner, SimpleNamespace()))
+
+    status = app._run_community_evaluation(model_id, "visitor-secret", True)
+
+    assert seen == [model_id]
+    assert "Run it locally, then upload the replay-audited ZIP" in status
+    assert "No provider request was made" in status
+
+
+def test_nested_model_identifier_rejects_empty_and_traversal_segments_before_runtime(monkeypatch):
+    monkeypatch.setattr(app, "_community_runtime", lambda: pytest.fail("invalid ID reached preflight"))
+
+    for model_id in ("huggingface/together//model", "huggingface/together/../model"):
+        status = app._run_community_evaluation(model_id, "visitor-secret", True)
+        assert "valid provider/model identifier" in status
+        assert "No provider request was made" in status
+
+
+def test_community_model_field_documents_nested_huggingface_route():
+    rendered = app._render_custom_app(app._initial_custom_state())
+
+    assert "LiteLLM model ID (provider/model or nested route)" in rendered
+    assert "huggingface/together/meta-llama/Llama-3.3-70B-Instruct" in rendered
 
 
 def test_community_run_rejects_wrong_token_limit_or_cap_before_dispatch(monkeypatch):
@@ -802,7 +841,7 @@ def test_community_model_control_accepts_provider_model_text_and_explains_cost_g
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
-    assert '<label for="pramaan-community-model">LiteLLM model (provider/model)</label>' in rendered
+    assert '<label for="pramaan-community-model">LiteLLM model ID (provider/model or nested route)</label>' in rendered
     assert '<input id="pramaan-community-model" data-field="community_model" type="text"' in rendered
     assert 'data-field="community_model" type="text"' in rendered
     assert 'data-field="community_model" type="password"' not in rendered
@@ -974,9 +1013,8 @@ def test_archive_publish_validates_managed_upload_and_uses_only_scoped_publisher
         captured["kwargs"] = kwargs
         return {"repo_id": "kshitijthakkar/pramaan-community-runs", "records": 3}
 
-    publisher = SimpleNamespace(publish_community_submission_archive=publish)
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
-                        lambda: (lambda *_a, **_k: None, publisher))
+                        lambda: (lambda *_a, **_k: None, publish))
 
     status = app._publish_community_archive(str(archive_path))
 
@@ -998,8 +1036,8 @@ def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_u
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "scoped-write-token")
     publisher_calls = []
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
-                        lambda: (lambda *_a, **_k: None, SimpleNamespace(
-                            publish_community_submission_archive=lambda *_a, **_k: publisher_calls.append(True))))
+                        lambda: (lambda *_a, **_k: None,
+                                 lambda *_a, **_k: publisher_calls.append(True)))
     monkeypatch.setattr(app, "_render_custom_app", lambda _state: "rendered")
 
     event = SimpleNamespace(action="community_archive_submit", active_tab="leaderboard",
@@ -1025,10 +1063,9 @@ def test_archive_publish_discloses_bounded_audit_reason_and_html_escapes_it(monk
     archive_path.write_bytes(b"zip fixture")
     monkeypatch.setattr(app.gr.utils, "get_upload_folder", lambda: str(upload_root))
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "scoped-write-token")
-    publisher = SimpleNamespace(publish_community_submission_archive=lambda *_a, **_k: (_ for _ in ()).throw(
-        ValueError("<script>alert(1)</script> invalid digest")))
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
-                        lambda: (lambda *_a, **_k: None, publisher))
+                        lambda: (lambda *_a, **_k: None, lambda *_a, **_k: (_ for _ in ()).throw(
+                            ValueError("<script>alert(1)</script> invalid digest"))))
 
     status = app._publish_community_archive(str(archive_path))
     monkeypatch.setattr(app, "_community_model_choices", lambda: [])

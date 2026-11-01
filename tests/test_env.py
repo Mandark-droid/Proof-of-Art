@@ -325,8 +325,7 @@ def test_pramaan_app_imports_from_only_the_files_copied_by_dockerfile(tmp_path):
                 shutil.copy2(source_path, target)
 
     env = os.environ.copy()
-    dependency_path = env.get("PRAMAAN_TEST_DEPENDENCY_PATH", "")
-    env["PYTHONPATH"] = os.pathsep.join(part for part in (str(image_root), dependency_path) if part)
+    env["PYTHONPATH"] = str(image_root)
     env["PRAMAAN_PROJECT_ROOT"] = str(image_root)
     for name in ("HF_TOKEN", "HF_COMMUNITY_WRITE_TOKEN", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY"):
         env.pop(name, None)

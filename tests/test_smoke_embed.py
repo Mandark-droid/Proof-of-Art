@@ -1,18 +1,6 @@
 import pytest
 
-from scripts.smoke_embed import (
-    select_rl_code_snippet,
-    validate_home_wall_rendering,
-    validate_visitor_panels,
-)
-
-
-def test_rl_smoke_selects_the_first_code_block_when_multiple_are_present():
-    snippets = [
-        "from pramaan_env import PramaanEnv, PramaanAction",
-        "python scripts/run_arms.py --suite benchmarks/suites/eval-v2.1.jsonl",
-    ]
-    assert select_rl_code_snippet(snippets) == snippets[0]
+from scripts.smoke_embed import validate_home_wall_rendering, validate_visitor_panels
 
 
 def test_home_wall_smoke_accepts_complete_reference_art_and_beam_results():

@@ -34,6 +34,9 @@ def test_build_with_it_leads_with_environment_and_dataset_resources_and_collapse
     assert "https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" in build
     assert "https://github.com/Mandark-droid/Proof-of-Art" in build
     assert "Add and run a model" in build and "--model" in build
+    assert "benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --model your-model-key --limit 12 --output benchmarks/results/my-run.jsonl" in build
+    assert "scripts/pack_submission.py benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip" in build
+    assert "scripts/run_arms.py" not in build
     assert '<details class="pramaan-ui-sources">' in build
     assert '<summary>Sources</summary>' in build
     assert '<details class="pramaan-ui-diwali">' in build

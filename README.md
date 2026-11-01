@@ -19,13 +19,15 @@ tags:
   - generative-art
   - india
 thumbnail: https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art/resolve/main/assets/space-card.png
-short_description: "Art you can prove: AI patterns from 36 Indian traditions."
+short_description: "AI drew it. Math checked it. Proof of art you can verify."
 suggested_hardware: cpu-basic
 ---
 
 # Pramaan — Proof of Art
 
-**Art you can prove.**
+**AI drew it. Math checked it.**
+
+*Proof of art that you can verify.*
 
 <p align="center"><img src="assets/pramaan-mark.png" alt="Pramaan geometric loop mark" width="112"></p>
 

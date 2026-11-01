@@ -232,5 +232,5 @@ def render_data_quilt(index: dict, arm_documents: dict[str, dict], *, model_key:
             + '<li data-tile-state="community-run"><span aria-hidden="true"></span>Community run</li></ul>'
             + '<dialog class="pramaan-quilt-dialog" data-testid="quilt-state-sheet" aria-labelledby="quilt-sheet-title">'
             + '<div class="pramaan-quilt-dialog-head"><h3 id="quilt-sheet-title" data-quilt-sheet-title>State evidence</h3>'
-            + '<button type="button" class="pramaan-ui-button secondary" data-quilt-close aria-label="Close state evidence">Close</button></div>'
+            + '<button type="button" class="pramaan-ui-button secondary" data-quilt-close data-testid="quilt-state-sheet-close" aria-label="Close state evidence">Close</button></div>'
             + '<div data-quilt-sheet-content></div></dialog>')

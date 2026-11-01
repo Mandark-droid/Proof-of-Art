@@ -84,9 +84,7 @@ def community_model_identity(model_key):
     model_id = match.group("model")
     if any(part in {".", ".."} for part in model_id.split("/")):
         return None
-    provider_key = match.group("provider")
-    provider = COMMUNITY_LITELLM_PROVIDERS.get(provider_key, "Self-reported") if provider_key else "Self-reported"
-    return {"provider": provider,
+    return {"provider": "Self-reported",
             "model_id": model_id, "api_style": "litellm-chat-completions"}
 
 
@@ -139,16 +137,27 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
     identity = community_model_identity(model_key)
     if identity is None:
         raise ValueError("community run model is not on the supported provider list")
+    legacy_identity = model_key in COMMUNITY_MODEL_PROVIDERS
     provider, model_id, api_style = identity["provider"], identity["model_id"], identity["api_style"]
     if first.get("model_id") != model_id:
         raise ValueError("community run model id is invalid")
-    if api_style == "litellm-chat-completions":
+    if legacy_identity and api_style == "litellm-chat-completions":
         expected_params = {"temperature": 0.4, "max_tokens": 4096}
-    elif api_style == "anthropic-messages":
+    elif legacy_identity and api_style == "anthropic-messages":
         expected_params = {"max_tokens": 4096, "output_config": {"effort": "low"}}
-    else:
+    elif legacy_identity:
         expected_params = {"temperature": 0.4, "max_tokens": 4096,
                            "extra_body": {"thinking": {"type": "disabled"}}}
+    else:
+        reported_provider = first.get("provider")
+        api_style = first.get("api_style")
+        if (not isinstance(reported_provider, str)
+                or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 ._-]{0,79}", reported_provider)
+                or not isinstance(api_style, str)
+                or api_style not in {"openai-compatible-chat-completions", "litellm-chat-completions"}):
+            raise ValueError("self-reported community runs need a provider label and supported chat API style")
+        provider = "Self-reported"
+        expected_params = None
     submitted_at = datetime.now(timezone.utc).isoformat()
     safe_rows = []
     from pramaan.checks.core import all_pass, verify_pattern
@@ -159,10 +168,31 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
         task = tasks.get(prompt_id)
         if task is None:
             raise ValueError(f"{prompt_id!r} is not a question in the frozen {task_rows[0]['suite_id']} suite")
+        row_params = row.get("request_params")
+        if not legacy_identity:
+            if (row.get("provider") != reported_provider or row.get("api_style") != api_style
+                    or not isinstance(row_params, dict) or row_params.get("max_tokens") != 4096
+                    or ("max_completion_tokens" in row_params
+                        and row_params["max_completion_tokens"] != 4096)):
+                raise ValueError(f"{prompt_id}: self-reported run settings need max_tokens 4096")
+            try:
+                encoded_params = json.dumps(row_params, ensure_ascii=False, separators=(",", ":"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError("self-reported request settings must be JSON data") from exc
+            if len(encoded_params) > 4096:
+                raise ValueError("request settings exceed the public metadata limit")
+            public_params = _community_safe(row_params, provider_api_key)
+            if (row.get("provider") != reported_provider
+                    or row.get("api_style") != api_style
+                    or row_params != first.get("request_params")):
+                raise ValueError("community run mixes self-reported provider settings")
+        else:
+            public_params = expected_params
         if (row.get("model_key") != model_key or row.get("model_id") != model_id
-                or row.get("provider") != provider or row.get("prompt_suite_sha256") != suite_sha
+                or (legacy_identity and row.get("provider") != provider)
+                or row.get("prompt_suite_sha256") != suite_sha
                 or row.get("api_style") != api_style
-                or row.get("request_params") != expected_params):
+                or (legacy_identity and row_params != expected_params)):
             raise ValueError("community run mixes providers, settings, or prompt-suite revisions")
         for field in ("suite_id", "state", "tradition_id", "grammar", "level", "brief", "symmetry"):
             if row.get(field) != task.get(field):
@@ -225,8 +255,9 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
             "resolved_model_ids": [value[:128] for value in (row.get("resolved_model_ids") or [])[:5]
                                    if isinstance(value, str)],
             "provider": provider, "provider_host": COMMUNITY_PROVIDER_HOSTS.get(provider),
-            "api_style": row.get("api_style"),
-            "request_params": expected_params,
+            "reported_provider": reported_provider if not legacy_identity else provider,
+            "api_style": api_style,
+            "request_params": public_params,
             "prompt_suite_sha256": suite_sha, "suite_id": task["suite_id"],
             "prompt_id": prompt_id, "state": task["state"], "tradition_id": task["tradition_id"],
             "grammar": task["grammar"], "level": task["level"], "brief": task["brief"],

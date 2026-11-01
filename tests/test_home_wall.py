@@ -60,6 +60,11 @@ def test_wall_uses_map_grid_two_marks_model_chips_and_state_sheets():
                                      selected_model="beam-hf", display_mode="reference")
 
     assert 'data-home-wall-tile' in rendered
+    assert 'data-testid="home-wall-tile-andhra-pradesh"' in rendered
+    assert 'data-testid="home-wall-state-sheet-close"' in rendered
+    assert 'data-state-id="Andhra Pradesh"' in rendered
+    assert 'data-easy-task-id="ap-easy"' in rendered
+    assert 'data-hard-task-id="ap-hard"' in rendered
     assert 'role="grid"' in rendered and 'grid-column:6;grid-row:7' in rendered
     assert rendered.count('data-wall-mark=') == 72
     tile = rendered.split('data-state="Andhra Pradesh"', 1)[1].split('</article>', 1)[0]
@@ -76,6 +81,8 @@ def test_wall_uses_map_grid_two_marks_model_chips_and_state_sheets():
     assert "Passed means the geometric checks passed; it does not mean the design matches the brief." in rendered
     assert rendered.index("Beam attempt · Right first try") < rendered.index("Passed means the geometric checks passed")
     assert 'data-wall-state-sheet' in rendered
+    assert 'class="pramaan-wall-state-sheet-source" data-wall-state-sheet' in rendered
+    assert '<template data-wall-state-sheet' not in rendered
     assert 'All model results (2)' in rendered
     assert 'Other model results' not in rendered
     assert 'No reference: this brief has no valid solution' not in rendered

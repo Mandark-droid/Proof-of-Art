@@ -29,6 +29,17 @@ _STATE_SHORT_NAMES = {
 }
 
 
+def _human_task_name(value: object) -> str:
+    """Turn a registry/task identifier into a readable label for evidence headings."""
+    if not isinstance(value, str) or not value:
+        return "Task brief"
+    parts = re.split(r"[_-]+", value)
+    # Registry IDs commonly begin with a two-letter state/territory code.
+    if len(parts) > 1 and len(parts[0]) == 2 and parts[0].isalpha():
+        parts = parts[1:]
+    return " ".join(part.capitalize() for part in parts if part) or "Task brief"
+
+
 def _result(task: dict | None) -> tuple[str, str]:
     if not isinstance(task, dict):
         return "none", "Not run"
@@ -162,7 +173,7 @@ def _task_sheet_section(state: str, level: str, spec: dict | None, reference: di
                + f'<figcaption>{html.escape(selected_label)} attempt · {html.escape(selected_result)}</figcaption>'
                + verification_note + visibility_note + selected_html + _task_attempts(selected_task) + '</figure></div>')
     return (f'<section class="pramaan-wall-task" data-wall-task-level="{level}">'
-            + f'<p class="pramaan-ui-eyebrow">{title}</p><h4>{html.escape(str(spec.get("tradition_id", "")) if isinstance(spec, dict) else "Task brief")}</h4>'
+            + f'<p class="pramaan-ui-eyebrow">{title}</p><h4>{html.escape(_human_task_name(spec.get("tradition_id")) if isinstance(spec, dict) else "Task brief")}</h4>'
             + f'<p class="pramaan-wall-brief">{html.escape(str(brief))}</p>'
             + compare + '</section>')
 
@@ -255,11 +266,14 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         state_tiles.append(
             f'<article class="pramaan-wall-state" data-state="{html.escape(state, quote=True)}" '
             f'style="grid-column:{column + 1};grid-row:{row + 1}">'
-            f'<button type="button" class="pramaan-wall-tile" data-home-wall-tile data-state="{html.escape(state, quote=True)}" '
+            f'<button type="button" class="pramaan-wall-tile" data-home-wall-tile '
+            f'data-testid="home-wall-tile-{re.sub(r"[^a-z0-9]+", "-", state.casefold()).strip("-")}" '
+            f'data-state-id="{html.escape(state, quote=True)}" data-easy-task-id="{html.escape(str(easy_id), quote=True)}" '
+            f'data-hard-task-id="{html.escape(str(hard_id), quote=True)}" data-state="{html.escape(state, quote=True)}" '
             f'aria-label="{html.escape(aria, quote=True)}" aria-haspopup="dialog">'
             + art + f'<span class="pramaan-wall-state-name" title="{html.escape(state, quote=True)}">{html.escape(_STATE_SHORT_NAMES.get(state, state))}</span>'
             + f'<span class="pramaan-wall-marks">{marks}</span></button>'
-            + f'<template data-wall-state-sheet data-state="{html.escape(state, quote=True)}">{details}</template></article>')
+            + f'<div class="pramaan-wall-state-sheet-source" data-wall-state-sheet data-state="{html.escape(state, quote=True)}">{details}</div></article>')
     state_model_counts = sum(tally[selected_model].values()) if selected_model in tally else 0
     selected_count_line = (f'<span data-wall-summary>{html.escape(chosen_label)} · {state_model_counts} task records</span>'
                            if selected_model else '<span data-wall-summary>Model results unavailable</span>')
@@ -290,5 +304,5 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         + "".join(state_tiles) + '</div>'
         '<dialog class="pramaan-wall-dialog" data-wall-dialog aria-labelledby="pramaan-wall-dialog-title">'
         '<div class="pramaan-wall-dialog-head"><h3 id="pramaan-wall-dialog-title" data-wall-dialog-title>State evidence</h3>'
-        '<button type="button" class="pramaan-ui-button secondary" data-wall-dialog-close>Close</button></div>'
+        '<button type="button" class="pramaan-ui-button secondary" data-wall-dialog-close data-testid="home-wall-state-sheet-close">Close</button></div>'
         '<div data-wall-dialog-content></div></dialog></section>')

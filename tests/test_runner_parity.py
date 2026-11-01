@@ -2080,12 +2080,12 @@ def test_community_model_identity_accepts_self_reported_and_huggingface_names():
     from scripts.push_hub_datasets import community_model_identity
 
     assert community_model_identity("anthropic/claude-sonnet-4-5") == {
-        "provider": "Anthropic", "model_id": "claude-sonnet-4-5",
+        "provider": "Self-reported", "model_id": "claude-sonnet-4-5",
         "api_style": "litellm-chat-completions",
     }
-    assert community_model_identity("openai/gpt-4o")["provider"] == "OpenAI"
+    assert community_model_identity("openai/gpt-4o")["provider"] == "Self-reported"
     assert community_model_identity("huggingface/together/meta-llama/Llama-3.3-70B-Instruct") == {
-        "provider": "Hugging Face", "model_id": "together/meta-llama/Llama-3.3-70B-Instruct",
+        "provider": "Self-reported", "model_id": "together/meta-llama/Llama-3.3-70B-Instruct",
         "api_style": "litellm-chat-completions",
     }
     assert community_model_identity("unknown/provider-model")["provider"] == "Self-reported"
@@ -2135,6 +2135,82 @@ def test_huggingface_model_identity_packs_and_replay_audits_without_invented_hos
     assert report.accepted_rows[0]["provider_host"] is None
     assert report.accepted_rows[0]["model_label"].endswith("self-reported, unverified)")
     assert report.accepted_rows[0]["training_eligible"] is False
+
+
+@pytest.mark.parametrize(("model_key", "provider", "model_id"), [
+    ("huggingface/org/model", "Hugging Face", "org/model"),
+    ("my-lab/new-model", "Self-hosted", "new-model"),
+])
+def test_custom_runner_rows_pack_and_replay_audit_end_to_end(
+        tmp_path, model_key, provider, model_id):
+    """Exercise the actual runner row shape without initializing a provider client."""
+    from benchmarks import run as runner
+    from pramaan.community import audit_submission_archive
+    from pramaan.tasks import load_suite
+    from scripts.pack_submission import pack_submission
+    from scripts.push_hub_datasets import sanitize_community_eval_rows
+
+    registry_path = tmp_path / "models.json"
+    registry_path.write_text(json.dumps({"schema_version": 1, "models": [{
+        "key": model_key, "provider": provider,
+        "api_style": "openai-compatible-chat-completions", "model_id": model_id,
+        "base_url": "https://inference.example/v1", "api_key_env": "FAKE_MODEL_KEY",
+        "request_params": {"temperature": 0.25, "max_tokens": 4096, "top_p": 0.8},
+    }]}), encoding="utf-8")
+    config = runner.load_model_registry(registry_path)[model_key]
+    tasks, digest = load_suite("eval-v2.1")
+
+    class FakeClient:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, _system, _prompt):
+            self.calls += 1
+            return "not valid PatternDSL JSON", {"model_id": model_id, "provider": provider}
+
+    fake = FakeClient()
+    runner_row = runner.run_prompt(
+        tasks[0].model_dump(mode="json"), client=fake, suite_sha256=digest, model_config=config)
+
+    assert fake.calls == 3
+    assert runner_row["provider"] == provider
+    assert runner_row["api_style"] == "openai-compatible-chat-completions"
+    assert runner_row["request_params"] == config["request_params"]
+
+    sanitized_rows = sanitize_community_eval_rows(
+        [runner_row], run_id="runner-e2e", expected_suite_sha256=digest,
+        provider_api_key="sk-local-test-only")
+    assert sanitized_rows[0]["provider"] == "Self-reported"
+    assert sanitized_rows[0]["reported_provider"] == provider
+    assert sanitized_rows[0]["api_style"] == runner_row["api_style"]
+    assert sanitized_rows[0]["request_params"] == config["request_params"]
+    results_path = tmp_path / "runner-output.jsonl"
+    results_path.write_text(json.dumps(sanitized_rows[0]) + "\n", encoding="utf-8")
+    archive_path = tmp_path / "runner-output.zip"
+    pack_submission(results_path, archive_path)
+
+    report = audit_submission_archive(archive_path, run_id="runner-e2e-audit")
+
+    assert report.accepted is True
+    assert report.accepted_rows[0]["provider"] == "Self-reported"
+    assert report.accepted_rows[0]["provider_host"] is None
+    assert report.accepted_rows[0]["attempt_count"] == 3
+
+
+def test_self_reported_community_audit_requires_4096_output_tokens():
+    from pramaan.community import audit_trajectory_rows
+    from pramaan.tasks import load_suite
+
+    tasks, digest = load_suite("eval-v2.1")
+    row = _minimal_self_reported_archive_row(
+        "my-lab/new-model", "new-model", "Self-hosted", tasks[0], digest)
+    row["api_style"] = "openai-compatible-chat-completions"
+    row["request_params"] = {"temperature": 0.1, "max_tokens": 2048, "top_p": 0.8}
+
+    report = audit_trajectory_rows([row], run_id="wrong-output-cap", expected_suite_sha256=digest)
+
+    assert report.accepted is False
+    assert "max_tokens 4096" in report.reasons[0]
 
 
 def test_community_audit_rejects_failed_design_claimed_as_passing():

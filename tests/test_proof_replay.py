@@ -7,8 +7,9 @@ from pramaan.app import HEADLINE, _initial_custom_state, _proof_replay_html, _re
 def test_first_screen_uses_shared_headline_and_replay_is_included():
     rendered = _render_custom_app(_initial_custom_state())
 
-    assert HEADLINE == "Art you can prove."
+    assert HEADLINE == "AI drew it. Math checked it."
     assert HEADLINE in rendered
+    assert "Proof of art that you can verify." in rendered
     assert 'data-testid="proof-replay"' in rendered
     assert 'data-testid="proof-replay-play"' in rendered
     assert 'data-testid="proof-replay-step"' in rendered
@@ -20,7 +21,10 @@ def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
     rendered = _proof_replay_html()
 
     assert "Gujarat" in rendered
-    assert "gj_bandhani" in rendered
+    assert "Bandhani" in rendered
+    assert "Dot Field" in rendered
+    assert "gj_bandhani" not in rendered
+    assert "dot_field" not in rendered
     assert "dark red field with a diamond of 12 small white dots" in rendered
     assert "Attempt 1 · did not pass" in rendered
     assert "What needs attention · attempt 1" in rendered
@@ -33,6 +37,13 @@ def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
     match = re.search(r'data-pattern-b64="([A-Za-z0-9+/=]+)"', rendered)
     assert match
     assert b'"grammar":"dot_field"' in base64.b64decode(match.group(1))
+
+
+def test_try_it_uses_plain_language_pattern_type_label():
+    rendered = _render_custom_app(_initial_custom_state())
+
+    assert "Pattern type: Dot field" in rendered
+    assert "Grammar: <code>dot_field</code>" not in rendered
 
 
 def test_home_replay_starts_on_failed_attempt_and_removes_repeated_tile_caption():
@@ -53,6 +64,41 @@ def test_home_replay_starts_on_failed_attempt_and_removes_repeated_tile_caption(
     assert first_image and active_image and first_image.group(1) == active_image.group(1)
     assert "Repair · all checks pass" in rendered
     assert "data-proof-figure-caption" not in rendered
+
+
+def test_initial_failed_attempt_names_failed_check_and_marks_its_witness_on_tile():
+    from pramaan import app
+
+    rendered = app._proof_replay_html()
+    first_step = re.search(
+        r'<div class="pramaan-proof-step" data-proof-step="1"[^>]*>(.*?)</div>', rendered, re.S,
+    )
+    assert first_step
+    assert "Dots keep their distance: failed" in first_step.group(1)
+    # The witness is two motif centres, not a pixel coordinate. Both are circled
+    # on the initial image so the opening replay frame contains visible evidence.
+    image = re.search(
+        r'<img class="pramaan-proof-tile" src="data:image/png;base64,([^"]+)" data-proof-witness-mark',
+        first_step.group(1),
+    )
+    assert image
+    from io import BytesIO
+    from PIL import Image
+    marked_tile = Image.open(BytesIO(base64.b64decode(image.group(1)))).convert("RGB")
+    assert sum(1 for pixel in marked_tile.get_flattened_data() if pixel == (209, 47, 138)) > 0
+
+
+def test_every_proof_replay_step_has_visible_explanatory_content():
+    rendered = _proof_replay_html()
+    steps = re.findall(
+        r'<div class="pramaan-proof-step" data-proof-step="(\d+)"([^>]*)>(.*?)</div>',
+        rendered, re.S,
+    )
+    assert len(steps) == 6
+    for _index, _attrs, body in steps:
+        text = re.sub(r'<[^>]+>', ' ', body)
+        assert re.search(r'\w', text) or '<img ' in body
+    assert "Dots keep their distance: failed" in steps[1][2]
 
 
 def test_mobile_proof_replay_uses_the_large_tile_once_and_wall_details_are_collapsed():
