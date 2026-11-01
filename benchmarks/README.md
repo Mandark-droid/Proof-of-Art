@@ -159,7 +159,11 @@ The planned score-entry shape is:
   notes: "pass@1 (%); pass@3=<value>; provider=<route>; max_tokens=4096; max_attempts=3; suite_sha256=<digest>; validator=<version>; one stochastic run; deterministic verifier replay; cost provenance is in the source dataset."
 ```
 
-## Contribute a local evaluation
+## Run the benchmark and submit
+
+**On the Space:** in Models → Opt-in community evaluation, enter a priced `provider/model` ID and your own provider key. IDs may use names such as `huggingface/org/model` or a nested provider route such as `huggingface/together/meta-llama/Llama-3.3-70B-Instruct`. The Space estimates full-suite cost without a provider call, accepts 12-task or 72-task runs, and enforces a USD 10 cap. Your key passes through the Space to the provider; use a disposable key with a provider-side limit. Public release requires a separate consent. The model name is self-reported and unverified. Accepted, replay-checked, sanitized results go to the separate [community dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs), not the official evaluation or training datasets.
+
+**Locally:** add a model object to `benchmarks/models.json` with a unique key, provider, supported API style, model ID, HTTPS base URL, environment-variable name for its key, request parameters, and known pricing. For example, the model key can be `my-lab/new-model`; set the key named by `api_key_env` in your local environment and never add credentials to JSON or results. Run the selected frozen suite and package the result:
 
 Run the selected provider from your own machine so the provider key never passes through the Space:
 
@@ -170,6 +174,6 @@ uv run --project . python scripts/pack_submission.py \
   benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip
 ```
 
-Use the model's provider key only through its documented environment variable for the local run. The packer makes a new ZIP containing `results.jsonl` and a SHA-256 manifest; it refuses suite/task mismatches, duplicate task IDs, credential-bearing fields, and overwriting an existing archive. Upload the ZIP through the Space's Contribute flow when available. The server validates the manifest and replays every candidate before publishing sanitized rows to the separate `kshitijthakkar/pramaan-community-runs` dataset. Community model identities are self-reported and unverified; rows are always `training_eligible: false`.
+Use the model's provider key only through its documented environment variable for the local run. The packer makes a new ZIP containing `results.jsonl` and a SHA-256 manifest; it refuses suite/task mismatches, duplicate task IDs, credential-bearing fields, and overwriting an existing archive. Upload the ZIP through the Space's Contribute flow. The server validates the manifest and replays every candidate before publishing sanitized rows to the separate [community dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs). Community model identities are self-reported and unverified; rows are always `training_eligible: false`.
 
 The Space publisher requires a fine-grained `HF_COMMUNITY_WRITE_TOKEN` scoped only to that community dataset. The read-only benchmark `HF_TOKEN` is not used for community writes. Public uploads are append-only, and the Space's ephemeral buffer may lose pending rows on restart.
