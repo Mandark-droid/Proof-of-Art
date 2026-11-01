@@ -436,7 +436,7 @@ def test_benchmark_tab_wires_the_custom_html_protocol_and_summary(monkeypatch):
     assert "key === 'state' ? 'state' : key === 'tradition' ? 'tradition'" in custom_html.js_on_load
     assert "const uploaded = await upload(file)" in custom_html.js_on_load
     assert "values.community_archive_path = uploaded.path" in custom_html.js_on_load
-    assert "Sign in with Hugging Face to publish" in custom_html.js_on_load
+    assert "Sign in with Hugging Face to publish: use the button at the top of this page" in custom_html.js_on_load
     assert "Archive submission timed out after 90 seconds" in custom_html.js_on_load
     assert "}, 90000)" in custom_html.js_on_load
 
@@ -991,7 +991,7 @@ def test_archive_contribution_prompts_for_hf_sign_in_when_enabled(monkeypatch):
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
-    assert "Sign in with Hugging Face to publish" in rendered
+    assert "Sign in with Hugging Face to publish: use the button at the top of this page" in rendered
 
 
 def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path(monkeypatch):

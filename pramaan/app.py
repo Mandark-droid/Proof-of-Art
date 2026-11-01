@@ -380,7 +380,7 @@ def _publish_community_archive(archive_path: str, *, submitted_by: str | None = 
     """Audit then publish a user-consented ZIP through the configured scoped writer."""
     if (not isinstance(submitted_by, str)
             or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", submitted_by) is None):
-        return "Sign in with Hugging Face to publish"
+        return "Sign in with Hugging Face to publish: use the button at the top of this page"
     if not os.getenv("HF_COMMUNITY_WRITE_TOKEN"):
         return "Archive contribution is not enabled in this Space. No archive was published."
     runtime = _community_submission_archive_runtime()
@@ -1920,7 +1920,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_archive_submit"'
         + ("" if archive_ready else ' disabled title="Configure the scoped community write secret before enabling archive contributions"')
         + '>Audit and contribute archive</button></div>'
-        + f'<p class="pramaan-ui-muted" role="status" data-community-archive-status>{html_escape(archive_status or ("Archive contributions are disabled until the scoped HF_COMMUNITY_WRITE_TOKEN and archive verifier are configured." if not archive_ready else "Sign in with Hugging Face to publish"))}</p>'
+        + f'<p class="pramaan-ui-muted" role="status" data-community-archive-status>{html_escape(archive_status or ("Archive contributions are disabled until the scoped HF_COMMUNITY_WRITE_TOKEN and archive verifier are configured." if not archive_ready else "Sign in with Hugging Face to publish: use the button at the top of this page"))}</p>'
         + '</article>'
     )
     community = (
@@ -2177,7 +2177,7 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
         try:
             if (not isinstance(username, str)
                     or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", username) is None):
-                state["community_archive_status"] = "Sign in with Hugging Face to publish"
+                state["community_archive_status"] = "Sign in with Hugging Face to publish: use the button at the top of this page"
             elif not consent:
                 state["community_archive_status"] = "Check the publication consent box before submitting. No archive was audited or published."
             elif not isinstance(archive_path, str) or not archive_path:
@@ -3141,11 +3141,12 @@ def build_demo():
     js_on_load = quilt_navigation_js + r"""
 function syncArchiveSignInPrompt() {
   const status = element.querySelector('[data-community-archive-status]');
-  if (!status || !['Sign in with Hugging Face to publish', 'Select a ZIP archive and give publication consent to begin.'].includes(status.textContent.trim())) return;
+  const signInPrompt = 'Sign in with Hugging Face to publish: use the button at the top of this page';
+  if (!status || ![signInPrompt, 'Select a ZIP archive and give publication consent to begin.'].includes(status.textContent.trim())) return;
   const loginText = document.querySelector('#pramaan-hf-login-row')?.textContent || '';
   status.textContent = /\bsign out\b/i.test(loginText)
     ? 'Select a ZIP archive and give publication consent to begin.'
-    : 'Sign in with Hugging Face to publish';
+    : signInPrompt;
 }
 syncArchiveSignInPrompt();
 const archiveLoginRow = document.querySelector('#pramaan-hf-login-row');
@@ -3432,7 +3433,7 @@ element.addEventListener('click', async function(event) {
     const status = element.querySelector('[data-community-archive-status]');
     const loginText = document.querySelector('#pramaan-hf-login-row')?.textContent || '';
     if (!/\bsign out\b/i.test(loginText)) {
-      if (status) status.textContent = 'Sign in with Hugging Face to publish';
+      if (status) status.textContent = 'Sign in with Hugging Face to publish: use the button at the top of this page';
       return;
     }
     if (!consent?.checked) {
