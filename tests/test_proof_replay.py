@@ -1,15 +1,26 @@
 import base64
 import re
 
-from pramaan.app import HEADLINE, _initial_custom_state, _proof_replay_html, _render_custom_app
+from pramaan.app import (
+    HEADLINE,
+    SUBTITLE,
+    _initial_custom_state,
+    _proof_replay_html,
+    _render_custom_app,
+)
 
 
 def test_first_screen_uses_shared_headline_and_replay_is_included():
     rendered = _render_custom_app(_initial_custom_state())
 
     assert HEADLINE == "AI drew it. Math checked it."
+    assert SUBTITLE == "Proof of art that you can verify."
     assert HEADLINE in rendered
-    assert "Proof of art that you can verify." in rendered
+    home_intro = re.search(r'<div class="pramaan-home-intro">(.*?)</div>', rendered, re.S)
+    assert home_intro
+    assert home_intro.group(1).startswith(f"<h1>{HEADLINE}</h1><p>{SUBTITLE} ")
+    assert rendered.count(f"<h1>{HEADLINE}</h1>") == 1
+    assert "Art you can prove." not in rendered
     assert 'data-testid="proof-replay"' in rendered
     assert 'data-testid="proof-replay-play"' in rendered
     assert 'data-testid="proof-replay-step"' in rendered
@@ -21,6 +32,8 @@ def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
     rendered = _proof_replay_html()
 
     assert "Gujarat" in rendered
+    assert "Art you can prove." not in rendered
+    assert "pramaan-proof-subtitle" not in rendered
     assert "Bandhani" in rendered
     assert "Dot Field" in rendered
     assert "gj_bandhani" not in rendered
@@ -37,6 +50,19 @@ def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
     match = re.search(r'data-pattern-b64="([A-Za-z0-9+/=]+)"', rendered)
     assert match
     assert b'"grammar":"dot_field"' in base64.b64decode(match.group(1))
+
+
+def test_readme_and_standalone_replay_use_the_shared_branding_copy():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    replay = (root / "assets" / "proof-replay.html").read_text(encoding="utf-8")
+
+    assert f"**{HEADLINE}**" in readme
+    assert f"*{SUBTITLE}*" in readme
+    assert f'<h1>{HEADLINE}</h1><p class="pramaan-proof-subtitle">{SUBTITLE}</p>' in replay
+    assert "Art you can prove." not in replay
 
 
 def test_try_it_uses_plain_language_pattern_type_label():

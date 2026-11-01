@@ -1,31 +1,31 @@
 # Pramaan benchmark protocol
 
-This note records the planned one-pass comparison protocol. The run must not start until the selected prompt manifest, its ordered task IDs and digest, provider settings, cost preflight, and release revision have been reviewed. The existing partial 72-task provider run is aborted and excluded from scores and public datasets.
+*AI drew it. Math checked it.* Proof of art that you can verify.
 
-## Shared suite and scoring
+Pramaan's published comparison is the completed `eval-v2.1` run. It evaluates ten models on the same 72 frozen tasks across 36 Indian states and Union Territories. The suite digest is `b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a`; the public export contains 720 model-task rows.
 
-The source suite is `eval-v2.1` at `benchmarks/suites/eval-v2.1.jsonl` (72 tasks across 36 states and Union Territories). The comparison uses one fixed 47-task subset selected before any model call. Every model receives the same task IDs in the same order, the same initial prompt, the same 4,096-token completion limit, the same deterministic verifier, and up to three proposals per task. Report pass@1, pass@3, repair attempts, verifier outcomes, task coverage, token use, latency, and cost separately for every model. Compare quality only over the exact shared completed task IDs; disclose missing tasks.
+## Shared evaluation
 
-Select the 47 tasks using seed `pramaan-eval-v2.1-common47-v1`, independently of model results. Rank state names by UTF-8 SHA-256 of `seed|pair|state` (lexical state name breaks a tie); include both the easy and hard task for the first 11 states. Rank the remaining states by SHA-256 of `seed|single|state`; include the easy task for the first 14 and the hard task for the other 11. Preserve original suite order in the final manifest. The subset therefore contains 25 easy and 22 hard tasks and represents every state. Publish the exact ordered IDs and digest before execution.
+Every model received the same ordered task IDs, initial prompt, deterministic verifier, 4,096-token output ceiling, and maximum of three proposals per task. Provider retries were disabled. All ten models completed all 72 tasks. The verifier and result aggregation path were shared. Provider-specific sampling parameters are recorded in each trajectory because the providers do not expose identical controls.
 
-## Model arms and settings
+The roster is Beam; Claude Fable 5.1, Haiku 5.5, Opus 5.5, and Sonnet 5.5; DeepSeek V4 Flash; GPT-6 Astra and Luna; and GPT-6.1 Sol and Terra. Scores use all 72 task IDs. Per-model pass@1/pass@3, token use, latency, estimated rate-card cost, and spend limits are reported in [the benchmark results](../benchmarks/README.md).
 
-Planned arms are Beam (`reflection/Beam-1.0-501B-A23B`), Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, Fable 5.1, and DeepSeek V4.1 Flash through CometAPI. The five paid models each have an independent hard cap of USD 10, for a maximum paid-model spend of USD 50; a cap on one model does not reduce another model's budget. Beam is the baseline. Use one benchmark runner, one suite manifest, one normalizer and one scoring path for all arms. Record the exact endpoint, model ID, request parameters, package versions, prompt and suite digests, every raw response, verifier feedback, errors, retries, per-call input/output tokens, request/provider/verifier durations, and estimated or reported cost.
+## Recorded results and interpretation
 
-Use `max_tokens=4096` and up to three proposals per task for every arm. Beam and DeepSeek use temperature 0.4. The Claude API rejects `temperature`, so Claude uses provider-default sampling with `output_config.effort=low`; disclose this provider limitation. SDK and transport retries are disabled. A failure is recorded, not silently retried by a different path. Do not change the token limit, prompt, subset, normalizer, proposal count or scoring after the run starts. The intended comparison is one pass, with no reruns.
+The Beam baseline scored 17/72 pass@1 (23.6%) and 47/72 pass@3 (65.3%). Its trajectories contain 146 candidate replays and 46 unique accepted masks. The other model results are a single completed run per model; they are observed benchmark outcomes, not confidence estimates for future runs. Cost figures are rate-card estimates because provider-reported billed cost was unavailable.
 
-## Cost gate
+One frozen task, `py_kolam-as-practised-in-puducherry-easy-35`, requests one loop on a 2×2 D2 Kolam grid. Exhaustive enumeration shows the profile permits zero or two loops, never one. It remains in the shared denominator for every model, has no reference pattern, and was not rerun. The reference set therefore contains 71 verified designs for the other tasks.
 
-The earlier USD 85 shared Anthropic cap and its preflight estimate are superseded. Before any paid request, regenerate the ordered task manifest and exact digest, calculate a conservative bound for each paid model using current provider rates and prompt sizes, confirm that each independent USD 10 hard cap is enforced and the aggregate ceiling is USD 50, and disclose which arms are expected to reach all 47 tasks. If a model's bound exceeds its cap, that arm may stop at the cap; do not silently reduce its token limit, change its task sequence, or alter the proposal count. Compare quality only over the exact shared completed task IDs and disclose each model's task coverage. The user must review the concrete no-call preflight before calls begin. Provider-reported billed cost is distinct from a locally estimated rate-card cost and must be labeled accurately.
+The geometric checker measures declared shapes and constraints; it does not measure whether the drawing is visibly legible. Of 470 accepted designs, 44 show little or no visible ink. A geometric pass also does not establish cultural authenticity, physical print behavior, or continuous vector properties. Jaali minimum-web thickness is an approximate raster proxy; other assurance labels are retained in the verifier reports.
 
-## Output handling and data eligibility
+## Community submissions
 
-All arms use the same strict output normalizer: remove at most one complete outer JSON code fence and leading `<think>…</think>` blocks only when followed directly by a JSON object. Do not extract JSON from prose or repair malformed output. Preserve raw responses and record every cleanup action. Keep evaluation trajectories in the evaluation split and mark them ineligible for training. Do not add aborted, incomplete, community, or unreviewed runs to benchmark scores or training data. Community contributions require explicit consent, sanitization, and deterministic replay before publication.
+Visitor submissions are separate from the official evaluation and training datasets. The submitted model name is self-reported and unverified. A submission is published only after explicit consent, sanitization, and deterministic replay audit; published rows carry `data_role: community_evaluation` and `training_eligible: false`. Community results do not change the official benchmark scores. Compare at most one run per model on common completed task IDs and show coverage. See the [trajectory dataset policy](../benchmarks/TRAJECTORY_DATASET.md).
 
-## Current baseline and references
+## Reproducibility and data handling
 
-The audited single Beam run on all 72 `eval-v2.1` tasks scored 17/72 pass@1 (23.6%) and 47/72 pass@3 (65.3%) over 146 candidate replays, with 46 unique accepted masks. All 72 rows passed independent deterministic replay with no provider errors. Estimated rate-card cost was USD 0.4382; provider-billed cost was unavailable. This is a single stochastic run, not a cross-model ranking, and must not be combined with the aborted partial run.
+The frozen suite, protocol version, prompt and suite digests, model route, request settings, verifier version, proposal sequence, feedback, outcomes, and available token, latency, and cost telemetry are recorded in the trajectories. Credentials, authorization headers, and raw provider error bodies are excluded from published records. Raw completions are retained only where the dataset's stated access and privacy policy permits them.
 
-The frozen v1 suite contains 24 Ajrakh prompts. It is a different task set and should not be directly compared with `eval-v2.1`. The old `eval-v2` scores and `train-v1` prompt/run are superseded. The corrected 144-brief `train-v1.1` suite has not been evaluated and has no matching trajectory or training export yet.
+Evaluation records are not training eligible. The corrected 144-brief `train-v1.2` suite is separate from `eval-v2.1`; it has not been evaluated or exported as training records. Historical suites and exports remain available only for reproducibility and are not mixed with the current comparison.
 
-For runner commands, validated exports, legacy summaries, and known limitations, see [the benchmark report](../benchmarks/README.md). For trajectory fields and split policy, see [the trajectory dataset specification](../benchmarks/TRAJECTORY_DATASET.md).
+For runner details, exports, and known limitations, see [the benchmark report](../benchmarks/README.md). For trajectory fields and split policy, see [the trajectory dataset specification](../benchmarks/TRAJECTORY_DATASET.md).

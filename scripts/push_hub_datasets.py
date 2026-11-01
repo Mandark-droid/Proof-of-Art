@@ -111,7 +111,7 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
     """Whitelist and replay community results before public dataset publication."""
     if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", run_id):
         raise ValueError("run_id must be a safe public identifier")
-    if submitted_by is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}", submitted_by):
+    if submitted_by is not None and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", submitted_by):
         raise ValueError("submitted_by must be an authenticated Hugging Face username")
     suite_id = rows[0].get("suite_id") if isinstance(rows, list) and rows and isinstance(rows[0], dict) else None
     if suite_path is None:
@@ -326,7 +326,7 @@ def publish_community_eval_run(rows: list[dict], *, run_id: str,
     token = os.getenv(COMMUNITY_WRITE_TOKEN_ENV)
     if not token and api is None:
         raise RuntimeError(f"Space {COMMUNITY_WRITE_TOKEN_ENV} secret is required for community publication")
-    if not isinstance(submitted_by, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}", submitted_by):
+    if not isinstance(submitted_by, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", submitted_by):
         raise ValueError("public community runs require authenticated Hugging Face submitter attribution")
     hub = api or HfApi(token=token)
     path_in_repo = f"community/test/{run_id}.jsonl"

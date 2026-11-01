@@ -436,6 +436,9 @@ def test_benchmark_tab_wires_the_custom_html_protocol_and_summary(monkeypatch):
     assert "key === 'state' ? 'state' : key === 'tradition' ? 'tradition'" in custom_html.js_on_load
     assert "const uploaded = await upload(file)" in custom_html.js_on_load
     assert "values.community_archive_path = uploaded.path" in custom_html.js_on_load
+    assert "Sign in with Hugging Face to publish" in custom_html.js_on_load
+    assert "Archive submission timed out after 90 seconds" in custom_html.js_on_load
+    assert "}, 90000)" in custom_html.js_on_load
 
 
 def test_home_proof_first_paint_shows_failed_attempt_then_replays_the_repair():
@@ -980,6 +983,17 @@ def test_archive_contribution_requires_scoped_secret_and_publication_consent(mon
     assert "No model is called." in rendered
 
 
+def test_archive_contribution_prompts_for_hf_sign_in_when_enabled(monkeypatch):
+    monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "scoped-write-token")
+    monkeypatch.setattr(app, "_community_submission_archive_runtime",
+                        lambda: (lambda *_a, **_k: None, lambda *_a, **_k: {}))
+    _stub_custom_render_sources(monkeypatch)
+
+    rendered = app._render_custom_app(app._initial_custom_state())
+
+    assert "Sign in with Hugging Face to publish" in rendered
+
+
 def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path(monkeypatch):
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
                         lambda: (_ for _ in ()).throw(AssertionError("archive runtime loaded")))
@@ -990,7 +1004,9 @@ def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path
         community_archive_path="C:/temp/private-submission.zip", community_archive_consent=False,
     )
 
-    rendered, state = app._handle_custom_event(event, app._initial_custom_state())
+    rendered, state = app._handle_custom_event(
+        event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test-user"),
+    )
 
     assert "Check the publication consent box" in state["community_archive_status"]
     assert "C:/temp/private-submission.zip" not in json.dumps(state)
@@ -1016,11 +1032,12 @@ def test_archive_publish_validates_managed_upload_and_uses_only_scoped_publisher
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
                         lambda: (lambda *_a, **_k: None, publish))
 
-    status = app._publish_community_archive(str(archive_path))
+    status = app._publish_community_archive(str(archive_path), submitted_by="test_user")
 
     assert "Published 3 replay-audited record(s)" in status
     assert captured["source"] == archive_path.resolve()
     assert captured["kwargs"]["expected_suite_sha256"] == app.EVAL_SUITE_SHA256
+    assert captured["kwargs"]["submitted_by"] == "test_user"
     assert "api" not in captured["kwargs"] and "provider_api_key" not in captured["kwargs"]
     assert "scoped-write-token" not in status
 
@@ -1042,7 +1059,9 @@ def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_u
 
     event = SimpleNamespace(action="community_archive_submit", active_tab="leaderboard",
                             community_archive_path=str(outside), community_archive_consent=True)
-    _, state = app._handle_custom_event(event, app._initial_custom_state())
+    _, state = app._handle_custom_event(
+        event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test_user"),
+    )
 
     assert "Choose a ZIP uploaded to this Space" in state["community_archive_status"]
     assert outside.exists()
@@ -1050,7 +1069,9 @@ def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_u
 
     event.community_archive_path = str(managed)
     event.community_archive_consent = False
-    _, state = app._handle_custom_event(event, app._initial_custom_state())
+    _, state = app._handle_custom_event(
+        event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test_user"),
+    )
     assert "Check the publication consent box" in state["community_archive_status"]
     assert not managed.exists()
     assert not publisher_calls
@@ -1067,7 +1088,7 @@ def test_archive_publish_discloses_bounded_audit_reason_and_html_escapes_it(monk
                         lambda: (lambda *_a, **_k: None, lambda *_a, **_k: (_ for _ in ()).throw(
                             ValueError("<script>alert(1)</script> invalid digest"))))
 
-    status = app._publish_community_archive(str(archive_path))
+    status = app._publish_community_archive(str(archive_path), submitted_by="test_user")
     monkeypatch.setattr(app, "_community_model_choices", lambda: [])
     monkeypatch.setattr(app, "_community_comparison_snapshot", lambda: {"rows": [], "beam_rows": [],
                         "selected": {}, "summary": {}, "status": "unavailable"})

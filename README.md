@@ -107,7 +107,7 @@ Third-party model outputs are evaluation data only (`training_eligible=false`). 
 
 ## Development
 
-Install pinned development dependencies with `python -m pip install -r requirements-dev.txt`. Before implementation commits, run the local gates; they do not make Beam calls:
+For local development, install the pinned dependencies and run the checks:
 
 ```bash
 python -m pytest -q

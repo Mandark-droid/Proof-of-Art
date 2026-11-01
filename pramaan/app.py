@@ -22,7 +22,7 @@ from pydantic import ValidationError
 from dotenv import load_dotenv
 
 from .certificate import make_certificate
-from .branding import HEADLINE
+from .branding import HEADLINE, SUBTITLE
 from .checks.core import all_pass, verify_pattern
 from .dsl import parse_pattern
 from .export import artifact_bundle, render_highlighted_png, render_png, trajectory_bundle
@@ -376,8 +376,11 @@ def _remove_gradio_upload(path_text) -> None:
         return
 
 
-def _publish_community_archive(archive_path: str) -> str:
+def _publish_community_archive(archive_path: str, *, submitted_by: str | None = None) -> str:
     """Audit then publish a user-consented ZIP through the configured scoped writer."""
+    if (not isinstance(submitted_by, str)
+            or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", submitted_by) is None):
+        return "Sign in with Hugging Face to publish"
     if not os.getenv("HF_COMMUNITY_WRITE_TOKEN"):
         return "Archive contribution is not enabled in this Space. No archive was published."
     runtime = _community_submission_archive_runtime()
@@ -391,6 +394,7 @@ def _publish_community_archive(archive_path: str) -> str:
         result = publish(
             archive, run_id=f"space-upload-{uuid.uuid4().hex}",
             expected_suite_sha256=EVAL_SUITE_SHA256,
+            submitted_by=submitted_by,
         )
     except ValueError as exc:
         reason = " ".join(str(exc).split())[:240]
@@ -1361,6 +1365,9 @@ def _proof_replay_html() -> str:
     try:
         content = PROOF_REPLAY_HTML_PATH.read_text(encoding="utf-8")
         content = content.replace(f"<h1>{html_escape(HEADLINE)}</h1>", "", 1)
+        content = content.replace(
+            f'<p class="pramaan-proof-subtitle">{html_escape(SUBTITLE)}</p>', "", 1,
+        )
         content = content.replace("Verify it yourself in Studio", "Try it yourself", 1)
 
         def show_first_attempt(match: re.Match[str]) -> str:
@@ -1883,7 +1890,7 @@ def _render_custom_app(ui_state: dict) -> str:
     benchmark = (
         '<section class="pramaan-home" aria-label="Home"><div class="pramaan-home-intro">'
         f'<h1>{html_escape(HEADLINE)}</h1>'
-        '<p>Proof of art that you can verify. AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
+        f'<p>{html_escape(SUBTITLE)} AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
         + _proof_replay_html()
         + '<nav class="pramaan-home-actions" aria-label="Start exploring">'
         '<a class="pramaan-ui-button" href="#proof-replay">Watch a proof</a>'
@@ -1913,7 +1920,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_archive_submit"'
         + ("" if archive_ready else ' disabled title="Configure the scoped community write secret before enabling archive contributions"')
         + '>Audit and contribute archive</button></div>'
-        + f'<p class="pramaan-ui-muted" role="status" data-community-archive-status>{html_escape(archive_status or ("Archive contributions are disabled until the scoped HF_COMMUNITY_WRITE_TOKEN and archive verifier are configured." if not archive_ready else "Select a ZIP archive and give publication consent to begin."))}</p>'
+        + f'<p class="pramaan-ui-muted" role="status" data-community-archive-status>{html_escape(archive_status or ("Archive contributions are disabled until the scoped HF_COMMUNITY_WRITE_TOKEN and archive verifier are configured." if not archive_ready else "Sign in with Hugging Face to publish"))}</p>'
         + '</article>'
     )
     community = (
@@ -2164,10 +2171,14 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
                 enforce_daily_limit=True,
             )
     elif action == "community_archive_submit":
+        username = getattr(oauth_profile, "username", None)
         consent = getattr(event, "community_archive_consent", False) is True
         archive_path = getattr(event, "community_archive_path", None)
         try:
-            if not consent:
+            if (not isinstance(username, str)
+                    or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", username) is None):
+                state["community_archive_status"] = "Sign in with Hugging Face to publish"
+            elif not consent:
                 state["community_archive_status"] = "Check the publication consent box before submitting. No archive was audited or published."
             elif not isinstance(archive_path, str) or not archive_path:
                 state["community_archive_status"] = "Choose a ZIP archive before submitting. No archive was audited or published."
@@ -2178,7 +2189,9 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
                 if not callable(publish_archive):
                     state["community_archive_status"] = "Archive validation is not available in this Space build. No archive was published."
                 else:
-                    state["community_archive_status"] = publish_archive(archive_path)
+                    state["community_archive_status"] = publish_archive(
+                        archive_path, submitted_by=username,
+                    )
         finally:
             _remove_gradio_upload(archive_path)
     return _render_custom_app(state), state
@@ -3126,6 +3139,19 @@ def build_demo():
     ui_state = _initial_custom_state()
     quilt_navigation_js = (Path(__file__).parent / "ui" / "assets" / "quilt.js").read_text(encoding="utf-8")
     js_on_load = quilt_navigation_js + r"""
+function syncArchiveSignInPrompt() {
+  const status = element.querySelector('[data-community-archive-status]');
+  if (!status || !['Sign in with Hugging Face to publish', 'Select a ZIP archive and give publication consent to begin.'].includes(status.textContent.trim())) return;
+  const loginText = document.querySelector('#pramaan-hf-login-row')?.textContent || '';
+  status.textContent = /\bsign out\b/i.test(loginText)
+    ? 'Select a ZIP archive and give publication consent to begin.'
+    : 'Sign in with Hugging Face to publish';
+}
+syncArchiveSignInPrompt();
+const archiveLoginRow = document.querySelector('#pramaan-hf-login-row');
+if (archiveLoginRow && 'MutationObserver' in window) {
+  new MutationObserver(syncArchiveSignInPrompt).observe(archiveLoginRow, {childList:true, subtree:true, characterData:true});
+}
 function applyLeaderboardControls() {
   const search = (element.querySelector('[data-leaderboard-search]')?.value || '').trim().toLowerCase();
   const source = element.querySelector('[data-leaderboard-provenance]')?.value || 'all';
@@ -3404,6 +3430,11 @@ element.addEventListener('click', async function(event) {
     const fileInput = element.querySelector('[data-field="community_archive_file"]');
     const consent = element.querySelector('[data-field="community_archive_consent"]');
     const status = element.querySelector('[data-community-archive-status]');
+    const loginText = document.querySelector('#pramaan-hf-login-row')?.textContent || '';
+    if (!/\bsign out\b/i.test(loginText)) {
+      if (status) status.textContent = 'Sign in with Hugging Face to publish';
+      return;
+    }
     if (!consent?.checked) {
       if (status) status.textContent = 'Check the publication consent box before submitting. No archive was uploaded or published.';
       return;
@@ -3413,9 +3444,29 @@ element.addEventListener('click', async function(event) {
       if (status) status.textContent = 'Choose a ZIP archive before submitting. No archive was uploaded or published.';
       return;
     }
-    if (status) status.textContent = 'Uploading the ZIP to the Space for private validation…';
+    if (status) {
+      status.textContent = 'Uploading the ZIP to the Space for private validation…';
+      status.dataset.archivePending = 'true';
+    }
+    let archiveTimedOut = false;
+    const archiveTimeout = window.setTimeout(() => {
+      const currentStatus = element.querySelector('[data-community-archive-status]');
+      if (!currentStatus || currentStatus.dataset.archivePending !== 'true') return;
+      archiveTimedOut = true;
+      currentStatus.dataset.archivePending = 'false';
+      currentStatus.textContent = 'Archive submission timed out after 90 seconds. Its publication status is unknown; check the community dataset before trying again.';
+    }, 90000);
+    const archiveObserver = new MutationObserver(() => {
+      const currentStatus = element.querySelector('[data-community-archive-status]');
+      if (currentStatus && currentStatus.dataset.archivePending !== 'true') {
+        window.clearTimeout(archiveTimeout);
+        archiveObserver.disconnect();
+      }
+    });
+    archiveObserver.observe(element, {childList:true, subtree:true, characterData:true});
     try {
       const uploaded = await upload(file);
+      if (archiveTimedOut) return;
       if (!uploaded?.path) throw new Error('upload failed');
       const values = {};
       element.querySelectorAll('[data-field]').forEach(node => {
@@ -3426,8 +3477,14 @@ element.addEventListener('click', async function(event) {
       values.active_tab = element.querySelector('[data-tab-button][aria-selected="true"]')?.dataset.tabButton || 'benchmark';
       values.community_archive_path = uploaded.path;
       trigger('click', values);
-    } catch (_error) {
-      if (status) status.textContent = 'The archive could not be uploaded for validation. Check the file and try again.';
+    } catch (error) {
+      window.clearTimeout(archiveTimeout);
+      archiveObserver.disconnect();
+      const reason = typeof error?.message === 'string' ? error.message.trim().slice(0, 180) : '';
+      if (status) {
+        status.dataset.archivePending = 'false';
+        status.textContent = reason ? `Archive upload failed: ${reason}` : 'Archive upload failed. Check the file and try again.';
+      }
     }
     return;
   }
