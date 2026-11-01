@@ -60,29 +60,33 @@ COMMUNITY_PROVIDER_HOSTS = {
 }
 COMMUNITY_LITELLM_PROVIDERS = {
     "anthropic": "Anthropic", "openai": "OpenAI", "deepseek": "DeepSeek",
+    "huggingface": "Hugging Face",
     "gemini": "Google Gemini", "mistral": "Mistral", "cohere": "Cohere",
     "groq": "Groq", "xai": "xAI", "together_ai": "Together AI",
     "fireworks_ai": "Fireworks AI", "perplexity": "Perplexity",
 }
-COMMUNITY_LITELLM_MODEL_RE = re.compile(
-    r"(?P<provider>[a-z][a-z0-9_-]{0,31})/(?P<model>[A-Za-z0-9_.:-]+(?:/[A-Za-z0-9_.:-]+)*)"
+COMMUNITY_MODEL_NAME_RE = re.compile(
+    r"(?:(?P<provider>[a-z][a-z0-9_-]{0,31})/)?"
+    r"(?P<model>[A-Za-z0-9_.:-]+(?:/[A-Za-z0-9_.:-]+)*)"
 )
 
 
 def community_model_identity(model_key):
-    """Return trusted provider metadata for legacy keys or strict LiteLLM IDs."""
+    """Return a replay identity; non-legacy provider/model names are self-reported."""
     if isinstance(model_key, str) and model_key in COMMUNITY_MODEL_PROVIDERS:
         return {
             "provider": COMMUNITY_MODEL_PROVIDERS[model_key], "model_id": model_key,
             "api_style": COMMUNITY_API_STYLES[model_key],
         }
-    match = COMMUNITY_LITELLM_MODEL_RE.fullmatch(model_key) if isinstance(model_key, str) else None
-    if not match or match.group("provider") not in COMMUNITY_LITELLM_PROVIDERS:
+    match = COMMUNITY_MODEL_NAME_RE.fullmatch(model_key) if isinstance(model_key, str) else None
+    if not match or len(model_key) > 256:
         return None
     model_id = match.group("model")
     if any(part in {".", ".."} for part in model_id.split("/")):
         return None
-    return {"provider": COMMUNITY_LITELLM_PROVIDERS[match.group("provider")],
+    provider_key = match.group("provider")
+    provider = COMMUNITY_LITELLM_PROVIDERS.get(provider_key, "Self-reported") if provider_key else "Self-reported"
+    return {"provider": provider,
             "model_id": model_id, "api_style": "litellm-chat-completions"}
 
 
@@ -220,7 +224,7 @@ def sanitize_community_eval_rows(rows: list[dict], *, run_id: str,
             "model_label": f"{model_id} (self-reported, unverified)",
             "resolved_model_ids": [value[:128] for value in (row.get("resolved_model_ids") or [])[:5]
                                    if isinstance(value, str)],
-            "provider": provider, "provider_host": COMMUNITY_PROVIDER_HOSTS[provider],
+            "provider": provider, "provider_host": COMMUNITY_PROVIDER_HOSTS.get(provider),
             "api_style": row.get("api_style"),
             "request_params": expected_params,
             "prompt_suite_sha256": suite_sha, "suite_id": task["suite_id"],

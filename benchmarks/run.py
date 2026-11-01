@@ -1273,6 +1273,7 @@ class LiteLLMCommunityClient:
 
 _LITELLM_PROVIDER_LABELS = {
     "anthropic": "Anthropic", "openai": "OpenAI", "deepseek": "DeepSeek",
+    "huggingface": "Hugging Face",
     "gemini": "Google Gemini", "mistral": "Mistral", "cohere": "Cohere",
     "groq": "Groq", "xai": "xAI", "together_ai": "Together AI",
     "fireworks_ai": "Fireworks AI", "perplexity": "Perplexity",
@@ -1294,7 +1295,7 @@ def community_litellm_model_config(model_name: str) -> dict:
     except Exception:
         info = None
     if not isinstance(info, dict):
-        raise ValueError("model is not in LiteLLM's priced model catalog")
+        raise ValueError("model is not in LiteLLM's priced catalog; run it locally and upload its replay-audited ZIP instead")
     input_rate = info.get("input_cost_per_token")
     output_rate = info.get("output_cost_per_token")
     reasoning_rate = info.get("output_cost_per_reasoning_token")
@@ -1305,7 +1306,7 @@ def community_litellm_model_config(model_name: str) -> dict:
         raise ValueError("model does not support the fixed 4,096-token output limit")
     if any(not isinstance(rate, (int, float)) or isinstance(rate, bool)
            or not math.isfinite(rate) or rate <= 0 for rate in (input_rate, output_rate)):
-        raise ValueError("model needs known non-zero token pricing before evaluation")
+        raise ValueError("model needs known non-zero token pricing; run it locally and upload its replay-audited ZIP instead")
     return {
         "key": model_name, "provider": _LITELLM_PROVIDER_LABELS[provider],
         "budget_provider": provider, "budget_group": model_name,
