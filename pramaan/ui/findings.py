@@ -53,13 +53,13 @@ def render_findings_strip(summary: dict | None) -> str:
     # proposals after checker feedback. The label explicitly describes protocol.
     cards = [
         '<article data-testid="finding-first-try">' + rate_text(first_try, "Beam on the first proposal") +
-        '<small>Without repair feedback</small></article>',
+        '<small>No repair feedback</small></article>',
         '<article data-testid="finding-repair-gain">' + rate_text(repair, "Repairs accepted") +
-        '<small>Of initial failures sent for checker feedback</small></article>',
+        '<small>Among initial failures</small></article>',
         '<article data-testid="finding-proofs">' + rate_text(final, "Replay-verified results") +
-        '<small>Pass@3 after checker feedback; task count is the denominator</small></article>',
+        '<small>Pass@3; task count is the denominator</small></article>',
     ]
     return ('<section class="pramaan-findings" data-testid="findings-strip" aria-label="Benchmark findings">'
             '<h2>What the checker found</h2><div class="pramaan-findings-grid">' + "".join(cards) +
-            '</div><p class="pramaan-findings-note">Scores count geometric verifier outcomes, not cultural authenticity. '
-            'Confidence intervals use the Wilson score method.</p></section>')
+            '</div><p class="pramaan-findings-note">Scores measure geometry, not cultural authenticity. '
+            'Intervals use the Wilson score method.</p></section>')

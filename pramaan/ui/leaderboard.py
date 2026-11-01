@@ -149,16 +149,16 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
     chart = ("".join(chart_rows) if chart_rows else '<li role="status">No model results have been published.</li>')
     return (
         '<section class="pramaan-model-report" data-testid="model-report" aria-label="Canonical model results">'
-        '<h3>Model results</h3><p>Quality is measured by the deterministic geometric verifier. Provider errors are excluded from evaluated counts and scores.</p>'
+        '<h3>Model results</h3><p>Deterministic geometric scores. Provider errors are excluded from evaluated counts and scores.</p>'
         '<section class="pramaan-model-chart" data-testid="model-report-chart" aria-label="Within-three success by model">'
-        '<h4>Verified within three proposals</h4><p>Each bar shows the share of evaluated tasks accepted within three proposals; exact counts appear in its accessible label and in the table.</p>'
-        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: bars compare within-three percentages; the table lists exact counts, denominators, ranks, and costs.</p></section>'
+        '<h4>Verified within three proposals</h4><p>Bars show within-three rates; the table lists exact counts and costs.</p>'
+        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: the table lists every model’s rates and costs.</p></section>'
         '<div class="pramaan-leaderboard-scroll"><table class="pramaan-model-table" data-testid="model-report-table" data-leaderboard-table>'
-        '<caption>One result row per model; missing provider answers are not scored as failures.</caption>'
+        '<caption>One row per model; missing provider answers are excluded.</caption>'
         '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Evaluated</th><th scope="col">Cost</th></tr></thead>'
         '<tbody>' + body + '</tbody></table></div>'
         '<p class="pramaan-model-footnote" data-testid="visibility-limitation">The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.</p>'
-        '<p class="pramaan-model-footnote">One benchmark task has a documented unsatisfiable constraint. Rows were collected in two sittings; the task definitions and evaluation protocol stayed frozen.</p>'
+        '<p class="pramaan-model-footnote">One unsatisfiable task remains in every model’s denominator.</p>'
         '</section>')
 
 
@@ -406,7 +406,7 @@ def render_canonical_leaderboard(index: dict | None = None, *, root: Path, suite
     baseline_html = ("<h4>Verifier baselines · full suite, shown for calibration</h4><ul>"
                      + "".join(baseline_rows) + "</ul>" if baseline_rows else "")
     hero_html = _leaderboard_hero(records, common_ids, wilson_interval)
-    body = ("<p>Ranks use only the intersection of completed prompt IDs. Confidence intervals are 95% Wilson intervals; partial arms stay visible without a cross-model rank.</p>"
+    body = ("<p>Ranks use shared completed prompts. Intervals are 95% Wilson; partial arms stay visible but unranked.</p>"
             + hero_html +
             '<div class="pramaan-leaderboard-scroll"><table class="pramaan-leaderboard" data-leaderboard-table><thead><tr>'
             '<th scope="col">Model</th><th scope="col">Coverage / rank</th><th scope="col">Pass@1</th>'

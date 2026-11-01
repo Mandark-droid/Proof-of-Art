@@ -41,6 +41,31 @@ def check_label(check_id: object) -> str:
     return cleaned.capitalize() if cleaned else "Geometric rule"
 
 
+def plain_check_label(check: object) -> str:
+    """Short, visitor-facing wording for the Home replay and Studio checks."""
+    if not isinstance(check, dict):
+        return "Check the pattern"
+    check_id = check.get("id") if isinstance(check.get("id"), str) else ""
+    if check_id == "schema_valid":
+        return "Readable pattern"
+    if check_id == "complexity_bound":
+        return "Within the design size limit"
+    if check_id == "palette_limit":
+        message = check.get("message", "")
+        match = re.search(r"\blimit\s+(\d+)\b", message) if isinstance(message, str) else None
+        return f"At most {match.group(1)} colours" if match else "Within the colour limit"
+    if check_id.startswith("symmetry_"):
+        return "Symmetric"
+    return {
+        "periodic_raster": "Repeat tiles match",
+        "layer_registration": "Layers line up",
+        "exclusive_ink_collision": "Ink layers do not overlap",
+        "minimum_gap": "Motifs keep their distance",
+        "coverage_bound": "Ink coverage is within the requested range",
+        "dot_clearance": "Dots keep their distance",
+    }.get(check_id, "Check the pattern")
+
+
 def check_labels(check_ids: object, *, limit: int = 8) -> str:
     if not isinstance(check_ids, list):
         return ""

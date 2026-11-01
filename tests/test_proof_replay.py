@@ -13,6 +13,7 @@ def test_first_screen_uses_shared_headline_and_replay_is_included():
     assert 'data-testid="proof-replay-play"' in rendered
     assert 'data-testid="proof-replay-step"' in rendered
     assert 'data-testid="proof-verify-yourself"' in rendered
+    assert "Try it yourself" in rendered
 
 
 def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
@@ -34,6 +35,26 @@ def test_saved_replay_renders_reverified_attempts_witness_and_certificate():
     assert b'"grammar":"dot_field"' in base64.b64decode(match.group(1))
 
 
+def test_home_replay_starts_on_failed_attempt_and_removes_repeated_tile_caption():
+    from pramaan import app
+
+    rendered = app._proof_replay_html()
+    first_step = re.search(
+        r'<div class="pramaan-proof-step" data-proof-step="1"([^>]*)>(.*?)</div>', rendered, re.S,
+    )
+    result_step = re.search(
+        r'<div class="pramaan-proof-step" data-proof-step="\d+" data-proof-result([^>]*)>', rendered,
+    )
+    first_image = re.search(r'<img class="pramaan-proof-tile" src="([^"]+)"', first_step.group(2) if first_step else "")
+    active_image = re.search(r'<img class="pramaan-proof-tile" data-proof-active-tile src="([^"]+)"', rendered)
+
+    assert first_step and "hidden" not in first_step.group(1)
+    assert result_step and "hidden" in result_step.group(1)
+    assert first_image and active_image and first_image.group(1) == active_image.group(1)
+    assert "Repair · all checks pass" in rendered
+    assert "data-proof-figure-caption" not in rendered
+
+
 def test_mobile_proof_replay_uses_the_large_tile_once_and_wall_details_are_collapsed():
     from pramaan import app
 
@@ -43,16 +64,16 @@ def test_mobile_proof_replay_uses_the_large_tile_once_and_wall_details_are_colla
 
     assert ".pramaan-proof-step .pramaan-proof-tile { display: none; }" in css
     assert "<summary>How to read this</summary>" in wall
-    assert "Tap a tile to inspect its verified reference" in wall
-    assert "two marks show easy and hard task outcomes" in wall
-    assert "do not score visual similarity" in wall
+    assert "Tap a tile for its verified reference and model results" in wall
+    assert "Marks show easy and hard outcomes" in wall
+    assert "not visual similarity or cultural authenticity" in wall
     assert "36 states, one tile each" in wall
     assert ".pramaan-wall-mark { font-size: 12px;" in css
     assert ".pramaan-wall-legend li { align-items: center; display: inline-flex; gap: .35rem; font-size: 13px; }" in css
-    assert ".pramaan-wall-state-name { font-size: 12px; }" in css
+    assert ".pramaan-wall-state-name { bottom: auto;" in css
     assert "unsatisfiable" in wall
-    intro = re.search(r'<p>Tap a tile to inspect.*?</p>', wall)
-    assert intro and "easy and hard task outcomes" in intro.group(0)
+    intro = re.search(r'<p>Tap a tile for its verified reference.*?</p>', wall)
+    assert intro and "easy and hard outcomes" in intro.group(0)
 
 
 def test_home_metrics_name_beam_as_the_evaluated_model():

@@ -17,11 +17,11 @@ def test_try_it_starts_with_g_column_example_result_and_collapsed_advanced_rules
 
     assert 'class="pramaan-ui-preview"' in studio
     assert 'data-local-panel="checks" aria-pressed="true"' in studio
-    assert 'data-panel="checks"><pre>' in studio
+    assert 'data-panel="checks"><ul class="pramaan-ui-certificate-checks"' in studio
     assert 'data-panel="source" hidden' in studio
     assert '<details class="pramaan-ui-advanced-rules">' in studio
     assert '<summary>Advanced rules</summary>' in studio
-    assert "Load example" in studio and "Generate with Beam" in studio and "Recheck edited PatternDSL" in studio
+    assert "Load example" in studio and "Generate with Beam" in studio and "Recheck my edit" in studio
     assert studio.index('data-action="generate"') < studio.index('data-field="palette"')
 
 
@@ -37,6 +37,35 @@ def test_build_with_it_leads_with_environment_and_dataset_resources_and_collapse
     assert '<details class="pramaan-ui-sources">' in build
     assert '<summary>Sources</summary>' in build
     assert '<details class="pramaan-ui-diwali">' in build
+
+
+def test_add_and_run_a_model_is_a_full_width_row_below_the_four_resource_cards():
+    rendered = app._render_custom_app(app._initial_custom_state())
+    build = rendered.split('data-tab-panel="rl"', 1)[1]
+    resources = build.split('<section aria-label="Public datasets and source code">', 1)[1].split('</section>', 1)[0]
+    grid, runner = resources.split('</div><article class="pramaan-ui-card pramaan-builder-runner">', 1)
+
+    assert grid.count('<article class="pramaan-ui-card">') == 4
+    assert "Add and run a model" in runner
+    assert "--model" in runner
+    assert "Open the source repository" in runner
+    assert runner.endswith("</article>")
+
+
+def test_studio_checks_are_plain_language_first_with_certificate_json_collapsed():
+    state = app._initial_custom_state()
+    rendered = app._render_custom_app(state)
+    studio = rendered.split('data-tab-panel="studio"', 1)[1].split('data-tab-panel="rl"', 1)[0]
+    checks = studio.split('data-panel="checks">', 1)[1].split('data-panel="attempts"', 1)[0]
+
+    assert "Readable pattern" in checks
+    assert "Symmetric" in checks
+    assert "At most 3 colours" in checks
+    assert "Dots keep their distance" in checks
+    assert '<details class="pramaan-ui-certificate-details"><summary>Technical details</summary>' in checks
+    assert "mask_sha256" in checks
+    assert checks.index("Readable pattern") < checks.index('<summary>Technical details</summary>')
+    assert "mask_sha256" not in checks.split("<details", 1)[0]
 
 
 def test_home_has_one_visible_replay_artwork_plain_language_checks_and_readable_wall_labels():

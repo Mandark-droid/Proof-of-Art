@@ -33,6 +33,7 @@ from .ui.compare import render_arena, render_comparison_charts, render_same_brie
 from .ui.leaderboard import (leaderboard_numeric_attr, render_canonical_leaderboard,
                              render_community_leaderboard, render_model_report)
 from .ui.findings import render_findings_strip
+from .ui.check_labels import plain_check_label
 from .paths import resolve_project_root
 from .tasks import canonical_jsonl_bytes
 from . import VALIDATOR_VERSION
@@ -1141,6 +1142,30 @@ def _image_data_uri(image) -> str:
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
+def _certificate_checks_html(certificate_json: str) -> str:
+    """Show readable rule outcomes first and keep hashes/raw certificate data collapsed."""
+    try:
+        certificate = json.loads(certificate_json)
+    except (TypeError, json.JSONDecodeError):
+        certificate = {}
+    checks = certificate.get("checks", []) if isinstance(certificate, dict) else []
+    rows = []
+    for check in checks if isinstance(checks, list) else []:
+        if not isinstance(check, dict):
+            continue
+        passed = check.get("status") == "PASS"
+        state = "pass" if passed else "fail"
+        mark = "✓" if passed else "×"
+        label = html_escape(plain_check_label(check))
+        rows.append(f'<li class="pramaan-ui-check-{state}"><span aria-hidden="true">{mark}</span>{label}</li>')
+    if not rows:
+        return '<p class="pramaan-muted">No checker details are available for this result.</p>'
+    return ('<ul class="pramaan-ui-certificate-checks" aria-label="Pattern checks">'
+            + "".join(rows) + '</ul>'
+            + '<details class="pramaan-ui-certificate-details"><summary>Technical details</summary>'
+            + f'<pre>{html_escape(certificate_json)}</pre></details>')
+
+
 def _initial_custom_state() -> dict:
     state_name = "Gujarat" if "Gujarat" in ALL_STATES else ALL_STATES[0]
     traditions = _tradition_choices(state_name)
@@ -1307,7 +1332,37 @@ def _proof_replay_html() -> str:
     """Read the pre-rendered replay so first paint never waits for geometry checks."""
     try:
         content = PROOF_REPLAY_HTML_PATH.read_text(encoding="utf-8")
-        return content.replace(f"<h1>{html_escape(HEADLINE)}</h1>", "", 1)
+        content = content.replace(f"<h1>{html_escape(HEADLINE)}</h1>", "", 1)
+        content = content.replace("Verify it yourself in Studio", "Try it yourself", 1)
+
+        def show_first_attempt(match: re.Match[str]) -> str:
+            tag, step = match.group(1), match.group(2)
+            if step == "1":
+                tag = re.sub(r"\s+hidden\b", "", tag)
+            elif not re.search(r"\s+hidden\b", tag):
+                tag += " hidden"
+            return tag + ">"
+
+        content = re.sub(
+            r'(<div class="pramaan-proof-step" data-proof-step="(\d+)"[^>]*)>',
+            show_first_attempt, content,
+        )
+        first_step = re.search(
+            r'<div class="pramaan-proof-step" data-proof-step="1"[^>]*>(.*?)</div>',
+            content, re.S,
+        )
+        first_image = re.search(
+            r'<img class="pramaan-proof-tile" src="([^"]+)" alt="([^"]+)"',
+            first_step.group(1) if first_step else "",
+        )
+        if first_image:
+            content = re.sub(
+                r'(<img class="pramaan-proof-tile" data-proof-active-tile )src="[^"]+" alt="[^"]+"',
+                lambda match: match.group(1) + f'src="{first_image.group(1)}" alt="{first_image.group(2)}"',
+                content, count=1,
+            )
+        content = re.sub(r'<figcaption data-proof-figure-caption>.*?</figcaption>', "", content, count=1, flags=re.S)
+        return content
     except OSError:
         return ('<article class="pramaan-ui-card pramaan-proof-replay" data-testid="proof-replay">'
                 f'<p class="pramaan-ui-eyebrow">Proof Replay</p>'
@@ -1469,23 +1524,10 @@ def _render_proof_replay_html_from_data() -> str:
                 'width="384" height="384" decoding="async">')
 
     def check_list(rows: list[dict]) -> str:
-        labels = {
-            "schema_valid": "Readable pattern",
-            "complexity_bound": "Within the design size limit",
-            "palette_limit": "At most 4 colours",
-            "symmetry_d2": "Symmetric",
-            "symmetry_d4": "Symmetric",
-            "periodic_raster": "Repeat tiles match",
-            "layer_registration": "Layers line up",
-            "exclusive_ink_collision": "Ink layers do not overlap",
-            "minimum_gap": "Motifs keep their distance",
-            "coverage_bound": "Ink coverage is within the requested range",
-            "dot_clearance": "Dots keep their distance",
-        }
         visible = '<ul class="pramaan-proof-checks">' + "".join(
             '<li class="' + ("is-pass" if row.get("status") == "PASS" else "is-fail") + '">'
             + '<span aria-hidden="true">' + ("✓" if row.get("status") == "PASS" else "×") + '</span> '
-            + '<strong>' + safe(labels.get(str(row.get("id", "")), "Check the pattern")) + '</strong></li>'
+            + '<strong>' + safe(plain_check_label(row)) + '</strong></li>'
             for row in rows) + '</ul>'
         technical = '<ul>' + "".join(
             '<li><code>' + safe(str(row.get("id", "check"))) + '</code>: '
@@ -1551,7 +1593,7 @@ def _render_proof_replay_html_from_data() -> str:
         '<span class="pramaan-proof-progress" data-proof-progress role="status">Attempt 1 of replay</span>'
         '</div>'
         f'<button type="button" class="pramaan-ui-button secondary" data-proof-verify '
-        f'data-pattern-b64="{pattern_b64}" data-testid="proof-verify-yourself">Verify it yourself in Studio</button>'
+        f'data-pattern-b64="{pattern_b64}" data-testid="proof-verify-yourself">Try it yourself</button>'
         '</div><figure class="pramaan-proof-art">'
         + f'<img class="pramaan-proof-tile" data-proof-active-tile src="{first_failed["image"]}" '
         'alt="First failed tile with its exact pixel counterexample outlined" width="384" height="384" decoding="async">'
@@ -1580,6 +1622,7 @@ def _render_custom_app(ui_state: dict) -> str:
 
     source = str((ui_state.get("result") or {}).get("source", ""))
     certificate = str((ui_state.get("result") or {}).get("certificate", ""))
+    certificate_checks_html = _certificate_checks_html(certificate)
     history = str((ui_state.get("result") or {}).get("history", ""))
     preview = (ui_state.get("result") or {}).get("image")
     preview_uri = _image_data_uri(preview)
@@ -1619,10 +1662,10 @@ def _render_custom_app(ui_state: dict) -> str:
             '<p class="pramaan-muted">Choose a state and tradition to see matching worked examples.</p>'
         )
     studio = (
-        '<section><p class="pramaan-ui-intro">Choose a state, load an example or generate a pattern, then read the independent checker result.</p><div class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
+        '<section><p class="pramaan-ui-intro">Choose a state, load or generate a pattern, then read the checker result.</p><div class="pramaan-ui-layout"><article class="pramaan-ui-card pramaan-ui-form">'
         '<p class="pramaan-ui-eyebrow">Design studio</p><h2>Start with a checked example</h2>'
         '<ol class="pramaan-studio-steps"><li>Pick a state and tradition.</li><li>Load the example or generate with Beam.</li><li>Read the preview and checker result.</li></ol>'
-        '<p class="pramaan-muted">The tradition choice supplies its own grammar, palette and starting constraints. The verifier checks the resulting finite pattern.</p>'
+        '<p class="pramaan-muted">Tradition sets the grammar, palette, and starting rules. The verifier checks the pattern.</p>'
         + _field("State / Union Territory", "state", state_name, options=state_options)
         + _field("Tradition", "tradition", tradition_id, options=tradition_options)
         + example_guidance
@@ -1632,7 +1675,7 @@ def _render_custom_app(ui_state: dict) -> str:
            if example_choices else '<button type="button" class="pramaan-ui-button secondary" data-action="example" disabled>Load example</button>')
         + '<button type="button" class="pramaan-ui-button" data-action="generate"'
         + ("" if beam_available else ' disabled title="Beam is not configured in this build"')
-        + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck edited PatternDSL</button></div>'
+        + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck my edit</button></div>'
         + _field("Pattern brief", "brief", form.get("brief", ""), kind="textarea", attrs=f'maxlength="{MAX_BRIEF_CHARS}" rows="3"')
         + (f'<p class="pramaan-muted">Grammar: <code>{html_escape(grammar or "select a tradition")}</code></p>')
         + '<details class="pramaan-ui-advanced-rules"><summary>Advanced rules</summary>'
@@ -1672,7 +1715,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + '<button type="button" data-local-panel="attempts" aria-pressed="false">Attempts</button>'
         + '<button type="button" data-local-panel="previews" aria-pressed="false">Proposals</button></nav>'
         + f'<div class="pramaan-ui-subpanel" data-panel="source" hidden><label for="pramaan-source">Editable PatternDSL JSON</label><textarea id="pramaan-source" data-field="source" rows="18" spellcheck="false">{html_escape(source)}</textarea></div>'
-        + f'<div class="pramaan-ui-subpanel" data-panel="checks"><pre>{html_escape(certificate)}</pre></div>'
+        + f'<div class="pramaan-ui-subpanel" data-panel="checks">{certificate_checks_html}</div>'
         + f'<div class="pramaan-ui-subpanel" data-panel="attempts" hidden><pre>{html_escape(history)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel pramaan-ui-gallery" data-panel="previews" hidden>{"".join(gallery_html) or "<p class=\"pramaan-muted\">Proposal previews will appear here.</p>"}</div>'
         + download_html + '</article></div></section>'
@@ -1813,14 +1856,14 @@ def _render_custom_app(ui_state: dict) -> str:
     archive_contribution = (
         '<article class="pramaan-ui-card pramaan-community-contribution"><p class="pramaan-ui-eyebrow">Contribute a trajectory archive</p>'
         '<h3>Share replayable benchmark work</h3>'
-        '<p>Upload a ZIP archive for manifest, suite and task checks, then independent verifier replay. Only accepted sanitized records are published to the separate public community dataset; this upload does not call a model provider.</p>'
+        '<p>Upload a ZIP for manifest, suite, and task checks, then verifier replay. Accepted, sanitized records publish to the separate community dataset. No model is called.</p>'
         '<label for="pramaan-community-archive">Submission archive (.zip)</label>'
         '<input id="pramaan-community-archive" data-field="community_archive_file" type="file" accept=".zip,application/zip"'
         + ("" if archive_ready else ' disabled title="The scoped community write secret and archive verifier are not configured"')
         + '>'
         + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_archive_consent"'
         + ("" if archive_ready else " disabled")
-        + '> I consent to public publication of the sanitized, verifier-replayed designs and benchmark metadata if the archive passes audit.</label>'
+        + '> I consent to public release of sanitized, verifier-replayed designs and benchmark metadata if the audit passes.</label>'
         + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_archive_submit"'
         + ("" if archive_ready else ' disabled title="Configure the scoped community write secret before enabling archive contributions"')
         + '>Audit and contribute archive</button></div>'
@@ -1830,8 +1873,8 @@ def _render_custom_app(ui_state: dict) -> str:
     community = (
         '<article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Opt-in community evaluation</p>'
         '<h3>Run one model on frozen eval-v2.1</h3>'
-        '<p>Quick run is 12 questions. The optional full suite is 72 questions and requires a no-call estimate plus separate confirmation. Both use the frozen 4,096-token output limit and up to three proposals per task. Beam and DeepSeek use temperature 0.4; Anthropic uses provider-default sampling with low effort because its API rejects temperature. '
-        'Only priced models are accepted. The Space applies a hard USD 10 run cap and allows one capped evaluation per account or browser session each UTC day; this in-memory daily guard resets when the Space restarts. Provider billing may differ. A run may stop before its selected question limit. Partial results are labeled by coverage and are not ranked across different question sets.</p>'
+        '<p>Run 12 tasks, or estimate the full 72-task suite before confirming. Both use a 4,096-token cap and up to three proposals per task. Sampling: Beam/DeepSeek 0.4; Anthropic default with low effort. '
+        'Only priced models are accepted. The hard USD 10 run cap permits one capped run per account or browser session per UTC day. The in-memory limit resets on restart. Provider charges may differ. Early stops show coverage; different task sets are not ranked together.</p>'
         + _field("LiteLLM model (provider/model)", "community_model", "",
                  attrs=("placeholder=\"e.g. anthropic/claude-haiku-5-5\" autocapitalize=\"none\" spellcheck=\"false\"" + ("" if community_ready else " disabled")))
         + _field("Run size", "community_task_limit", "12",
@@ -1842,14 +1885,14 @@ def _render_custom_app(ui_state: dict) -> str:
         + '>Estimate full-suite cost (no provider call)</button></div>'
         + _field("Your provider API key", "community_api_key", "", kind="password",
                  attrs='autocomplete="off" autocapitalize="none" spellcheck="false"')
-        + '<p class="pramaan-muted">Your key is sent from your browser to this Space and then to the selected provider. It is not saved in your profile or result record. Use a throwaway key with a provider-side spend limit; the provider may bill differently from this Space\'s estimate.</p>'
+        + '<p class="pramaan-muted">Your key passes through this Space to the provider; it is not saved in your profile or run. Use a disposable key and provider-side limit; actual charges may differ.</p>'
         + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_charge_consent"> '
-        + 'I understand this run may incur charges on my provider account and authorize this use of my key.</label>'
+        + 'This run may incur provider charges; I authorize use of my key.</label>'
         + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_full_run_cost_consent"> '
-        + 'For a 72-question run, I reviewed the displayed estimate and authorize provider charges up to the Space\'s USD 10 hard cap.</label>'
+        + 'For a full suite, I reviewed the no-call estimate and authorize charges up to the Space\'s USD 10 hard cap.</label>'
         + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_publish_consent"> '
-        + 'Publish verifier-replayed designs and metrics to the public community dataset under CC-BY-4.0. Model identity is self-reported and unverified; I will follow my provider\'s terms.</label>'
-        + '<p class="pramaan-ui-muted">You can run privately without signing in; the result summary stays in this session and is not added to a dataset. Public submissions require Hugging Face sign-in and the separate publication opt-in. Space storage is ephemeral and may be lost on restart.</p>'
+        + 'I consent to publish replay-verified designs and metrics under CC BY 4.0. Model identity is self-reported and unverified; I will follow provider terms.</label>'
+        + '<p class="pramaan-ui-muted">Private results stay in this session, not the dataset. Public submissions need Hugging Face sign-in and separate consent. Space storage may be lost on restart.</p>'
         + f'<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_run"'
         + ("" if community_ready else ' disabled title="Community evaluation helpers are not in this build"')
         + '>Run privately</button><button type="button" class="pramaan-ui-button" data-action="community_publish"'
@@ -1861,7 +1904,7 @@ def _render_custom_app(ui_state: dict) -> str:
     )
     model_summary = _benchmark_summary()
     leaderboard = (
-        '<section><p class="pramaan-ui-intro">Compare verifier outcomes, then inspect recorded attempts for a selected brief.</p><article class="pramaan-ui-card">'
+        '<section><p class="pramaan-ui-intro">Compare outcomes and replay attempts for one brief.</p><article class="pramaan-ui-card">'
         '<p class="pramaan-ui-eyebrow">Canonical benchmark</p><h2>Model leaderboard</h2>'
         + '<nav class="pramaan-leaderboard-nav" aria-label="Leaderboard sections">'
         + '<a href="#leaderboard-ranking">Ranking</a><a href="#model-arena">Arena</a>'
@@ -1895,12 +1938,12 @@ def _render_custom_app(ui_state: dict) -> str:
         + _tradition_html_for_state(about_state) + '</article></details>'
     )
     rl = (
-        '<section><p class="pramaan-ui-intro">Connect the checker to an agent, dataset, or reinforcement-learning workflow.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
-        '<p>A reward of 1.0 means every hard geometric check passes. Partial structural progress receives a bounded score below 1.0; parse errors, truncation and missing checks receive 0. The reward does not assess cultural authenticity.</p>'
+        '<section><p class="pramaan-ui-intro">Use the verifier in an agent or RL workflow.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
+        '<p>Reward 1.0 means every hard geometry check passes. Other results earn bounded partial credit; parse errors, truncation, or missing checks score 0. Reward measures neither visibility nor cultural authenticity.</p>'
         '<pre><code>from pramaan_env import PramaanEnv, PramaanAction\nenv = PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space")\nobservation = env.reset(suite="eval-v2.1", seed=0)\nobservation = env.step(PramaanAction(pattern_json=pattern_json))</code></pre>'
         '<a class="pramaan-ui-button secondary" href="/web/" target="_blank" rel="noopener noreferrer">Open the interactive environment</a></article>'
         + '<details class="pramaan-ui-card"><summary>How the benchmark is measured</summary>'
-        + '<p>The 72-task source suite spans 36 states. The one-pass paid comparison uses the same 47 predeclared task IDs and order for Claude Haiku 5.5, Sonnet 5.5, Opus 5.5, and DeepSeek V4.1 Flash. Each paid arm has a USD 10 cap, the same verifier, 4,096-token cap, and up to three proposals per task; an arm may stop early at its spend cap. The separate Beam baseline covers all 72 tasks and is not pooled with the 47-task comparison. Provider costs, tokens, and latency are shown separately from quality.</p>'
+        + '<p>Source: 72 tasks across 36 states. Paid models share 47 tasks and order, the verifier, a 4,096-token cap, and up to three proposals per task; each has a USD 10 cap and may stop early. Beam’s 72-task baseline is separate. Costs, tokens, and latency are reported apart from quality.</p>'
         + _benchmark_summary_html() + _community_leaderboard_html(community_snapshot) + '</details></section>'
     )
     builder_resources = (
@@ -1913,11 +1956,11 @@ def _render_custom_app(ui_state: dict) -> str:
         '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv" target="_blank" rel="noopener noreferrer">Open the OpenEnv dataset</a></article>'
         '<article class="pramaan-ui-card"><h2>Pramaan collection</h2><p>Browse the public Space and related datasets together.</p>'
         '<a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener noreferrer">Open the collection</a></article>'
-        '<article class="pramaan-ui-card"><h2>Source repository</h2><p>Verifier, environment, benchmark protocol, and model runner.</p>'
-        '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Open the GitHub repository</a>'
+        '</div><article class="pramaan-ui-card pramaan-builder-runner">'
         '<h3>Add and run a model</h3><p>Add its provider and model key in <code>benchmarks/models.json</code>, then select it on the command line:</p>'
-        '<pre><code>python scripts/run_arms.py --suite benchmarks/suites/eval-v2.1.jsonl --models benchmarks/models.json --model your-model-key --output artifacts/my-run.jsonl</code></pre></article>'
-        '</div></section>'
+        '<pre><code>python scripts/run_arms.py --suite benchmarks/suites/eval-v2.1.jsonl --models benchmarks/models.json --model your-model-key --output artifacts/my-run.jsonl</code></pre>'
+        '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Open the source repository</a></article>'
+        '</section>'
     )
     models = leaderboard + '<div id="model-arena">' + arena_html + '</div>'
     build_with_it = rl + builder_resources + traditions
@@ -2566,6 +2609,12 @@ html.light, body.light {
 .pramaan-ui-preview { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; height: auto; margin: .75rem auto 1rem; max-width: 100%; }
 .pramaan-ui-placeholder { align-items: center; background: var(--pramaan-card-subtle); border: 1px dashed var(--pramaan-line); border-radius: 14px; color: var(--pramaan-muted); display: flex; justify-content: center; margin: .8rem 0; min-height: 230px; text-align: center; }
 .pramaan-ui-result pre, .pramaan-ui-card pre { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 10px; max-height: 26rem; overflow: auto; padding: .8rem; white-space: pre-wrap; word-break: break-word; }
+.pramaan-ui-certificate-checks { display: grid; gap: .35rem; list-style: none; margin: 0; padding: 0; }
+.pramaan-ui-certificate-checks li { align-items: baseline; display: flex; gap: .45rem; line-height: 1.4; }
+.pramaan-ui-check-pass > span { color: var(--pramaan-pass); font-weight: 800; }
+.pramaan-ui-check-fail > span { color: var(--pramaan-fail); font-weight: 900; }
+.pramaan-ui-certificate-details { margin-top: .75rem; }
+.pramaan-ui-certificate-details summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; }
 .pramaan-ui-subpanel[hidden], .pramaan-ui-tabpanel[hidden] { display: none !important; }
 .pramaan-ui-gallery, .pramaan-ui-card-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); }
 .pramaan-ui-gallery figure { margin: 0; }
@@ -2787,7 +2836,9 @@ html.light, body.light {
   .pramaan-home-metrics span { font-size: .68rem; }
   .pramaan-home-wall-grid { gap: 5px; grid-template-columns: repeat(3,minmax(0,1fr)); grid-template-rows: none; max-width: 420px; }
   .pramaan-home-wall-grid .pramaan-wall-state { grid-column: auto !important; grid-row: auto !important; }
-  .pramaan-wall-state-name { font-size: 12px; }
+  .pramaan-wall-tile { display: grid; grid-template-rows: minmax(0,1fr) auto; text-align: center; }
+  .pramaan-wall-art { grid-row: 1; height: auto; min-height: 0; object-fit: contain; }
+  .pramaan-wall-state-name { bottom: auto; font-size: clamp(7px,2vw,10px); grid-row: 2; left: auto; line-height: 1.05; overflow: visible; padding: 2px 1px 3px; position: static; right: auto; text-align: center; text-overflow: clip; white-space: normal; }
   .pramaan-wall-marks { border-radius: 6px; gap: 1px; padding: 0 2px; right: 2px; top: 2px; }
   .pramaan-wall-mark { font-size: 9px; line-height: 1.1; }
   .pramaan-wall-models { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: .25rem; width: 100%; }
@@ -3106,7 +3157,7 @@ if (proofReplay) {
   const proofProgress = proofReplay.querySelector('[data-proof-progress]');
   const proofArtwork = proofReplay.querySelector('[data-proof-active-tile]');
   const proofFigureCaption = proofReplay.querySelector('[data-proof-figure-caption]');
-  let proofIndex = Math.max(0, proofSteps.findIndex(node => node.hasAttribute('data-proof-result') && !node.hidden));
+  let proofIndex = Math.max(0, proofSteps.findIndex(node => !node.hidden));
   let proofTimer = null;
   function showProofStep(index) {
     proofIndex = Math.max(0, Math.min(index, proofSteps.length - 1));

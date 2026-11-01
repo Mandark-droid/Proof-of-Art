@@ -135,7 +135,7 @@ def render_arena(
     return ('<section class="pramaan-arena" data-testid="arena" aria-label="Same-brief model Arena">'
             '<p class="pramaan-ui-eyebrow">Same brief · same checker</p><h3>Arena</h3>'
             f'<p class="pramaan-same-brief-prompt">{brief}</p>'
-            '<p>Each attempt is replay evidence from the saved benchmark record. A check or cross reports the geometric verifier outcome.</p>'
+            '<p>Attempts replay saved records; marks show geometric-check outcomes.</p>'
               + selector + '<div class="pramaan-arena-grid">' + "".join(cards) + '</div></section>')
 
 

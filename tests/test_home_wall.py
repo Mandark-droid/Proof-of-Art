@@ -152,6 +152,13 @@ def test_wall_uses_short_visible_names_without_losing_full_state_accessible_name
         assert f'title="{full}"' in rendered
         assert f'class="pramaan-wall-state-name" title="{full}">{short}</span>' in rendered
 
+    for full, short in (
+        ("Himachal Pradesh", "Himachal"),
+        ("Madhya Pradesh", "Madhya Pradesh"),
+        ("Andhra Pradesh", "Andhra"),
+    ):
+        assert f'class="pramaan-wall-state-name" title="{full}">{short}</span>' in rendered
+
 
 def test_phone_wall_switches_to_three_columns_with_readable_art_and_compact_model_row():
     from pramaan.app import PRAMAAN_CSS
@@ -165,5 +172,8 @@ def test_phone_wall_switches_to_three_columns_with_readable_art_and_compact_mode
     assert "grid-column: auto !important" in phone_rules
     assert "grid-row: auto !important" in phone_rules
     assert ".pramaan-wall-models { flex-wrap: nowrap; overflow-x: auto;" in phone_rules
-    assert ".pramaan-wall-state-name { font-size: 12px; }" in phone_rules
+    assert ".pramaan-wall-tile { display: grid; grid-template-rows: minmax(0,1fr) auto;" in phone_rules
+    assert ".pramaan-wall-state-name { bottom: auto;" in phone_rules
+    assert "position: static;" in phone_rules
+    assert "white-space: normal;" in phone_rules
     assert ".pramaan-wall-mark { font-size: 9px;" in phone_rules

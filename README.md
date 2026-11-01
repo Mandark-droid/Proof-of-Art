@@ -31,6 +31,8 @@ suggested_hardware: cpu-basic
 
 **Public demo:** [Pramaan on Hugging Face Spaces](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art).
 
+**Beam baseline (eval-v2.1):** 23.6% correct on the first try · 65.3% within three proposals · 36 states and Union Territories covered.
+
 Pramaan is a generative-art benchmark inspired by Indian geometric craft traditions. Models propose structured PatternDSL designs; an independent deterministic checker evaluates declared rules on a fixed 64×64 raster, returns concrete counterexamples, and produces replayable certificates. The benchmark covers seven grammars, from Ajrakh-inspired repeat geometry to Sikku Kolam loops and Jaali lattices.
 
 These designs are mathematical reinterpretations, not artisan-authentic work, ritual guidance, or physical printing guarantees. They do not replace craft practitioners. Ajrakh is practiced in Gujarat, Rajasthan, and Sindh in Pakistan. See [CITATIONS.md](CITATIONS.md) for cultural and technical references.

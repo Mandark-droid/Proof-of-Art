@@ -24,6 +24,8 @@ _STATE_SHORT_NAMES = {
     "Dadra and Nagar Haveli and Daman and Diu": "DNH & DD",
     "Arunachal Pradesh": "Arunachal",
     "Andaman and Nicobar Islands": "Andaman",
+    "Himachal Pradesh": "Himachal",
+    "Andhra Pradesh": "Andhra",
 }
 
 
@@ -270,13 +272,12 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         f'data-wall-display="{display_mode}" data-wall-selected-model="{html.escape(selected_model, quote=True)}">'
         f'<div class="pramaan-home-wall-heading"><div><p class="pramaan-ui-eyebrow">{len(STATE_GRID)} states and territories</p>'
         '<h2 id="state-wall-heading">36 states, one tile each</h2>'
-        '<p>Tap a tile to inspect its verified reference and model results. The two marks show easy and hard task outcomes.</p>'
+        '<p>Tap a tile for its verified reference and model results. Marks show easy and hard outcomes.</p>'
         '</div>' + selected_count_line + '</div>'
         '<details class="pramaan-home-reference-note"><summary>How to read this</summary>'
-        '<p>References are independently generated constraint witnesses, not model submissions or leaderboard scores. '
-        'The marks show verifier-versus-brief outcomes; they do not score visual similarity or cultural authenticity.</p>'
-        '<p>The easy Puducherry Kolam brief is unsatisfiable under its stated rules and remains in the frozen evaluation as a documented exception. '
-        'No reference is invented for it.</p></details>'
+        '<p>References are generated designs that pass each brief’s checks, not model submissions or scores. '
+        'Marks show rule outcomes, not visual similarity or cultural authenticity.</p>'
+        '<p>The easy Puducherry Kolam brief is unsatisfiable and remains in the frozen evaluation. No reference is shown.</p></details>'
         '<div class="pramaan-wall-controls">'
         '<div class="pramaan-wall-models" role="radiogroup" aria-label="Choose a model for the Wall">' + "".join(chips) + '</div>'
         '<div class="pramaan-wall-mode-toggle" role="group" aria-label="Choose artwork shown in the tiles">' + mode_buttons + '</div>'
