@@ -29,7 +29,7 @@ requests.post(f"{base}/web/reset", json={"task_id": "as_gamosa-red-on-white-bord
 result = requests.post(f"{base}/web/step", json={"action": {"pattern_json": open("design.pattern.json").read()}}).json()
 print("reward:", result["reward"], "done:", result["done"])
 '''
-WEB_TITLE = "Pramaan: Proof of Art · RL environment"
+WEB_TITLE = "Pramaan: AI drew it. Math checked it. · RL environment"
 
 _MARKUP = '''
 <style>
@@ -60,7 +60,7 @@ html,body{width:100%;min-width:0}body,.gradio-container{width:100%;min-width:0;m
 @media(max-width:720px){.poa-shell{padding:12px}.poa-head{align-items:flex-start;flex-direction:column}.poa-legend{grid-template-columns:1fr}.poa-work{grid-template-columns:1fr}.poa-pattern{min-height:260px}.poa-btn{flex:1 1 160px}}
 </style>
 <main class="poa-shell" id="pramaan-rl">
-  <header class="poa-head"><div><div class="poa-brand"><img class="poa-logo" src="/favicon.ico" alt="Pramaan original mark"><div><div class="poa-kicker">Proof-carrying pattern environment</div><h1 class="poa-title">Art you can prove.</h1></div></div>
+  <header class="poa-head"><div><div class="poa-brand"><img class="poa-logo" src="/favicon.ico" alt="Pramaan original mark"><div><h1 class="poa-title">AI drew it. Math checked it.</h1><p class="poa-subtitle">Proof of art that you can verify.</p></div></div>
   <p class="poa-subtitle">Give the environment a pattern. It returns a reward from 0 to 1 and the exact check that failed.</p>
   <nav class="poa-links" aria-label="Pramaan links"><a href="/studio/">Open the Studio</a><a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener">Open the Collection</a></nav></div>
   <a href="/studio/" aria-label="Open Pramaan Studio">Studio home ↑</a></header>

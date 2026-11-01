@@ -136,8 +136,9 @@ def test_web_branding_uses_studio_tokens_and_public_identity():
     markup = _markup()
     script = _javascript("{}")
 
-    assert WEB_TITLE == "Pramaan: Proof of Art · RL environment"
-    assert "Art you can prove." in markup
+    assert WEB_TITLE == "Pramaan: AI drew it. Math checked it. · RL environment"
+    assert "AI drew it. Math checked it." in markup
+    assert "Proof of art that you can verify." in markup
     assert 'src="/favicon.ico"' in markup
     assert "https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" in markup
     assert "--pramaan-paper:#f7f3ec" in markup
