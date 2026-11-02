@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+import re
 
 from PIL import Image
 
@@ -69,10 +70,35 @@ def test_arena_flags_accepted_barely_visible_pattern():
 
 def test_visibility_limitation_is_in_models_and_readme():
     from pathlib import Path
-    from pramaan.app import _benchmark_summary, render_model_report
+    from pramaan.app import (_benchmark_summary, _home_suite_tasks, _load_gallery_arm_documents,
+                             _load_gallery_index, render_model_report)
 
     message = "The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink."
-    report = render_model_report(_benchmark_summary())
+    report = render_model_report(
+        _benchmark_summary(), gallery_documents=_load_gallery_arm_documents(_load_gallery_index()),
+        task_backgrounds={task["id"]: task["palette"][0] for task in _home_suite_tasks()},
+    )
     readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
     assert message in report and message in readme
     assert report.index('data-testid="model-report-table"') < report.index(message)
+
+
+def test_model_report_near_invisible_counts_sum_to_saved_44_of_470():
+    from pramaan.app import (_benchmark_summary, _home_suite_tasks, _load_gallery_arm_documents,
+                             _load_gallery_index)
+    from pramaan.ui.leaderboard import render_model_report
+
+    index = _load_gallery_index()
+    documents = _load_gallery_arm_documents(index)
+    backgrounds = {task["id"]: task["palette"][0] for task in _home_suite_tasks()}
+    rendered = render_model_report(_benchmark_summary(), gallery_documents=documents,
+                                   task_backgrounds=backgrounds)
+    row_counts = [tuple(map(int, match)) for match in re.findall(
+        r'data-near-invisible="(\d+)" data-accepted-designs="(\d+)"', rendered,
+    )]
+
+    assert len(documents) == 10
+    assert len(row_counts) == 10
+    assert sum(low for low, _accepted in row_counts) == 44
+    assert sum(accepted for _low, accepted in row_counts) == 470
+    assert "44 of 470 accepted designs show little or no visible ink" in rendered

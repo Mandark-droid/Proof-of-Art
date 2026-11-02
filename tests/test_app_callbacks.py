@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 import hashlib
 import json
+import re
 import uuid
 import zipfile
+from pathlib import Path
 import pytest
 
 from PIL import Image
@@ -265,9 +267,30 @@ def test_brand_header_keeps_logo_legible_at_mobile_width():
     assert 'class="pramaan-brand-seal"' not in header
     assert 'href="#pramaan-proof-seal"' not in header
     assert ".pramaan-brandbar {" in app.PRAMAAN_CSS
-    assert "max-height: 64px" in app.PRAMAAN_CSS
+    assert "grid-template-columns: 42px minmax(0,1fr)" in app.PRAMAAN_CSS
+    assert "grid-template-rows: 42px auto" in app.PRAMAAN_CSS
+    assert "grid-column: 2; grid-row: 2; justify-content: flex-start" in app.PRAMAAN_CSS
+    assert "grid-template-columns: 38px minmax(0,1fr)" in app.PRAMAAN_CSS
     assert "object-fit: contain" in app.PRAMAAN_CSS
     assert "huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art/resolve/main/assets/pramaan-mark.png" not in header + app.PRAMAAN_CSS
+
+
+def test_brand_header_exposes_project_links_without_emoji():
+    header = app._brand_header_html()
+
+    assert '<nav class="pramaan-brand-links" aria-label="Project links">' in header
+    for label, href in (
+        ("Dataset", "https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1"),
+        ("OpenEnv", "https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/"),
+        ("Collection", "https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art"),
+        ("Code", "https://github.com/Mandark-droid/Proof-of-Art"),
+    ):
+        assert f'href="{href}"' in header
+        assert f">{label}</a>" in header
+    assert 'target="_blank" rel="noopener noreferrer"' in header
+    assert "@media (max-width: 600px)" in app.PRAMAAN_CSS
+    assert ".pramaan-brand-links a { font-size: .64rem; }" in app.PRAMAAN_CSS
+    assert not any(ord(character) > 0xFFFF for character in header)
 
 
 def test_offline_configuration_checker_accepts_the_docker_space_contract(monkeypatch, tmp_path):
@@ -399,10 +422,21 @@ def test_benchmark_tab_wires_the_custom_html_protocol_and_summary(monkeypatch):
     assert 'data-tab-button="rl"' in ui_html and "><span>Build with it</span></a>" in ui_html
     assert "AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it." in ui_html
     assert 'data-testid="proof-replay"' in ui_html
-    assert "Watch a proof" in ui_html and "Try it" in ui_html and "Use it as an RL environment" in ui_html
+    proof_hero = ui_html.split('data-testid="proof-replay"', 1)[1].split('</article>', 1)[0]
+    assert proof_hero.count('class="pramaan-ui-button primary"') == 1
+    assert 'data-testid="proof-verify-yourself"' in proof_hero
+    assert 'data-testid="proof-replay-play"' in proof_hero and 'class="pramaan-ui-button secondary"' in proof_hero
+    home_actions = re.search(r'<nav class="pramaan-home-actions"[^>]*>(.*?)</nav>', ui_html, re.S)
+    assert home_actions
+    assert "Watch a proof" not in home_actions.group(1)
+    assert "Try it" not in home_actions.group(1)
+    assert "Models" in home_actions.group(1)
+    assert "Use it as an RL environment" in home_actions.group(1)
     home_panel = ui_html.split('data-tab-panel="benchmark">', 1)[1].split('<div class="pramaan-ui-tabpanel"', 1)[0]
+    assert 'See how 10 models compare' not in home_panel
     assert "Model leaderboard" not in home_panel and "USD 10" not in home_panel
     assert 'id="state-wall"' in home_panel and 'data-home-wall-tile' in home_panel
+    assert home_panel.index('class="pramaan-home-intro"') < home_panel.index('data-testid="proof-replay"') < home_panel.index('class="pramaan-home-metrics"') < home_panel.index('id="state-wall"')
     models_panel = ui_html.split('data-tab-panel="leaderboard"', 1)[1].split('<div class="pramaan-ui-tabpanel"', 1)[0]
     assert "Model leaderboard" in models_panel and 'data-testid="arena"' in models_panel
     assert "Design gallery" not in models_panel
@@ -454,11 +488,9 @@ def test_home_proof_first_paint_shows_failed_attempt_then_replays_the_repair():
     assert "hidden" in passing_step.group(1)
     assert active_image.group(1) == re.search(r'<img[^>]+src="([^"]+)"', first_step.group(2)).group(1)
     assert 'data-proof-step="1"' in rendered
-    assert "Gujarat · Bandhani (bandhej) tie Dye dot fields · Dot Field" in rendered
-    assert "gj_bandhani" not in rendered
-    assert "dot_field" not in rendered
-    assert "dark red field with a diamond of 12 small white dots" in rendered
-    assert "Repair · all checks pass" in rendered
+    assert "Himachal Pradesh · Kinnauri shawl geometric border · Periodic Raster" in rendered
+    assert "hp_kinnauri" not in rendered
+    assert "Attempt 3 · all checks pass" in rendered
 
 
 def test_home_wall_has_model_and_artwork_controls_without_implying_cultural_scores(monkeypatch):
@@ -673,6 +705,11 @@ def test_loading_example_syncs_state_and_tradition_controls_to_example(monkeypat
 def test_state_change_refreshes_tradition_and_worked_example_in_same_ui(monkeypatch):
     _stub_state_tradition_ui(monkeypatch)
     _stub_custom_render_sources(monkeypatch)
+    monkeypatch.setattr(app, "_example_result_for_ui", lambda name: {
+        "image": "data:image/png;base64,preview", "gallery": [],
+        "source": '{"tradition_id":"tn_sikku_kolam"}', "certificate": "{}",
+        "history": '{"original_prompt":"A checked Kolam"}', "status": "Verified", "bundle": None,
+    })
     previous = app._initial_custom_state()
     assert previous["form"]["tradition"] == "gj_bandhani"
     event = SimpleNamespace(action="state", state="Tamil Nadu", active_tab="studio")
@@ -689,6 +726,49 @@ def test_state_change_refreshes_tradition_and_worked_example_in_same_ui(monkeypa
     assert 'value="Sikku Kolam Loop" selected' in rendered
     assert "Showing examples for Tamil Nadu · Sikku Kolam. Change either selector to update the examples." in rendered
     assert "Bandhani Dot Field" not in rendered
+    assert state["form"]["brief"] == "A checked Kolam"
+    assert state["result"]["source"] == state["form"]["source"]
+    assert state["result"]["image"] == "data:image/png;base64,preview"
+
+
+def test_state_changes_keep_all_36_state_forms_and_evidence_consistent(monkeypatch):
+    monkeypatch.setattr(app, "_render_custom_app", lambda _state: "rendered")
+    starting = app._initial_custom_state()
+
+    for state_name in app.ALL_STATES:
+        event = SimpleNamespace(action="state", state=state_name, active_tab="studio")
+        _rendered, state = app._handle_custom_event(event, starting)
+        form = state["form"]
+        traditions = app._tradition_choices(state_name)
+        assert form["state"] == state_name
+        choices = app._example_choices(state_name, form["tradition"])
+
+        if choices:
+            expected_example = choices[0][1]
+            result = state["result"]
+            descriptor = app._saved_example_descriptor(expected_example)
+            assert form["example"] == expected_example
+            source = json.loads(result["source"])
+            if descriptor:
+                task = descriptor["task"]
+                assert form["state"] == task["state"]
+                assert form["tradition"] == task["tradition_id"]
+                assert form["brief"] == task["brief"]
+                assert "verified" in result["status"].lower() or "checks pass" in result["status"].lower()
+            else:
+                assert form["tradition"] == (traditions[0].id if traditions else "")
+                assert app.EXAMPLE_STATES[Path(app.EXAMPLES[expected_example]).name.removesuffix(".pattern.json")] == state_name
+                assert source["tradition_id"] == form["tradition"]
+            assert result["image"].startswith("data:image/png;base64,")
+            assert form["source"] == result["source"]
+            assert form["brief"] == app._example_brief(result)
+        else:
+            assert form["tradition"] == (traditions[0].id if traditions else "")
+            assert form["example"] == form["brief"] == form["source"] == ""
+            assert "image" not in state["result"]
+            assert state["result"]["status"] == (
+                "No saved example for this state; edit the brief and use Generate with Beam"
+            )
 
 
 def test_tradition_change_refreshes_matching_example_in_same_ui(monkeypatch):
@@ -714,13 +794,441 @@ def test_worked_example_choices_are_scoped_and_labeled_by_state_and_tradition(mo
     monkeypatch.setattr(app, "_tradition_by_id", lambda tradition_id: tradition
                         if tradition_id == tradition.id else None)
 
+    monkeypatch.setattr(app, "_home_suite_tasks", lambda: [])
+    monkeypatch.setattr(app, "_saved_benchmark_examples_by_task", lambda: {})
     choices = app._example_choices("Gujarat", "gj_bandhani")
 
     assert len(choices) == 1
     label, value = choices[0]
-    assert "Gujarat / Bandhani" in label
-    assert "Bandhani Dot Field" in value
+    assert "Bandhani" in label
+    assert "Bandhani Dot Field" in label
+    assert value == "Bandhani Dot Field · Beam-generated, verified"
     assert app._example_choices("Tamil Nadu", "gj_bandhani") == []
+
+
+def test_every_state_and_tradition_has_a_replay_verified_loadable_sample():
+    app._home_suite_tasks.cache_clear()
+    app._saved_benchmark_examples_by_task.cache_clear()
+    app._saved_example_result.cache_clear()
+    checked_pairs = 0
+    for state_name in app.ALL_STATES:
+        traditions = app._tradition_choices(state_name)
+        assert traditions, f"No registered traditions for {state_name}"
+        for tradition in traditions:
+            choices = app._example_choices(state_name, tradition.id)
+            assert choices, f"No worked sample for {state_name} / {tradition.id}"
+            assert 'data-action="example"' in app._load_example_button_html(choices)
+            assert " disabled" not in app._load_example_button_html(choices)
+            _label, value = choices[0]
+            descriptor = app._saved_example_descriptor(value)
+            assert descriptor is not None, f"First choice is not benchmark-backed: {value}"
+            task = descriptor["task"]
+            form = app._form_for_example(value, {"state": state_name, "tradition": tradition.id})
+            assert form["state"] == task["state"]
+            assert form["tradition"] == task["tradition_id"]
+            assert form["brief"].strip()
+            result = app._example_result_for_ui(value)
+            assert result["image"].startswith("data:image/png;base64,")
+            assert result["source"]
+            certificate = json.loads(result["certificate"])
+            assert certificate["all_hard_constraints_pass"] is True
+            assert form["brief"] == app._example_brief(result) == task["brief"]
+            if descriptor["kind"] == "beam":
+                assert descriptor["kind"] == "beam"
+                assert "Beam attempt, verified" in result["status"]
+            else:
+                assert "Reference design" in result["status"]
+                assert "may differ from the brief" in result["status"]
+            checked_pairs += 1
+    assert checked_pairs >= 36
+
+
+def test_home_replay_comparison_copy_distinguishes_appearance_from_check_result():
+    rendered = app._proof_replay_html()
+
+    assert "What the eye sees" in rendered and "attempt 1 looks symmetric" in rendered
+    assert "What the checker found" in rendered and "one pixel and its mirror differ" in rendered
+
+
+def test_home_proof_hero_gives_comparison_art_the_larger_column_and_tiles():
+    rendered = app._proof_replay_html()
+
+    assert 'data-proof-comparison-failed' in rendered and 'data-proof-comparison-passing' in rendered
+    assert ".pramaan-proof-replay {" in app.PRAMAAN_CSS
+    assert "grid-template-columns: minmax(0,.85fr) minmax(210px,1.15fr)" in app.PRAMAAN_CSS
+    assert '.pramaan-proof-comparison { align-items: start; display: grid; gap: .55rem; grid-template-areas: "failed passed" "summary summary";' in app.PRAMAAN_CSS
+    assert '.pramaan-proof-comparison .pramaan-proof-tile { max-height: 320px; width: min(100%,320px); }' in app.PRAMAAN_CSS
+    assert ".pramaan-proof-comparison .pramaan-proof-tile { max-height: 150px; width: min(100%,150px); }" in app.PRAMAAN_CSS
+
+
+def test_home_proof_witness_summary_appears_once_between_comparison_tiles():
+    rendered = app._proof_replay_html()
+
+    assert rendered.count('data-testid="proof-witness-summary"') == 1
+    failed = rendered.index('data-proof-comparison-failed')
+    witness = rendered.index('data-testid="proof-witness-summary"')
+    passed = rendered.index('data-proof-comparison-passing')
+    assert failed < witness < passed
+
+
+def test_home_proof_stage_is_hidden_until_replay_starts():
+    css = app.PRAMAAN_CSS
+
+    assert ".pramaan-proof-stage { display: none; }" in css
+    assert '.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-stage {' in css
+    assert "display: block; min-height: 120px;" in css
+
+
+def test_home_proof_progress_is_hidden_until_replay_starts():
+    rendered = app._proof_replay_html()
+
+    assert 'data-proof-progress role="status"' in rendered
+    assert ".pramaan-proof-progress { color: var(--pramaan-muted); display: none;" in app.PRAMAAN_CSS
+    assert '.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-progress { display: inline; }' in app.PRAMAAN_CSS
+
+
+def test_manipur_reward_gap_copy_is_honest_about_training_status(monkeypatch, tmp_path):
+    from pramaan.ui import known_gap
+
+    monkeypatch.setattr(known_gap, "accepted_pattern_is_low_visibility", lambda *_args: True)
+    thumbnail = tmp_path / "reference.png"
+    thumbnail.write_bytes(b"saved preview")
+    documents = {"model": {"tasks": {known_gap._TASK_ID: {
+        "attempts": [{"passed": True, "tile_png_b64": "AA=="}], "reward": 1.0,
+    }}}}
+
+    rendered = known_gap.render_known_gap_panel(documents, {known_gap._TASK_ID: "#000000"}, thumbnail)
+
+    assert "Reward gap found before training" in rendered
+    assert "None of these models was trained on this reward" in rendered
+    assert "not learned gaming" in rendered
+    assert "the hole a trained policy could find" in rendered
+
+
+def test_models_dashboard_has_sticky_section_navigation_in_requested_order():
+    from pramaan.ui.leaderboard import render_models_section_nav
+
+    anchors = ["leaderboard-composition", "leaderboard-results-matrix",
+               "leaderboard-failing-checks", "leaderboard-cost", "leaderboard-full-results",
+               "model-arena", "leaderboard-methodology", "leaderboard-community-results"]
+    rendered = render_models_section_nav(" ".join(f'id="{anchor}"' for anchor in anchors))
+    labels = ["Composition", "Results matrix", "Failing checks", "Cost",
+              "Full results", "Arena", "Methodology", "Community results"]
+
+    assert 'data-testid="models-section-menu"' in rendered
+    assert 'aria-label="Models dashboard sections"' in rendered
+    assert [rendered.index(label) for label in labels] == sorted(rendered.index(label) for label in labels)
+    assert 'href="#leaderboard-results-matrix">Results matrix</a>' in rendered
+    assert 'href="#leaderboard-full-results">Full results</a>' in rendered
+    assert 'Ranking' not in rendered
+    assert 'href="#leaderboard-community-results">Community results</a>' in rendered
+    assert ".pramaan-leaderboard-nav.is-sticky" in app.PRAMAAN_CSS
+
+
+def test_models_dashboard_navigation_omits_unrendered_sections():
+    from pramaan.ui.leaderboard import render_models_section_nav
+
+    rendered = render_models_section_nav('<section id="leaderboard-composition"></section>')
+
+    assert 'href="#leaderboard-composition">Composition</a>' in rendered
+    assert "Results matrix" not in rendered
+    assert "Cost" not in rendered
+    assert "Arena" not in rendered
+
+
+def test_full_results_table_preserves_saved_wilson_intervals_without_redundant_ranking_chart():
+    import re
+    from pramaan.ui.findings import wilson_interval
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    rendered = render_model_report(summary)
+    models = summary["by_model"]
+    assert 'data-testid="model-report-table"' in rendered
+    for key, document in models.items():
+        overall = document["overall"]
+        n = overall["n"]
+        first = overall.get("passed_at_1", round(overall.get("validity_at_1", 0) * n))
+        within = overall.get("accepted_designs", round(overall.get("validity_at_3", 0) * n))
+        row_match = re.search(
+            rf'<tr[^>]*data-testid="model-report-row-{re.escape(key)}"[^>]*>(.*?)</tr>', rendered, re.S,
+        )
+        assert row_match, key
+        first_interval = wilson_interval(first, n)
+        within_interval = wilson_interval(within, n)
+        assert f'95% Wilson {first_interval[0]:.1%}–{first_interval[1]:.1%}' in row_match.group(1)
+        assert f'95% Wilson {within_interval[0]:.1%}–{within_interval[1]:.1%}' in row_match.group(1)
+
+
+def test_composition_chart_legend_and_stacked_counts_use_saved_attempts():
+    import re
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    gallery = app._load_gallery_arm_documents(app._load_gallery_index())
+    rendered = render_model_report(summary, gallery_documents=gallery)
+
+    for label in ("Passed", "Broke a rule", "Unreadable"):
+        assert f">{label}</li>" in rendered
+    for model_key, document in gallery.items():
+        passed = broke_rule = unreadable = observed = 0
+        tasks = document.get("tasks", {})
+        for task in tasks.values():
+            attempts = task.get("attempts", []) if isinstance(task, dict) else []
+            first = attempts[0] if attempts and isinstance(attempts[0], dict) else None
+            if first is None:
+                continue
+            failing = first.get("failing_checks")
+            if first.get("passed") is True:
+                passed += 1
+            elif first.get("passed") is False and isinstance(failing, list) and failing:
+                if "candidate_parse" in failing:
+                    unreadable += 1
+                else:
+                    broke_rule += 1
+            else:
+                continue
+            observed += 1
+        if observed == summary["by_model"][model_key]["overall"]["n"]:
+            row = re.search(rf'<li[^>]*data-testid="model-chart-{re.escape(model_key)}"([^>]*)>', rendered)
+            assert row
+            assert f'data-first-pass="{passed}"' in row.group(1)
+            assert f'data-first-rule-fail="{broke_rule}"' in row.group(1)
+            assert f'data-first-unreadable="{unreadable}"' in row.group(1)
+    assert ".pramaan-model-bar-stacked { border:" in app.PRAMAAN_CSS
+    assert ".pramaan-model-composition-legend" in app.PRAMAAN_CSS
+
+
+def test_cost_frontier_uses_saved_estimates_and_within_three_results():
+    import re
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    rendered = render_model_report(summary)
+    models = summary["by_model"]
+    observed = []
+    for key, document in models.items():
+        overall = document["overall"]
+        expected_cost = overall["estimated_cost_totals_by_currency"]["USD"]
+        expected_count = overall["accepted_designs"]
+        match = re.search(rf'<g class="point[^>]*data-testid="model-cost-point-{re.escape(key)}"([^>]*)>', rendered)
+        assert match, key
+        attrs = match.group(1)
+        assert f'data-estimated-cost="{expected_cost:.8f}"' in attrs
+        assert f'data-within-three="{expected_count}"' in attrs
+        assert 'data-denominator="72"' in attrs
+        observed.append((key, expected_cost, expected_count))
+    frontier = {key for key, cost, count in observed if not any(
+        other_key != key and other_cost <= cost and other_count >= count
+        and (other_cost < cost or other_count > count)
+        for other_key, other_cost, other_count in observed
+    )}
+    for key, _cost, _count in observed:
+        assert f'data-testid="model-cost-point-{key}"' in rendered
+        point = re.search(rf'<g class="point[^>]*data-testid="model-cost-point-{re.escape(key)}"([^>]*)>', rendered).group(1)
+        assert f'data-frontier="{str(key in frontier).lower()}"' in point
+    assert "log scale" in rendered
+    assert "Costs are estimates, request settings differ by provider" in rendered
+    assert "Pareto frontier" in rendered
+    assert "$0.15639" not in rendered
+    tick_values = re.findall(r'data-cost-tick="([^"]+)"', rendered)
+    assert tick_values and set(tick_values) <= {"0.2", "0.5", "1", "2", "5", "10", "20"}
+    label_boxes = []
+    for key in models:
+        point = re.search(rf'data-testid="model-cost-point-{re.escape(key)}"[^>]*>(.*?)</g>', rendered)
+        assert point and 'class="label-leader"' in point.group(1)
+        box = re.search(r'data-label-box="([^"]+)"', point.group(1))
+        assert box, key
+        bounds = tuple(float(value) for value in box.group(1).split(","))
+        assert len(bounds) == 4
+        for other in label_boxes:
+            left, top, right, bottom = bounds
+            other_left, other_top, other_right, other_bottom = other
+            assert not (left < other_right and right > other_left and top < other_bottom and bottom > other_top), (key, bounds, other)
+        label_boxes.append(bounds)
+
+
+def test_results_matrix_covers_saved_model_task_outcomes_and_arena_links(monkeypatch):
+    import re
+    from html import escape as html_escape
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    index = app._load_gallery_index()
+    gallery = app._load_gallery_arm_documents(index)
+    tasks = app._home_suite_tasks()
+    backgrounds = {task["id"]: task["palette"][0] for task in tasks}
+    rendered = render_model_report(summary, gallery_documents=gallery,
+                                   task_backgrounds=backgrounds, suite_tasks=tasks)
+    cell_count = rendered.count('data-testid="matrix-cell-')
+    assert cell_count == len(summary["by_model"]) * len(tasks)
+    for model_key, document in gallery.items():
+        for task in tasks:
+            task_id = task["id"]
+            saved = document.get("tasks", {}).get(task_id)
+            attempts = saved.get("attempts", []) if isinstance(saved, dict) else []
+            first_pass = bool(attempts and attempts[0].get("passed") is True)
+            passing = next((attempt for attempt in attempts if attempt.get("passed") is True), None)
+            expected_state = ("first" if first_pass else "repair" if passing else "fail" if attempts else "not-run")
+            cell = re.search(
+                rf'<a class="pramaan-matrix-cell[^>]*data-testid="matrix-cell-{re.escape(model_key)}-{re.escape(task_id)}"[^>]*>',
+                rendered,
+            )
+            assert cell, (model_key, task_id)
+            assert f'data-cell-state="{expected_state}"' in cell.group(0)
+            assert f'href="#/leaderboard?task={task_id}"' in cell.group(0)
+            assert html_escape(task["state"], quote=True) in cell.group(0)
+            cell_html = rendered[cell.start():rendered.find("</a>", cell.end())]
+            passing = next((attempt for attempt in attempts if attempt.get("passed") is True), None)
+            if passing:
+                attempt_number = passing.get("index")
+                if type(attempt_number) is not int or not 1 <= attempt_number <= 3:
+                    attempt_number = next(i for i, attempt in enumerate(attempts, 1) if attempt is passing)
+                assert f'<span aria-hidden="true">{attempt_number}</span>' in cell_html
+            else:
+                expected_mark = "×" if expected_state == "fail" else "—"
+                assert f'<span aria-hidden="true">{expected_mark}</span>' in cell_html
+    assert 'aria-label="Scrollable model by task results matrix"' in rendered
+    assert 'Passed on attempt 1' in rendered and 'Passed on attempt 2 or 3' in rendered
+    assert 'class="matrix-model matrix-corner"' in rendered
+    assert 'is-near-invisible' in rendered
+
+
+def test_matrix_task_link_selects_the_matching_same_brief_arena(monkeypatch):
+    from html import escape as html_escape
+    from pramaan.ui.compare import render_arena
+
+    monkeypatch.setattr(app, "_render_custom_app", lambda state: "rendered")
+    previous = app._initial_custom_state()
+    tasks = app._home_suite_tasks()
+    task = tasks[0]
+    event = SimpleNamespace(action="arena_task", task_id=task["id"], active_tab="leaderboard")
+
+    rendered, state = app._handle_custom_event(event, previous)
+
+    assert rendered == "rendered"
+    assert state["active_tab"] == "leaderboard"
+    assert state["arena_prompt_id"] == task["id"]
+    gallery_index = app._load_gallery_index()
+    gallery = app._load_gallery_arm_documents(gallery_index)
+    backgrounds = {row["id"]: row["palette"][0] for row in tasks}
+    arena = render_arena(
+        gallery_index, gallery, suite_id=app.EVAL_SUITE_ID,
+        suite_sha256=app.EVAL_SUITE_SHA256, prompt_id=state["arena_prompt_id"],
+        replay_prompt_id=app.PROOF_REPLAY_PROMPT_ID, task_backgrounds=backgrounds,
+    )
+    assert html_escape(task["brief"]) in arena
+    assert 'data-testid="arena"' in arena
+
+
+def test_first_try_failing_checks_chart_matches_saved_attempts_and_separates_unreadable():
+    from collections import Counter
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    gallery = app._load_gallery_arm_documents(app._load_gallery_index())
+    rendered = render_model_report(summary, gallery_documents=gallery)
+    expected = Counter()
+    failed_first_attempts = 0
+    for document in gallery.values():
+        for task in document.get("tasks", {}).values():
+            attempts = task.get("attempts", []) if isinstance(task, dict) else []
+            first = attempts[0] if attempts and isinstance(attempts[0], dict) else None
+            if not first or first.get("passed") is not False:
+                continue
+            failures = first.get("failing_checks")
+            if not isinstance(failures, list):
+                continue
+            failed_first_attempts += 1
+            if "candidate_parse" in failures:
+                expected["__unreadable__"] += 1
+            else:
+                expected.update(set(check_id for check_id in failures if isinstance(check_id, str)))
+
+    assert 'id="leaderboard-failing-checks"' in rendered
+    assert "unreadable outputs are counted separately" in rendered
+    for check_id, count in expected.items():
+        assert f'data-testid="first-try-failure-{check_id}" data-check-id="{check_id}" data-count="{count}"' in rendered
+    assert f"summarize {failed_first_attempts} failed first attempts" in rendered
+    assert '<span class="pramaan-failure-label">Unreadable output</span>' in rendered
+
+
+def test_full_results_table_uses_saved_mean_request_time_values():
+    from pramaan.ui.leaderboard import render_model_report
+
+    summary = app._benchmark_summary()
+    rendered = render_model_report(summary)
+    assert 'id="leaderboard-latency"' not in rendered
+    assert 'data-testid="model-latency-chart"' not in rendered
+    assert "<th scope=\"col\">Mean request time</th>" in rendered
+    for key, model in summary["by_model"].items():
+        overall = model["overall"]
+        row = next(line for line in rendered.splitlines() if f'data-testid="model-report-row-{key}"' in line)
+        latency = overall.get("mean_request_elapsed_ms_per_prompt")
+        if isinstance(latency, (int, float)) and not isinstance(latency, bool):
+            assert f'data-latency-ms="{latency:.8f}"' in row
+            assert f'<td>{latency / 1000:.1f}s per request</td>' in row
+        else:
+            assert 'data-latency-ms=""' in row
+            assert '<td>not reported</td>' in row
+
+
+def test_matrix_and_scatter_details_are_available_on_touch_and_keyboard_activation():
+    from pathlib import Path
+    from pramaan.ui.leaderboard import render_model_report
+
+    tasks = app._home_suite_tasks()
+    backgrounds = {task["id"]: task["palette"][0] for task in tasks if task.get("palette")}
+    gallery = app._load_gallery_arm_documents(app._load_gallery_index())
+    rendered = render_model_report(
+        app._benchmark_summary(), gallery_documents=gallery, suite_tasks=tasks,
+        task_backgrounds=backgrounds,
+    )
+
+    assert 'data-testid="chart-detail-dialog"' in rendered
+    assert 'data-testid="matrix-cell-beam-hf-' in rendered
+    assert 'data-touch-detail="matrix"' in rendered
+    assert 'data-detail-result="' in rendered and 'data-detail-brief="' in rendered
+    assert 'data-touch-detail="cost"' in rendered and 'data-estimated-cost="' in rendered
+    assert 'data-touch-detail="latency"' not in rendered
+    assert 'data-chart-detail-arena hidden' in rendered
+    assert 'data-chart-detail-close' in rendered
+
+    source = Path(app.__file__).read_text(encoding="utf-8")
+    assert "event.target.closest('[data-touch-detail]')" in source
+    assert "dialog.showModal()" in source
+    assert "detailTarget.click()" in source
+    assert "detailClose.closest('[data-testid=\"chart-detail-dialog\"]')?.close()" in source
+
+
+def test_all_frozen_suite_check_ids_have_specific_plain_language_labels():
+    from pramaan.ui.check_labels import plain_check_label
+
+    check_ids = {
+        "candidate_parse", "candidate_truncated", "schema_valid", "complexity_bound", "palette_limit",
+        "periodic_raster", "layer_registration", "exclusive_ink_collision", "minimum_gap",
+        "coverage_bound", "dot_clearance", "translation_period", "cell_quantization",
+        "kolam_mirrors_valid", "kolam_loop_count", "kolam_mirror_symmetry",
+        "jaali_single_solid", "jaali_holes_interior", "jaali_open_fraction", "jaali_min_web",
+        "symmetry_none", "symmetry_d2", "symmetry_d4", "symmetry_c2", "symmetry_c4",
+    }
+    assert all(plain_check_label({"id": check_id}) != "Check the pattern" for check_id in check_ids)
+
+
+def test_community_panel_routes_public_contributions_through_dataset_pull_requests(monkeypatch):
+    _stub_custom_render_sources(monkeypatch)
+    monkeypatch.setattr(app, "_community_model_choices", lambda: [])
+
+    rendered = app._render_custom_app(app._initial_custom_state())
+
+    assert "Space publishing is off" in rendered
+    assert "Contribute by pull request" in rendered
+    assert "create_pr=True" in rendered
+    assert "https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs" in rendered
+    assert 'id="pramaan-community-archive"' not in rendered
+    assert 'data-action="community_archive_submit"' not in rendered
+    assert 'data-action="community_publish"' not in rendered
+    assert "data-action=\"community_run\"" in rendered
 
 
 def test_community_callback_never_persists_visitor_key(monkeypatch):
@@ -739,6 +1247,8 @@ def test_community_callback_never_persists_visitor_key(monkeypatch):
 
 def test_consent_community_run_uses_fixed_suite_and_uploads_only_after_completion(monkeypatch, tmp_path):
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "community-write-secret")
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     suite_sha = "a" * 64
     run_id = "community-run-1"
     config = {"request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
@@ -807,6 +1317,8 @@ def test_consent_community_run_uses_fixed_suite_and_uploads_only_after_completio
 
 def test_community_run_does_not_use_read_only_hf_token_for_publication(monkeypatch):
     monkeypatch.setenv("HF_TOKEN", "read-only-token")
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     monkeypatch.delenv("HF_COMMUNITY_WRITE_TOKEN", raising=False)
     monkeypatch.setattr(app, "_community_runtime", lambda: (_ for _ in ()).throw(
         AssertionError("runner was loaded without a community write token")))
@@ -821,22 +1333,21 @@ def test_community_run_does_not_use_read_only_hf_token_for_publication(monkeypat
     assert "visitor-provider-key" not in status
 
 
-def test_community_controls_disclose_publication_and_start_disabled_without_runner(monkeypatch):
+def test_community_controls_keep_runs_private_and_route_sharing_to_pull_requests(monkeypatch):
     monkeypatch.setattr(app, "_community_model_choices", lambda: [])
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
     assert 'type="password"' in rendered
     assert 'data-field="community_charge_consent"' in rendered
-    assert 'data-field="community_publish_consent"' in rendered
     assert "Your key passes through this Space to the provider" in rendered
     assert "disposable key" in rendered
-    assert "Private results stay in this session, not the dataset" in rendered
-    assert "CC BY 4.0" in rendered
+    assert "Results stay private in this session and are not added to a dataset" in rendered
+    assert "Contribute by pull request" in rendered
     assert 'data-action="community_run" disabled' in rendered
-    assert 'data-action="community_publish" disabled' in rendered
+    assert 'data-action="community_publish"' not in rendered
+    assert 'data-action="community_archive_submit"' not in rendered
     assert 'data-field="community_charge_consent" checked' not in rendered
-    assert 'data-field="community_publish_consent" checked' not in rendered
 
 
 def test_community_model_control_accepts_provider_model_text_and_explains_cost_guard(monkeypatch):
@@ -897,13 +1408,69 @@ def test_public_community_run_requires_hf_sign_in_before_provider_call(monkeypat
     rendered, state = app._handle_custom_event(event, app._initial_custom_state(), oauth_profile=None)
 
     assert rendered == "rendered"
-    assert "Sign in with Hugging Face" in state["community_status"]
+    assert "Public publishing is disabled" in state["community_status"]
     assert "No provider request was made" in state["community_status"]
     assert "visitor-secret" not in json.dumps(state)
 
 
+def test_mocked_hf_owner_profile_cannot_publish_community_run_or_archive(tmp_path, monkeypatch):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
+    monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "must-not-be-used")
+    monkeypatch.setattr(app, "_community_runtime", lambda: pytest.fail("mock profile reached the runner"))
+    monkeypatch.setattr(app, "_community_submission_archive_runtime",
+                        lambda: pytest.fail("mock profile reached the archive publisher"))
+    monkeypatch.setattr(app, "_render_custom_app", lambda _state: "rendered")
+    upload_root = tmp_path / "gradio"
+    upload_root.mkdir()
+    archive_path = upload_root / "submission.zip"
+    archive_path.write_bytes(b"mock must never publish")
+    monkeypatch.setattr(app.gr.utils, "get_upload_folder", lambda: str(upload_root))
+    owner_profile = SimpleNamespace(username="space-owner")
+    mock_token = SimpleNamespace(token="mock-oauth-token-for-local-dev")
+
+    run_event = SimpleNamespace(
+        action="community_publish", active_tab="benchmark", community_model="anthropic/claude-haiku-5-5",
+        community_api_key="visitor-secret", community_charge_consent=True,
+        community_publish_consent=True,
+    )
+    _, run_state = app._handle_custom_event(
+        run_event, app._initial_custom_state(), oauth_profile=owner_profile, oauth_token=mock_token,
+    )
+    assert "Public publishing is disabled" in run_state["community_status"]
+    assert "No provider request was made" in run_state["community_status"]
+
+    archive_event = SimpleNamespace(
+        action="community_archive_submit", active_tab="leaderboard",
+        community_archive_path=str(archive_path), community_archive_consent=True,
+    )
+    _, archive_state = app._handle_custom_event(
+        archive_event, app._initial_custom_state(), oauth_profile=owner_profile, oauth_token=mock_token,
+    )
+    assert "Public publishing is disabled" in archive_state["community_archive_status"]
+    assert not archive_path.exists()
+
+
+def test_publication_controls_fail_closed_without_real_hf_oauth(monkeypatch):
+    monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "must-not-enable-publishing")
+    monkeypatch.delenv("SYSTEM", raising=False)
+    monkeypatch.delenv("OAUTH_CLIENT_ID", raising=False)
+    monkeypatch.setattr(app, "_community_model_choices", lambda: [("ready", "available")])
+    monkeypatch.setattr(app, "_community_submission_archive_runtime", lambda: (lambda *_a, **_k: None, lambda *_a, **_k: {}))
+
+    assert app._community_publish_ready() is False
+    assert app._community_submission_archive_ready() is False
+    rendered = app._render_custom_app(app._initial_custom_state())
+
+    assert 'data-action="community_publish"' not in rendered
+    assert 'data-action="community_archive_submit"' not in rendered
+    assert "Space publishing is off" in rendered
+
+
 def test_authenticated_public_submission_passes_submitter_to_publisher(monkeypatch):
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "community-write-secret")
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     config = {"request_params": {"max_tokens": 4096}, "budget": {"cap_usd": 10.0}}
     rows = [{"run_id": "public-run", "prompt_id": "q1", "validity_at_1": True,
              "validity_at_3": True, "total_tokens": 2, "elapsed_ms": 10,
@@ -927,7 +1494,10 @@ def test_authenticated_public_submission_passes_submitter_to_publisher(monkeypat
     profile = SimpleNamespace(username="craft-reviewer")
     monkeypatch.setattr(app, "_render_custom_app", lambda state: "rendered")
 
-    _rendered, state = app._handle_custom_event(event, app._initial_custom_state(), oauth_profile=profile)
+    _rendered, state = app._handle_custom_event(
+        event, app._initial_custom_state(), oauth_profile=profile,
+        oauth_token=SimpleNamespace(token="real-test-oauth-token"),
+    )
 
     assert submitted["submitted_by"] == "craft-reviewer"
     assert "Published Community run public-run" in state["community_status"]
@@ -936,6 +1506,8 @@ def test_authenticated_public_submission_passes_submitter_to_publisher(monkeypat
 
 def test_public_community_run_fails_closed_before_call_without_submitter_support(monkeypatch):
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "community-write-secret")
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     runner = SimpleNamespace(
         community_litellm_model_config=lambda _model: {
             "request_params": {"max_tokens": 4096}, "budget": {"cap_usd": 10.0}},
@@ -968,33 +1540,41 @@ def test_initial_custom_render_does_not_fetch_public_community_runs(monkeypatch)
     assert "Select Refresh public community runs to load the latest public results." in rendered
 
 
-def test_archive_contribution_requires_scoped_secret_and_publication_consent(monkeypatch):
+def test_space_archive_form_is_replaced_by_community_dataset_pull_request_instructions(monkeypatch):
     monkeypatch.delenv("HF_COMMUNITY_WRITE_TOKEN", raising=False)
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     monkeypatch.setattr(app, "_community_submission_archive_runtime", lambda: (object(), object()))
     _stub_custom_render_sources(monkeypatch)
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
-    assert 'data-field="community_archive_file" type="file" accept=".zip,application/zip" disabled' in rendered
-    assert 'data-field="community_archive_consent" disabled' in rendered
-    assert 'data-action="community_archive_submit" disabled' in rendered
-    assert "HF_COMMUNITY_WRITE_TOKEN" in rendered
-    assert "accepted, sanitized records publish to the separate community dataset" in rendered.lower()
-    assert "No model is called." in rendered
+    assert 'data-field="community_archive_file"' not in rendered
+    assert 'data-field="community_archive_consent"' not in rendered
+    assert 'data-action="community_archive_submit"' not in rendered
+    assert "Contribute by pull request" in rendered
+    assert "Space publishing is off" in rendered
+    assert "create_pr=True" in rendered
 
 
-def test_archive_contribution_prompts_for_hf_sign_in_when_enabled(monkeypatch):
+def test_pull_request_contribution_instructions_do_not_enable_space_publishing(monkeypatch):
     monkeypatch.setenv("HF_COMMUNITY_WRITE_TOKEN", "scoped-write-token")
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
                         lambda: (lambda *_a, **_k: None, lambda *_a, **_k: {}))
     _stub_custom_render_sources(monkeypatch)
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
-    assert "Sign in with Hugging Face to publish: use the button at the top of this page" in rendered
+    assert "Contribute by pull request" in rendered
+    assert 'data-action="community_publish"' not in rendered
+    assert 'data-action="community_archive_submit"' not in rendered
 
 
 def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path(monkeypatch):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     monkeypatch.setattr(app, "_community_submission_archive_runtime",
                         lambda: (_ for _ in ()).throw(AssertionError("archive runtime loaded")))
     rendered_state = {}
@@ -1006,6 +1586,7 @@ def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path
 
     rendered, state = app._handle_custom_event(
         event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test-user"),
+        oauth_token=SimpleNamespace(token="real-test-oauth-token"),
     )
 
     assert "Check the publication consent box" in state["community_archive_status"]
@@ -1016,6 +1597,8 @@ def test_archive_submit_refuses_without_consent_and_does_not_persist_upload_path
 
 
 def test_archive_publish_validates_managed_upload_and_uses_only_scoped_publisher(monkeypatch, tmp_path):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     upload_root = tmp_path / "gradio"
     upload_root.mkdir()
     archive_path = upload_root / "submission.zip"
@@ -1043,6 +1626,8 @@ def test_archive_publish_validates_managed_upload_and_uses_only_scoped_publisher
 
 
 def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_upload(monkeypatch, tmp_path):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     upload_root = tmp_path / "gradio"
     upload_root.mkdir()
     outside = tmp_path / "outside.zip"
@@ -1061,6 +1646,7 @@ def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_u
                             community_archive_path=str(outside), community_archive_consent=True)
     _, state = app._handle_custom_event(
         event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test_user"),
+        oauth_token=SimpleNamespace(token="real-test-oauth-token"),
     )
 
     assert "Choose a ZIP uploaded to this Space" in state["community_archive_status"]
@@ -1071,13 +1657,16 @@ def test_archive_publish_rejects_upload_outside_gradio_temp_and_cleans_managed_u
     event.community_archive_consent = False
     _, state = app._handle_custom_event(
         event, app._initial_custom_state(), oauth_profile=SimpleNamespace(username="test_user"),
+        oauth_token=SimpleNamespace(token="real-test-oauth-token"),
     )
     assert "Check the publication consent box" in state["community_archive_status"]
     assert not managed.exists()
     assert not publisher_calls
 
 
-def test_archive_publish_discloses_bounded_audit_reason_and_html_escapes_it(monkeypatch, tmp_path):
+def test_space_archive_publish_status_is_not_exposed_in_public_contribution_ui(monkeypatch, tmp_path):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     upload_root = tmp_path / "gradio"
     upload_root.mkdir()
     archive_path = upload_root / "submission.zip"
@@ -1097,9 +1686,9 @@ def test_archive_publish_discloses_bounded_audit_reason_and_html_escapes_it(monk
     monkeypatch.setattr(app, "_load_gallery_index", lambda: None)
     monkeypatch.setattr(app, "_benchmark_summary_html", lambda: "")
     rendered = app._render_custom_app({**app._initial_custom_state(), "community_archive_status": status})
-
     assert "Archive not published" in status and "invalid digest" in status
-    assert "<script>" not in rendered and "&lt;script&gt;" in rendered
+    assert "invalid digest" not in rendered
+    assert "<script>" not in rendered and "&lt;script&gt;" not in rendered
 
 
 def test_community_model_eligibility_requires_fixed_token_limit_and_run_cap():
@@ -1219,13 +1808,21 @@ def test_community_runner_receives_explicit_quick_run_limit(monkeypatch):
     assert calls == [(12, False)]
 
 
-def test_community_daily_identity_uses_hf_account_or_gradio_session():
+def test_community_daily_identity_uses_hf_account_only_with_real_oauth(monkeypatch):
+    monkeypatch.setenv("SYSTEM", "spaces")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "test-client-id")
     anonymous = app._community_daily_identity(None, SimpleNamespace(session_hash="browser-session"))
-    first = app._community_daily_identity(SimpleNamespace(username="Craft-Reviewer"), None)
-    same = app._community_daily_identity(SimpleNamespace(username="craft-reviewer"), None)
+    real_token = SimpleNamespace(token="real-test-oauth-token")
+    first = app._community_daily_identity(SimpleNamespace(username="Craft-Reviewer"), None, real_token)
+    same = app._community_daily_identity(SimpleNamespace(username="craft-reviewer"), None, real_token)
+    mocked = app._community_daily_identity(
+        SimpleNamespace(username="Space-Owner"), SimpleNamespace(session_hash="browser-session"),
+        SimpleNamespace(token="mock-oauth-token-for-local-dev"),
+    )
     assert anonymous != "browser-session"
     assert first == same
     assert first != anonymous
+    assert mocked == anonymous
 
 
 def test_community_daily_cap_blocks_second_run_before_provider_dispatch(monkeypatch):
@@ -1471,6 +2068,12 @@ def test_gallery_contains_selectable_36_state_overview_and_preserves_data_empty_
     home_html = rendered.split('data-tab-panel="benchmark"', 1)[1].split('<div class="pramaan-ui-tabpanel"', 1)[0]
     assert home_html.count('data-home-wall-tile') == 36
     assert home_html.count('data-wall-mark=') == 72
+    assert home_html.count('aria-hidden="true">E○</span>') == 36
+    assert home_html.count('aria-hidden="true">H○</span>') == 36
+    assert 'class="pramaan-wall-name-row"><span class="pramaan-wall-state-name" title=' in home_html
+    assert 'class="pramaan-wall-marks"><span class="pramaan-wall-mark" data-wall-mark="easy"' in home_html
+    assert '<details class="pramaan-wall-model-picker"><summary>Compare models</summary>' in home_html
+    assert '<details class="pramaan-wall-model-picker" open' not in home_html
     assert 'role="grid" aria-label="36 state and Union Territory pattern map"' in home_html
     assert 'data-wall-mode-choice="reference"' in home_html
     assert 'data-wall-mode-choice="attempt"' in home_html
@@ -1484,7 +2087,7 @@ def test_home_wall_controls_render_without_legacy_gallery_controls(monkeypatch):
         "suite_id": app.EVAL_SUITE_ID,
         "suite_sha256": app.EVAL_SUITE_SHA256,
         "validator_version": app.VALIDATOR_VERSION,
-        "states": [{"state": state, "grid": list(app.state_grid_cell(state))}
+        "states": [{"state": state, "grid": list(app.state_grid_cell(state)), "tradition": "Example tradition"}
                    for state in app.ALL_STATES],
         "arms": [{"key": "beam-hf", "label": "Beam"}],
         "common_prompt_ids": ["gj_easy"],
@@ -1496,10 +2099,13 @@ def test_home_wall_controls_render_without_legacy_gallery_controls(monkeypatch):
     rendered = app._render_custom_app(app._initial_custom_state())
     assert 'data-field="gallery_model"' not in rendered
     assert 'data-wall-model-choice="beam-hf"' in rendered
+    assert '<details class="pramaan-wall-model-picker"><summary>Compare models</summary>' in rendered
+    assert '<details class="pramaan-wall-model-picker" open' not in rendered
     assert 'data-wall-mode-choice="attempt"' in rendered
     assert 'data-tab-button="leaderboard"' in rendered
     assert 'data-tab-button="benchmark"' in rendered
     assert 'aria-label="Choose a model for the Wall"' in rendered
+    assert 'title="Gujarat · Example tradition"' in rendered
 
 
 def test_wall_model_and_art_mode_preferences_persist_in_custom_event(monkeypatch):
@@ -1594,7 +2200,7 @@ def test_home_wall_layout_is_bounded_and_has_outcome_legend():
     assert ".pramaan-state-mosaic-scroll { box-sizing: border-box; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-inline: contain; width: 100%; }" in app.PRAMAAN_CSS
     assert ".pramaan-ui, .pramaan-state-mosaic-scroll { max-width: 100%; min-width: 0; width: 100%; }" in app.PRAMAAN_CSS
     assert 'class="pramaan-wall-legend"' in rendered
-    for label in ("Right first try", "Right after repair", "Not yet right", "Not run"):
+    for label in ("Passed first try", "Passed after repair", "Did not pass", "Not run"):
         assert label in rendered
 
 
@@ -1785,9 +2391,8 @@ def test_leaderboard_exposes_anchored_sections_and_filterable_sortable_results(m
 
     rendered = app._render_custom_app(app._initial_custom_state())
 
-    assert 'href="#leaderboard-ranking"' in rendered
     assert 'href="#model-arena"' in rendered
-    assert 'href="#leaderboard-full-results"' in rendered
+    assert 'href="#leaderboard-community-results"' in rendered
     assert 'href="#leaderboard-methodology"' in rendered
     assert 'data-leaderboard-search' in rendered
     assert 'data-leaderboard-provenance' in rendered
@@ -1797,10 +2402,21 @@ def test_leaderboard_exposes_anchored_sections_and_filterable_sortable_results(m
     models_panel = rendered.split('data-tab-panel="leaderboard"', 1)[1].split('<div class="pramaan-ui-tabpanel"', 1)[0]
     methodology = models_panel.split('<details id="leaderboard-methodology"', 1)[1].split('</details>', 1)[0]
     assert 'open' not in methodology[:80]
-    assert models_panel.index('data-leaderboard-table') < models_panel.index('id="model-arena"')
+    ordered_sections = [
+        'data-testid="model-report-chart"', 'data-testid="model-results-matrix"',
+        'data-testid="first-try-failures-chart"', 'data-testid="model-cost-chart"',
+        'id="leaderboard-full-results"', 'id="model-arena"',
+        'id="leaderboard-methodology"', 'id="leaderboard-community-results"',
+    ]
+    assert [models_panel.index(section) for section in ordered_sections] == sorted(
+        models_panel.index(section) for section in ordered_sections
+    )
     assert 'data-testid="arena"' in models_panel
-    assert models_panel.count(' checked') == 1  # The single Beam arm in this fixture.
-    assert models_panel.count("<table") == 1
+    assert 'data-testid="model-results-matrix"' in models_panel
+    assert 'data-testid="model-report-table"' in models_panel
+    assert '<section id="leaderboard-full-results"' in models_panel
+    assert 'data-testid="model-latency-chart"' not in models_panel
+    assert models_panel.index('data-testid="model-cost-chart"') < models_panel.index('id="leaderboard-full-results"')
     assert 'data-testid="model-protocol-table"' not in models_panel
     for removed in (
         "Design gallery", "No replay-verified passing example in this build",
@@ -1823,7 +2439,104 @@ def test_models_panel_uses_final_ten_model_summary_without_partial_rank_text():
     assert "72 of 72 evaluated" in rendered_report
     assert rendered_report.count("<table") == 1
     assert "pramaan-model-wilson" not in rendered_report
-    assert "first try" not in rendered_report
+    assert "Not ranked" not in rendered_report
+
+
+def test_readme_and_models_page_do_not_describe_retired_charts():
+    from pathlib import Path
+
+    readme = (Path(app.ROOT) / "README.md").read_text(encoding="utf-8").casefold()
+    rendered = app._render_custom_app(app._initial_custom_state())
+    models_panel = rendered.split('data-tab-panel="leaderboard"', 1)[1].split(
+        '<div class="pramaan-ui-tabpanel"', 1
+    )[0].casefold()
+    for phrase in ("ranking chart", "stacked models chart", "passes-by-attempt",
+                   "passes by attempt", "latency chart", "latency scatter"):
+        assert phrase not in readme
+        assert phrase not in models_panel
+
+
+def test_readme_and_space_copy_have_no_stale_benchmark_or_replay_claims():
+    from html.parser import HTMLParser
+
+    class VisibleCopy(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.parts = []
+            self._skip = 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in {"script", "style"}:
+                self._skip += 1
+            if not self._skip:
+                for name, value in attrs:
+                    if name in {"aria-label", "alt", "title", "placeholder"} and value:
+                        self.parts.append(value)
+
+        def handle_endtag(self, tag):
+            if tag in {"script", "style"} and self._skip:
+                self._skip -= 1
+
+        def handle_data(self, data):
+            if not self._skip and data.strip():
+                self.parts.append(data.strip())
+
+    def visible_text(markup):
+        parser = VisibleCopy()
+        parser.feed(markup)
+        return " ".join(parser.parts)
+
+    readme = (Path(app.ROOT) / "README.md").read_text(encoding="utf-8")
+    rendered_space = visible_text(app._render_custom_app(app._initial_custom_state()))
+    combined = f"{readme}\n{rendered_space}"
+    lower = combined.casefold()
+
+    assert not re.search(r"(?:benchmark|eval-v2\.1|suite).{0,100}ajrakh|ajrakh.{0,100}(?:benchmark|eval-v2\.1|suite)",
+                         combined, re.I | re.S)
+    assert not re.search(r"\b47\s+tasks?\b|\b47[- ]task(?:s|\b)", combined, re.I)
+    assert "right first try" not in lower
+    assert not re.search(r"\b(?:correct|correctly|accuracy)\b.{0,50}\b(?:pass(?:ed|es|ing)?|checks?|score|rate)\b|"
+                         r"\b(?:pass(?:ed|es|ing)?|checks?|score|rate)\b.{0,50}\b(?:correct|correctly|accuracy)\b",
+                         combined, re.I | re.S)
+    for phrase in ("ranking chart", "stacked models chart", "passes-by-attempt",
+                   "passes by attempt", "latency chart"):
+        assert phrase not in lower
+
+    fable_row = next(line for line in readme.splitlines() if line.startswith("| Claude Fable 5.1 |"))
+    assert "72/72" in fable_row and "$22" in fable_row and "$10" not in fable_row
+    replay = visible_text(app._proof_replay_html()).casefold()
+    assert "himachal pradesh" in replay and "kinnauri" in replay
+    assert "gujarat" not in replay and "bandhani" not in replay
+    readme_replay = readme.split("### A replay with a visible counterexample", 1)[1].split(
+        "### Beam designs that the checker passed", 1
+    )[0].casefold()
+    assert "himachal pradesh" in readme_replay and "kinnauri" in readme_replay
+    assert "gujarat" not in readme_replay and "bandhani" not in readme_replay
+
+    header = app._brand_header_html().casefold()
+    header_text = visible_text(header).casefold()
+    assert "seal" not in header_text
+    assert "pramaan-brand-seal" not in header and "#pramaan-proof-seal" not in header
+
+
+def test_readme_examples_exist_and_every_local_image_resolves():
+    import re
+    from pathlib import Path
+    from urllib.parse import unquote, urlsplit
+
+    root = Path(app.ROOT)
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert "## Examples" in readme
+    assert "## Replay certificates and trajectories" in readme
+
+    image_paths = re.findall(r"!\[[^\]]*\]\(([^)]+)\)", readme)
+    image_paths.extend(re.findall(r'<img\b[^>]*\bsrc=["\']([^"\']+)', readme, re.I))
+    assert image_paths
+    local_paths = [urlsplit(path).path for path in image_paths
+                   if not urlsplit(path).scheme and not path.startswith("#")]
+    assert local_paths
+    missing = [path for path in local_paths if not (root / unquote(path)).is_file()]
+    assert not missing, f"README local image paths do not resolve: {missing}"
 
 
 def test_model_methodology_lists_current_models_and_provider_request_differences():
@@ -1858,6 +2571,21 @@ def test_model_methodology_lists_current_models_and_provider_request_differences
         "common_prompt_ids": ["task-only"], "arms": [arms[0]],
     }, {"expected_prompt_count": 1})
     assert "Methodology · 1 model · 1 suite task" in single
+
+
+def test_build_with_it_protocol_note_and_methodology_read_saved_run_caps():
+    summary = app._benchmark_summary()
+    note = app._benchmark_protocol_note(summary)
+    methodology = app._model_methodology_html(app._load_gallery_index(), summary)
+
+    assert note == (
+        "Every model ran all 72 tasks with the same verifier, a 4,096-token cap and up to 3 proposals. "
+        "Each paid model had a USD 10 cap, except Claude Fable 5.1 at USD 22. "
+        "Request settings differ by provider and are listed in Methodology."
+    )
+    assert "spend cap USD 22" in methodology
+    assert methodology.count("spend cap USD 10") == 8
+    assert "47 tasks" not in note
 
 
 def test_arena_defaults_to_beam_and_three_highest_scoring_evaluated_models():

@@ -225,7 +225,7 @@ def main() -> int:
     parser.add_argument("--preference", type=Path, required=True)
     parser.add_argument("--references", type=Path, default=ROOT / "benchmarks/data/eval-v2.1-references.jsonl")
     parser.add_argument("--gallery-dir", type=Path, default=ROOT / "assets/gallery")
-    parser.add_argument("--home-prompt-id", default="gj_bandhani-easy-6")
+    parser.add_argument("--home-prompt-id", default="hp_kinnauri-shawl-geometric-border-easy-8")
     args = parser.parse_args()
 
     models, trajectory_rows = audit_benchmark(args.trajectories, args.summary)

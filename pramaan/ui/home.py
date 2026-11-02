@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import html
 import re
+from collections import Counter
 
 from .quilt import STATE_GRID
 from .check_labels import check_label, check_labels
@@ -14,9 +15,9 @@ from .visibility import accepted_pattern_is_low_visibility
 
 _SAFE_B64 = re.compile(r"[A-Za-z0-9+/]+={0,2}\Z")
 _STATUS = {
-    "first": ("●", "Right first try"),
-    "repair": ("◐", "Right after repair"),
-    "fail": ("×", "Not yet right"),
+    "first": ("●", "Passed first try"),
+    "repair": ("◐", "Passed after repair"),
+    "fail": ("×", "Did not pass"),
     "none": ("○", "Not run"),
 }
 _STATE_SHORT_NAMES = {
@@ -26,6 +27,23 @@ _STATE_SHORT_NAMES = {
     "Andaman and Nicobar Islands": "Andaman",
     "Himachal Pradesh": "Himachal",
     "Andhra Pradesh": "Andhra",
+    "Chandigarh": "Chandigarh",
+    "Uttarakhand": "Uttarakhand",
+    "Madhya Pradesh": "Madhya Pradesh",
+    "Chhattisgarh": "Chhattisgarh",
+    "Jharkhand": "Jharkhand",
+    "West Bengal": "West Bengal",
+    "Meghalaya": "Meghalaya",
+    "Telangana": "Telangana",
+}
+_GRAMMAR_LABELS = {
+    "counted_grid": "Counted grid",
+    "dot_field": "Dot field",
+    "jaali_lattice": "Jaali lattice",
+    "kolam_loop": "Kolam loops",
+    "periodic_raster": "Repeat tiles",
+    "rotational_field": "Rotational motifs",
+    "stripe_band": "Stripe bands",
 }
 
 
@@ -45,12 +63,12 @@ def _result(task: dict | None) -> tuple[str, str]:
         return "none", "Not run"
     passed_at = task.get("passed_at")
     if type(passed_at) is int and passed_at == 1:
-        return "first", "Right first try"
+        return "first", "Passed first try"
     if type(passed_at) is int and passed_at > 1:
-        return "repair", "Right after repair"
+        return "repair", "Passed after repair"
     attempts = task.get("attempts")
     if isinstance(attempts, list) and attempts:
-        return "fail", "Not yet right"
+        return "fail", "Did not pass"
     return "none", "Not run"
 
 
@@ -144,7 +162,14 @@ def _task_sheet_section(state: str, level: str, spec: dict | None, reference: di
         check_rows = reference.get("checks", []) if isinstance(reference.get("checks"), list) else []
         check_text = " · ".join(html.escape(check_label(row.get("id", "check"))) for row in check_rows
                                if isinstance(row, dict) and row.get("status") == "PASS")
-        reference_note = f'<small>Procedural reference · all saved checks pass{": " + check_text if check_text else ""}</small>'
+        note = "Procedural reference · all saved checks pass"
+        if check_text:
+            note += f": {check_text}"
+        note += ". Shows these checks can be passed. It may differ from the brief's wording."
+        if isinstance(spec, dict) and spec.get("id") == "tn_kolam-easy-22":
+            note += (" Host fixes background to palette index 0 (white); the witness uses a dark curve on white "
+                     "rather than the requested white curve on dark ground.")
+        reference_note = f'<small>{note}</small>'
     elif isinstance(spec, dict) and spec.get("id") == "py_kolam-as-practised-in-puducherry-easy-35":
         reference_html = '<span class="pramaan-wall-placeholder" role="note">No reference: this brief has no valid solution</span>'
         reference_note = "<small>The frozen brief remains in the evaluation; its unsatisfiability is documented.</small>"
@@ -185,6 +210,9 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
     reference_by_task = {row["task_id"]: row for row in references
                          if isinstance(row, dict) and isinstance(row.get("task_id"), str)}
     task_by_state: dict[str, dict[str, dict]] = {}
+    grammar_counts = Counter(task.get("grammar") for task in suite_tasks
+                             if isinstance(task, dict) and isinstance(task.get("grammar"), str))
+    grammars = sorted(grammar_counts)
     for task in suite_tasks:
         if isinstance(task, dict) and task.get("state") in STATE_GRID and task.get("level") in {"easy", "hard"}:
             task_by_state.setdefault(task["state"], {})[task["level"]] = task
@@ -245,7 +273,7 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         marks = ''.join(
             f'<span class="pramaan-wall-mark" data-wall-mark="{level}" data-status="{status}" '
             f'aria-label="{level.title()} task: {html.escape(label, quote=True)}">'
-            f'<span aria-hidden="true">{_STATUS[status][0]}</span></span>'
+            f'<span aria-hidden="true">{"E" if level == "easy" else "H"}{_STATUS.get(status, _STATUS["none"])[0]}</span></span>'
             for level, status, label in (("easy", easy_status, easy_label), ("hard", hard_status, hard_label)))
         coordinate = state_metadata.get(state, {}).get("grid", list(STATE_GRID[state]))
         if not isinstance(coordinate, (list, tuple)) or len(coordinate) != 2 or any(type(v) is not int for v in coordinate):
@@ -256,6 +284,7 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         aria = f"{state}; easy task {easy_label.lower()}; hard task {hard_label.lower()}"
         metadata = state_metadata.get(state, {})
         tradition = metadata.get("tradition", metadata.get("tradition_id", "State tradition"))
+        tile_title = f"{state} · {tradition}"
         details = (
             _task_sheet_section(state, "easy", easy, easy_ref, chosen_label, easy_model)
             + _task_sheet_section(state, "hard", hard, hard_ref, chosen_label, hard_model)
@@ -265,14 +294,16 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
             + '</p>')
         state_tiles.append(
             f'<article class="pramaan-wall-state" data-state="{html.escape(state, quote=True)}" '
+            f'data-wall-grammars="{html.escape(" ".join(sorted({str(task.get("grammar")) for task in (easy, hard) if isinstance(task, dict) and isinstance(task.get("grammar"), str)})), quote=True)}" '
             f'style="grid-column:{column + 1};grid-row:{row + 1}">'
             f'<button type="button" class="pramaan-wall-tile" data-home-wall-tile '
             f'data-testid="home-wall-tile-{re.sub(r"[^a-z0-9]+", "-", state.casefold()).strip("-")}" '
             f'data-state-id="{html.escape(state, quote=True)}" data-easy-task-id="{html.escape(str(easy_id), quote=True)}" '
             f'data-hard-task-id="{html.escape(str(hard_id), quote=True)}" data-state="{html.escape(state, quote=True)}" '
-            f'aria-label="{html.escape(aria, quote=True)}" aria-haspopup="dialog">'
-            + art + f'<span class="pramaan-wall-state-name" title="{html.escape(state, quote=True)}">{html.escape(_STATE_SHORT_NAMES.get(state, state))}</span>'
-            + f'<span class="pramaan-wall-marks">{marks}</span></button>'
+            f'aria-label="{html.escape(aria, quote=True)}" title="{html.escape(str(tile_title), quote=True)}" aria-haspopup="dialog">'
+            + art + '<span class="pramaan-wall-name-row">'
+            + f'<span class="pramaan-wall-state-name" title="{html.escape(state, quote=True)}">{html.escape(_STATE_SHORT_NAMES.get(state, state))}</span>'
+            + f'<span class="pramaan-wall-marks">{marks}</span></span></button>'
             + f'<div class="pramaan-wall-state-sheet-source" data-wall-state-sheet data-state="{html.escape(state, quote=True)}">{details}</div></article>')
     state_model_counts = sum(tally[selected_model].values()) if selected_model in tally else 0
     selected_count_line = (f'<span data-wall-summary>{html.escape(chosen_label)} · {state_model_counts} task records</span>'
@@ -281,25 +312,43 @@ def render_reference_wall(references: list[dict], state_rows: list[dict], arm_do
         f'<button type="button" class="pramaan-wall-mode" data-wall-mode-choice="{mode}" '
         f'aria-pressed="{str(display_mode == mode).lower()}">{label}</button>'
         for mode, label in (("reference", "Reference"), ("attempt", "Model’s attempt")))
+    grammar_buttons = (
+        f'<button type="button" class="pramaan-wall-grammar-chip" data-wall-grammar-choice="all" data-wall-grammar-label="All" '
+        f'aria-pressed="true">All <small>{len(suite_tasks)} briefs</small></button>'
+        + ''.join(
+            f'<button type="button" class="pramaan-wall-grammar-chip" '
+            f'data-wall-grammar-choice="{html.escape(grammar, quote=True)}" '
+            f'data-wall-grammar-label="{html.escape(_GRAMMAR_LABELS.get(grammar, grammar.replace("_", " ").title()), quote=True)}" '
+            f'aria-pressed="false">'
+            f'{html.escape(_GRAMMAR_LABELS.get(grammar, grammar.replace("_", " ").title()))} '
+            f'<small>{grammar_counts[grammar]} {"brief" if grammar_counts[grammar] == 1 else "briefs"}</small></button>'
+            for grammar in grammars
+        )
+    )
     return (
         '<section class="pramaan-home-wall" id="state-wall" aria-labelledby="state-wall-heading" '
         f'data-wall-display="{display_mode}" data-wall-selected-model="{html.escape(selected_model, quote=True)}">'
         f'<div class="pramaan-home-wall-heading"><div><p class="pramaan-ui-eyebrow">{len(STATE_GRID)} states and territories</p>'
         '<h2 id="state-wall-heading">36 states, one tile each</h2>'
         '<p>Tap a tile for its verified reference and model results. Marks show easy and hard outcomes.</p>'
+        '<p>Tiles follow the map of India.</p>'
         '</div>' + selected_count_line + '</div>'
         '<details class="pramaan-home-reference-note"><summary>How to read this</summary>'
         '<p>References are generated designs that pass each brief’s checks, not model submissions or scores. '
         'Marks show rule outcomes, not visual similarity or cultural authenticity.</p>'
         '<p>The easy Puducherry Kolam brief is unsatisfiable and remains in the frozen evaluation. No reference is shown.</p></details>'
         '<div class="pramaan-wall-controls">'
-        '<div class="pramaan-wall-models" role="radiogroup" aria-label="Choose a model for the Wall">' + "".join(chips) + '</div>'
+        '<div class="pramaan-wall-grammar-picker" role="group" aria-label="Dim states by pattern grammar">'
+        + grammar_buttons + '</div>'
+        '<p class="pramaan-wall-grammar-status" data-wall-grammar-status aria-live="polite">All states are shown at full brightness.</p>'
+        '<details class="pramaan-wall-model-picker"><summary>Compare models</summary>'
+        '<div class="pramaan-wall-models" role="radiogroup" aria-label="Choose a model for the Wall">' + "".join(chips) + '</div></details>'
         '<div class="pramaan-wall-mode-toggle" role="group" aria-label="Choose artwork shown in the tiles">' + mode_buttons + '</div>'
         '<input type="hidden" data-field="wall_model" value="' + html.escape(selected_model, quote=True) + '">'
         '<input type="hidden" data-field="wall_mode" value="' + display_mode + '"></div>'
         '<ul class="pramaan-wall-legend" aria-label="Outcome marks">'
-        '<li><span data-status="first">●</span>Right first try</li><li><span data-status="repair">◐</span>Right after repair</li>'
-        '<li><span data-status="fail">×</span>Not yet right</li><li><span data-status="none">○</span>Not run</li></ul>'
+        '<li><span data-status="first">●</span>Passed first try</li><li><span data-status="repair">◐</span>Passed after repair</li>'
+        '<li><span data-status="fail">×</span>Did not pass</li><li><span data-status="none">○</span>Not run</li></ul>'
         f'<div class="pramaan-home-wall-grid" role="grid" aria-label="{len(STATE_GRID)} state and Union Territory pattern map">'
         + "".join(state_tiles) + '</div>'
         '<dialog class="pramaan-wall-dialog" data-wall-dialog aria-labelledby="pramaan-wall-dialog-title">'

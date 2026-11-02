@@ -25,6 +25,27 @@ DEFAULT_EMBED_URL = "https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-
 EXPECTED_REDIRECTS = {"/": "/studio/", "/studio": "/studio/", "/web": "/web/"}
 
 
+def is_known_hf_avatar_404(status: int, url: str) -> bool:
+    parsed = urlsplit(url)
+    return status == 404 and parsed.netloc.lower() == "huggingface.co" and parsed.path == "/api/organizations/kshitijthakkar/avatar"
+
+
+def attach_error_audit(page, errors: list[str]) -> None:
+    def on_console(message):
+        # Browser console omits the failed resource URL for generic 404 messages;
+        # the response hook below records the URL and filters only the known HF avatar.
+        if message.type == "error" and not message.text.startswith("Failed to load resource:"):
+            errors.append(message.text)
+
+    def on_response(response):
+        if response.status >= 400 and not is_known_hf_avatar_404(response.status, response.url):
+            errors.append(f"HTTP {response.status} {response.url}")
+
+    page.on("console", on_console)
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on("response", on_response)
+
+
 def validate_home_wall_rendering(*, state_count: int, art_count: int, loaded_art_count: int,
                                  placeholder_count: int, beam_selected: bool,
                                  non_ring_mark_count: int) -> None:
@@ -45,8 +66,8 @@ def validate_visitor_panels(*, proof_step_count: int, repaired_tile_loaded: bool
                             model_keys: list[str], fable_cap_visible: bool,
                             models_signin_bar_present: bool,
                             try_state: str, try_example: str, rl_snippet: str) -> None:
-    if proof_step_count != 6:
-        raise AssertionError(f"Home Proof Replay must expose six steps; found {proof_step_count}")
+    if proof_step_count != 7:
+        raise AssertionError(f"Home Proof Replay must expose seven replay/proof steps; found {proof_step_count}")
     if not repaired_tile_loaded:
         raise AssertionError("Home Proof Replay repaired tile is missing or not loaded")
     if len(model_keys) != 10 or len(set(model_keys)) != 10:
@@ -59,6 +80,13 @@ def validate_visitor_panels(*, proof_step_count: int, repaired_tile_loaded: bool
         raise AssertionError("Try it must open with its Gujarat state and a selected built-in example")
     if "PramaanEnv" not in rl_snippet or "env.reset" not in rl_snippet or "env.step" not in rl_snippet:
         raise AssertionError("Build with it must show the runnable PramaanEnv reset/step snippet")
+
+
+def validate_kinnauri_replay(text: str) -> None:
+    required = ("Himachal Pradesh", "Kinnauri", "16, 21", "47, 21")
+    missing = [value for value in required if value not in text]
+    if missing:
+        raise AssertionError(f"Home Proof Replay is missing saved Kinnauri evidence: {missing!r}")
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -104,9 +132,7 @@ async def check_browser(base_url: str, embed_url: str, output_dir: Path, browser
 
         context = await browser.new_context(viewport={"width": 1440, "height": 900})
         page = await context.new_page()
-        page.on("console", lambda message: errors.append(message.text)
-                if message.type == "error" and "mixed content" in message.text.lower() else None)
-        page.on("pageerror", lambda error: errors.append(str(error)))
+        attach_error_audit(page, errors)
         await page.goto(embed_url, wait_until="domcontentloaded", timeout=60_000)
         await page.wait_for_timeout(1_000)
         found = False
@@ -134,11 +160,10 @@ async def check_browser(base_url: str, embed_url: str, output_dir: Path, browser
                 context = await browser.new_context(viewport={"width": width, "height": height})
                 route_page = await context.new_page()
                 route_errors: list[str] = []
-                route_page.on("console", lambda message: route_errors.append(message.text)
-                              if message.type == "error" else None)
+                attach_error_audit(route_page, route_errors)
                 await route_page.goto(base_url.rstrip("/") + route, wait_until="domcontentloaded", timeout=60_000)
                 studio_route = route.startswith("/studio/")
-                expected_text = "Proof of Art" if studio_route else "PROOF-CARRYING PATTERN ENVIRONMENT"
+                expected_text = "Proof of Art" if studio_route else "AI drew it. Math checked it."
                 body = route_page.locator("body")
                 deadline = asyncio.get_running_loop().time() + 45
                 text = ""
@@ -150,9 +175,47 @@ async def check_browser(base_url: str, embed_url: str, output_dir: Path, browser
                 assert expected_text in text, f"{route} did not render {expected_text!r} at {width}px"
                 assert len(text.strip()) > 100, f"{route} returned an effectively blank page at {width}px"
                 assert not route_errors, f"{route} console errors at {width}px: " + " | ".join(route_errors)
+                if route == "/web/":
+                    for selector in ("#poa-reward-meter", "#poa-attempt", "#poa-done", "#poa-fail", "#poa-unreadable"):
+                        assert await route_page.locator(selector).count() == 1, f"/web/ missing result control {selector}"
+                    assert "0.2 to under 0.8" in await body.inner_text(), "/web/ reward bands are missing the partial-reward range"
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-brief')?.innerText.toLowerCase().includes('kinnauri')", timeout=45_000
+                    )
+                    assert "kinnauri" in (await route_page.locator("#poa-brief").inner_text()).casefold(), "/web/ did not load the Kinnauri task"
+                    await route_page.locator("#poa-fail").click()
+                    await route_page.locator("#poa-run").click()
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-status')?.innerText.includes('0.725')", timeout=20_000
+                    )
+                    failed_result = await route_page.locator("#poa-observation").text_content()
+                    assert "symmetry_d2" in failed_result and "16" in failed_result and "47" in failed_result, \
+                        "/web/ saved failure does not expose the Kinnauri symmetry witness"
+                    await route_page.wait_for_function(
+                        "(() => { const image = document.querySelector('#poa-preview'); return image && !image.hidden && image.complete && image.naturalWidth === 384; })()",
+                        timeout=15_000,
+                    )
+                    await route_page.locator("#poa-reset").click()
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-status')?.innerText.includes('Episode ready')", timeout=20_000
+                    )
+                    await route_page.locator("#poa-run").click()
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-status')?.innerText.includes('reward 1.0')", timeout=20_000
+                    )
+                    await route_page.locator("#poa-reset").click()
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-status')?.innerText.includes('Episode ready')", timeout=20_000
+                    )
+                    await route_page.locator("#poa-unreadable").click()
+                    await route_page.locator("#poa-run").click()
+                    await route_page.wait_for_function(
+                        "document.querySelector('#poa-status')?.innerText.includes('Reward 0')", timeout=20_000
+                    )
                 if studio_route:
                     home_panel = route_page.locator('[data-tab-panel="benchmark"]')
                     replay = home_panel.locator('[data-testid="proof-replay"]')
+                    validate_kinnauri_replay(await replay.inner_text())
                     proof_step_count = await replay.locator(".pramaan-proof-step[data-proof-step]").count()
                     repaired_tile = replay.locator('[data-proof-result] img.pramaan-proof-tile')
                     repaired_tile_loaded = await repaired_tile.count() == 1 and await repaired_tile.evaluate(
@@ -181,7 +244,9 @@ async def check_browser(base_url: str, embed_url: str, output_dir: Path, browser
                     await route_page.evaluate("window.location.hash = '#/build'")
                     build_panel = route_page.locator('[data-tab-panel="rl"]')
                     await build_panel.wait_for(state="visible", timeout=5_000)
-                    rl_snippet = await build_panel.locator("pre code").inner_text()
+                    # The contract and download cards also contain code blocks;
+                    # the first block is the client reset/step example.
+                    rl_snippet = await build_panel.locator("pre code").first.inner_text()
                     validate_visitor_panels(
                         proof_step_count=proof_step_count,
                         repaired_tile_loaded=repaired_tile_loaded,

@@ -56,14 +56,15 @@ def plain_check_label(check: object) -> str:
         return f"At most {match.group(1)} colours" if match else "Within the colour limit"
     if check_id.startswith("symmetry_"):
         return "Symmetric"
-    return {
+    label = {
         "periodic_raster": "Repeat tiles match",
         "layer_registration": "Layers line up",
         "exclusive_ink_collision": "Ink layers do not overlap",
         "minimum_gap": "Motifs keep their distance",
         "coverage_bound": "Ink coverage is within the requested range",
         "dot_clearance": "Dots keep their distance",
-    }.get(check_id, "Check the pattern")
+    }.get(check_id)
+    return label or check_label(check_id)
 
 
 def check_labels(check_ids: object, *, limit: int = 8) -> str:

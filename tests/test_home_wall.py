@@ -1,4 +1,4 @@
-from pramaan.ui.home import render_reference_wall
+from pramaan.ui.home import _task_sheet_section, render_reference_wall
 from pramaan.app import _home_reference_rows
 import base64
 from io import BytesIO
@@ -73,19 +73,45 @@ def test_wall_uses_map_grid_two_marks_model_chips_and_state_sheets():
     assert 'data-wall-model-choice="claude-haiku-5-5"' in rendered
     assert '>Beam<small>1 first · 1 repaired · 0 failed · 0 not run' in rendered
     assert '>Haiku<small>0 first · 0 repaired · 0 failed · 2 not run' in rendered
-    assert 'aria-label="Andhra Pradesh; easy task right first try; hard task right after repair"' in rendered
+    assert 'aria-label="Andhra Pradesh; easy task passed first try; hard task passed after repair"' in rendered
+    assert '>E●</span>' in rendered and '>H◐</span>' in rendered
+    assert '<span data-status="first">●</span>Passed first try' in rendered
+    assert '<span data-status="repair">◐</span>Passed after repair' in rendered
+    assert '<span data-status="fail">×</span>Did not pass' in rendered
+    assert '<span data-status="none">○</span>Not run' in rendered
     assert 'Easy brief.' in rendered and 'Hard brief.' in rendered
     assert "Pattern structure" in rendered and "Dot spacing" in rendered
     assert "schema_valid" not in rendered and "dot_clearance" not in rendered
     assert "Symmetry (D2)" in rendered and "symmetry_d2" not in rendered
     assert "Passed means the geometric checks passed; it does not mean the design matches the brief." in rendered
-    assert rendered.index("Beam attempt · Right first try") < rendered.index("Passed means the geometric checks passed")
+    assert "Shows these checks can be passed. It may differ from the brief's wording." in rendered
+    assert rendered.index("Beam attempt · Passed first try") < rendered.index("Passed means the geometric checks passed")
     assert 'data-wall-state-sheet' in rendered
     assert 'class="pramaan-wall-state-sheet-source" data-wall-state-sheet' in rendered
     assert '<template data-wall-state-sheet' not in rendered
     assert 'All model results (2)' in rendered
     assert 'Other model results' not in rendered
     assert 'No reference: this brief has no valid solution' not in rendered
+
+
+def test_wall_grammar_filter_counts_suite_briefs_and_dims_without_hiding_tiles():
+    suite_tasks = [
+        {"state": "Andhra Pradesh", "id": "ap-easy", "level": "easy", "grammar": "dot_field"},
+        {"state": "Andhra Pradesh", "id": "ap-hard", "level": "hard", "grammar": "counted_grid"},
+        {"state": "Goa", "id": "ga-easy", "level": "easy", "grammar": "dot_field"},
+    ]
+
+    rendered = render_reference_wall([], [], {}, suite_tasks, [])
+
+    assert 'data-wall-grammar-choice="all"' in rendered
+    assert 'aria-pressed="true">All <small>3 briefs</small>' in rendered
+    assert 'data-wall-grammar-choice="dot_field"' in rendered
+    assert 'Dot field <small>2 briefs</small>' in rendered
+    assert 'Counted grid <small>1 brief</small>' in rendered
+    assert 'data-wall-grammars="counted_grid dot_field"' in rendered
+    assert 'class="pramaan-wall-state" data-state="Andhra Pradesh"' in rendered
+    assert 'data-wall-grammar-status aria-live="polite"' in rendered
+    assert "is-grammar-dimmed" not in rendered
 
 
 def test_unsatisfiable_easy_task_has_no_reference_but_keeps_state_tile():
@@ -99,6 +125,20 @@ def test_unsatisfiable_easy_task_has_no_reference_but_keeps_state_tile():
     assert 'data-state="Puducherry"' in rendered
     assert "No reference: this brief has no valid solution" in rendered
     assert "frozen evaluation" in rendered
+
+
+def test_tamil_nadu_kolam_reference_note_includes_the_documented_brief_gap():
+    rendered = _task_sheet_section(
+        "Tamil Nadu", "easy",
+        {"id": "tn_kolam-easy-22", "tradition_id": "tn_sikku_kolam", "brief": "White curve on dark ground."},
+        {"thumbnail_uri": "data:image/png;base64," + _tiny_png_b64(),
+         "checks": [{"id": "symmetry_d2", "status": "PASS"}]},
+        "Beam", None,
+    )
+
+    assert "Shows these checks can be passed. It may differ from the brief's wording." in rendered
+    assert ("Host fixes background to palette index 0 (white); the witness uses a dark curve on white "
+            "rather than the requested white curve on dark ground.") in rendered
 
 
 def test_attempt_mode_shows_selected_model_design_or_an_explicit_missing_state():
@@ -117,7 +157,7 @@ def test_attempt_mode_shows_selected_model_design_or_an_explicit_missing_state()
 
     assert 'data-wall-display="attempt"' in rendered
     assert 'alt="Beam model attempt for Andhra Pradesh easy brief"' in rendered
-    assert 'aria-label="Andhra Pradesh; easy task right after repair; hard task not run"' in rendered
+    assert 'aria-label="Andhra Pradesh; easy task passed after repair; hard task not run"' in rendered
     assert 'data:image/png;base64,' + png in rendered
 
 
@@ -163,8 +203,16 @@ def test_wall_uses_short_visible_names_without_losing_full_state_accessible_name
         ("Himachal Pradesh", "Himachal"),
         ("Madhya Pradesh", "Madhya Pradesh"),
         ("Andhra Pradesh", "Andhra"),
+        ("Chandigarh", "Chandigarh"),
+        ("Uttarakhand", "Uttarakhand"),
+        ("Chhattisgarh", "Chhattisgarh"),
+        ("Jharkhand", "Jharkhand"),
+        ("West Bengal", "West Bengal"),
+        ("Meghalaya", "Meghalaya"),
+        ("Telangana", "Telangana"),
     ):
         assert f'class="pramaan-wall-state-name" title="{full}">{short}</span>' in rendered
+    assert "…" not in rendered
 
 
 def test_phone_wall_switches_to_three_columns_with_readable_art_and_compact_model_row():
@@ -184,3 +232,14 @@ def test_phone_wall_switches_to_three_columns_with_readable_art_and_compact_mode
     assert "position: static;" in phone_rules
     assert "white-space: normal;" in phone_rules
     assert ".pramaan-wall-mark { font-size: 9px;" in phone_rules
+
+
+def test_wall_describes_map_arrangement_and_expands_at_desktop_width():
+    from pramaan.app import PRAMAAN_CSS
+
+    rendered = render_reference_wall([], [], {}, [], [])
+
+    assert "Tiles follow the map of India." in rendered
+    assert ".pramaan-home-wall-grid { display: grid; gap: clamp(1px,.25vw,3px);" in PRAMAAN_CSS
+    assert "max-width: 1420px; width: 100%;" in PRAMAAN_CSS
+    assert 'role="grid" aria-label="36 state and Union Territory pattern map"' in rendered

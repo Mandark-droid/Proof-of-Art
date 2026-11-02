@@ -185,6 +185,36 @@ def test_space_favicon_route_serves_original_mark():
     assert '"pramaan-mark.png"' in source
 
 
+def test_root_oauth_redirects_preserve_query_string():
+    from starlette.requests import Request
+    from pramaan_env.server.oauth_redirects import root_oauth_redirect
+
+    def request(query: bytes):
+        return Request({
+            "type": "http", "method": "GET", "scheme": "https",
+            "server": ("example.hf.space", 443), "client": (".".join(("127", "0", "0", "1")), 1),
+            "root_path": "", "path": "/login/callback", "raw_path": b"/login/callback",
+            "query_string": query, "headers": [],
+        })
+
+    response = root_oauth_redirect("/studio/login/callback", request(b"code=x&state=y"))
+    assert response.status_code == 307
+    assert response.headers["location"] == "/studio/login/callback?code=x&state=y"
+
+
+def test_root_oauth_redirect_dispatch_covers_login_and_logout():
+    from starlette.requests import Request
+    from pramaan_env.server.oauth_redirects import ROOT_OAUTH_TARGETS, root_oauth_redirect
+
+    for source, target in ROOT_OAUTH_TARGETS.items():
+        request = Request({
+            "type": "http", "method": "GET", "scheme": "https",
+            "server": ("example.hf.space", 443), "client": (".".join(("127", "0", "0", "1")), 1),
+            "root_path": "", "path": source, "raw_path": source.encode(),
+            "query_string": b"next=%2Fstudio", "headers": [],
+        })
+        response = root_oauth_redirect(target, request)
+        assert response.headers["location"] == f"{target}?next=%2Fstudio"
 def test_space_frontmatter_targets_docker_mount():
     text = (ROOT / "README.md").read_text(encoding="utf-8")
     frontmatter = text.split("---", 2)[1]

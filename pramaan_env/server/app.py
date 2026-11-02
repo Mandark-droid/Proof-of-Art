@@ -11,6 +11,7 @@ from pramaan.app import PRAMAAN_CSS, build_demo, create_brand_theme
 from pramaan.paths import resolve_project_root
 from pramaan_env.models import PramaanAction, PramaanObservation, PramaanState
 from pramaan_env.server.environment import PramaanEnvironment
+from pramaan_env.server.oauth_redirects import root_oauth_redirect
 from pramaan_env.server.web_ui import WEB_TITLE, build_pramaan_web
 
 # Hugging Face Spaces sets GRADIO_ROOT_PATH from README base_path. Keep that
@@ -41,6 +42,21 @@ _favicon_path = resolve_project_root(__file__) / "assets" / "pramaan-mark.png"
 @app.get("/favicon.ico", include_in_schema=False)
 async def space_favicon():
     return FileResponse(_favicon_path, media_type="image/png")
+
+
+@app.get("/login/callback", include_in_schema=False)
+async def root_login_callback(request: Request):
+    return root_oauth_redirect("/studio/login/callback", request)
+
+
+@app.get("/login/huggingface", include_in_schema=False)
+async def root_login_huggingface(request: Request):
+    return root_oauth_redirect("/studio/login/huggingface", request)
+
+
+@app.get("/logout", include_in_schema=False)
+async def root_logout(request: Request):
+    return root_oauth_redirect("/studio/logout", request)
 
 
 @app.middleware("http")

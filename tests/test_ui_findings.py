@@ -2,40 +2,35 @@ from pramaan.ui.findings import render_findings_strip, wilson_interval
 import pytest
 
 
-def test_findings_strip_uses_live_summary_counts_and_discloses_methods():
-    summary = {
-        "by_model": {
-            "beam-hf": {"study": {"expected_prompt_count": 72, "observed_prompt_count": 72},
-                        "overall": {"n": 72, "validity_at_1": 17 / 72,
-                                    "repair_requested": 55, "repair_rescued": 30,
-                                    "accepted_designs": 47}},
-        },
-    }
-    rendered = render_findings_strip(summary)
-    assert 'data-testid="finding-first-try"' in rendered
-    assert "17/72 · 23.6%" in rendered
-    assert 'data-testid="finding-repair-gain"' in rendered
-    assert "30/55 · 54.5%" in rendered
-    assert "47/72 · 65.3%" in rendered
-    assert "95% Wilson" in rendered
-    assert "Scores measure geometry, not cultural authenticity" in rendered
+def test_findings_strip_uses_saved_repairs_grammar_latency_and_visibility():
+    from pramaan.app import (_benchmark_summary, _home_suite_tasks, _load_gallery_arm_documents,
+                             _load_gallery_index)
+
+    summary = _benchmark_summary()
+    documents = _load_gallery_arm_documents(_load_gallery_index())
+    backgrounds = {task["id"]: task["palette"][0] for task in _home_suite_tasks()}
+    rendered = render_findings_strip(summary, gallery_documents=documents,
+                                     task_backgrounds=backgrounds)
+
+    assert 'data-testid="finding-repair-origins"' in rendered
+    assert "25 of Beam’s 30 came from a readable design that broke a rule" in rendered
+    assert "7 of Opus’s 59 did" in rendered
+    assert "Jaali had 9 accepted results out of 50 model-task results" in rendered
+    assert "Beam averaged 7.8 s per request" in rendered
+    assert "next fastest was 20.2 s" in rendered
+    assert "44 of 470 accepted designs show little or no visible ink" in rendered
+    assert "Claude Opus 5.5 61, Claude Fable 5.1 60, GPT-6 Astra 59, GPT-6.1 Sol 59" in rendered
+    assert "Published ranks stay as run" in rendered
 
 
-def test_findings_strip_contains_three_live_metrics_without_a_stale_roster():
-    summary = {
-        "by_model": {
-            "beam-hf": {"study": {"expected_prompt_count": 72, "observed_prompt_count": 72},
-                        "overall": {"n": 72, "validity_at_1": 17 / 72,
-                                    "repair_requested": 55, "repair_rescued": 30,
-                                    "accepted_designs": 47}},
-        },
-    }
-    rendered = render_findings_strip(summary)
-    assert rendered.count("<article data-testid=\"finding-") == 3
-    assert "17/72 · 23.6%" in rendered
-    assert "30/55 · 54.5%" in rendered
-    assert "47/72 · 65.3%" in rendered
-    assert "finding-arm-" not in rendered
+def test_findings_strip_shows_unavailable_when_saved_evidence_is_missing():
+    rendered = render_findings_strip({"by_model": {"beam-hf": {"overall": {}}}})
+
+    assert rendered.count('<article data-testid="finding-') == 4
+    assert "Repair starting points are not available" in rendered
+    assert "Jaali results are not available" in rendered
+    assert "Request latency is not available" in rendered
+    assert "Near-invisible totals are not available" in rendered
 
 
 def test_wilson_interval_handles_bounds_and_invalid_counts():

@@ -10,6 +10,8 @@ from pathlib import Path
 from html import escape as html_escape
 
 from .findings import wilson_interval
+from .visibility import accepted_pattern_is_low_visibility, accepted_visibility_counts
+from .check_labels import check_label
 
 
 _MODEL_LABELS = {
@@ -63,7 +65,43 @@ def _usd_cost_number(overall: dict) -> float | None:
     return None
 
 
-def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> str:
+def _estimated_usd_cost_number(overall: dict) -> float | None:
+    costs = overall.get("estimated_cost_totals_by_currency")
+    amount = costs.get("USD") if isinstance(costs, dict) else None
+    if isinstance(amount, (int, float)) and not isinstance(amount, bool) and math.isfinite(amount) and amount > 0:
+        return float(amount)
+    return None
+
+
+def _first_try_breakdown(document: object) -> tuple[int, int, int, int]:
+    """Count saved first attempts as pass, readable rule failure, or unreadable."""
+    tasks = document.get("tasks") if isinstance(document, dict) else None
+    if not isinstance(tasks, dict):
+        return 0, 0, 0, 0
+    passed = broke_rule = unreadable = observed = 0
+    for task in tasks.values():
+        attempts = task.get("attempts") if isinstance(task, dict) else None
+        first = attempts[0] if isinstance(attempts, list) and attempts and isinstance(attempts[0], dict) else None
+        if first is None:
+            continue
+        failing = first.get("failing_checks")
+        if first.get("passed") is True:
+            passed += 1
+        elif first.get("passed") is False and isinstance(failing, list) and failing:
+            if "candidate_parse" in failing:
+                unreadable += 1
+            else:
+                broke_rule += 1
+        else:
+            continue
+        observed += 1
+    return passed, broke_rule, unreadable, observed
+
+
+def render_model_report(summary: dict | None, *, expected_tasks: int = 72,
+                        gallery_documents: dict[str, dict] | None = None,
+                        task_backgrounds: dict[str, str] | None = None,
+                        suite_tasks: list[dict] | None = None) -> str:
     """Render the canonical model chart and single-row-per-model report from a summary."""
     summary = summary if isinstance(summary, dict) else {}
     published_expected = summary.get("expected_prompt_count")
@@ -96,7 +134,8 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
             cap_usd = 10.0 if cap_reached else None
         records.append({"key": key, "label": label, "n": n, "first": first,
                         "within": within, "cost": _usd_cost(overall), "cost_number": _usd_cost_number(overall),
-                        "cap": cap_reached, "cap_usd": cap_usd})
+                        "latency_ms": overall.get("mean_request_elapsed_ms_per_prompt"),
+                        "cap": cap_reached, "cap_usd": cap_usd, "overall": overall})
 
     # Rank only arms with complete coverage. A high score on a smaller subset
     # must not displace models evaluated on the full frozen suite.
@@ -112,6 +151,7 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
             previous = score
         rank_by_key[row["key"]] = current_rank
 
+    gallery_documents = gallery_documents if isinstance(gallery_documents, dict) else {}
     chart_rows = []
     for row in sorted(records, key=lambda item: (rank_by_key.get(item["key"], expected_tasks + 1), item["label"].casefold())):
         label = html_escape(row["label"], quote=True)
@@ -119,13 +159,32 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
             chart_rows.append(f'<li data-model-key="{html_escape(row["key"], quote=True)}"><strong>{label}</strong><span>No evaluated tasks yet</span></li>')
             continue
         rate = row["within"] / row["n"]
+        passed, broke_rule, unreadable, observed = _first_try_breakdown(gallery_documents.get(row["key"]))
+        if observed == row["n"] and passed + broke_rule + unreadable == row["n"]:
+            first_try = (
+                f'<div class="pramaan-model-bar-track pramaan-model-bar-stacked" role="img" '
+                f'aria-label="First try: {passed} passed, {broke_rule} broke a rule, {unreadable} unreadable">'
+                f'<span class="pramaan-model-bar-segment is-pass" style="width:{passed / row["n"] * 100:.3f}%"></span>'
+                f'<span class="pramaan-model-bar-segment is-rule-fail" style="width:{broke_rule / row["n"] * 100:.3f}%"></span>'
+                f'<span class="pramaan-model-bar-segment is-unreadable" style="width:{unreadable / row["n"] * 100:.3f}%"></span>'
+                '</div>'
+                f'<p class="pramaan-model-first-try">First try: {passed} passed · {broke_rule} broke a rule · '
+                f'{unreadable} unreadable</p>'
+            )
+            data_counts = (f' data-first-pass="{passed}" data-first-rule-fail="{broke_rule}" '
+                           f'data-first-unreadable="{unreadable}"')
+        else:
+            first_try = '<p class="pramaan-model-first-try" role="status">First-try breakdown unavailable from saved attempt records.</p>'
+            data_counts = ""
         chart_rows.append(
-            f'<li data-model-key="{html_escape(row["key"], quote=True)}" data-testid="model-chart-{html_escape(row["key"], quote=True)}">'
-            f'<div class="pramaan-model-bar-label"><strong>{label}</strong><span>{rate:.1%}</span></div>'
-            f'<div class="pramaan-model-bar-track" role="img" aria-label="{label}: {rate:.1%} of evaluated tasks passed within three proposals, {row["within"]} of {row["n"]}">'
-            f'<span class="pramaan-model-bar" style="width:{rate * 100:.3f}%"></span>'
-            f'</div></li>')
+            f'<li data-model-key="{html_escape(row["key"], quote=True)}" data-testid="model-chart-{html_escape(row["key"], quote=True)}"{data_counts}>'
+            f'<div class="pramaan-model-bar-label"><strong>{label}</strong><span>Within three: {row["within"]}/{row["n"]} · {rate:.1%}</span></div>'
+            + first_try + '</li>')
 
+    visibility_counts = {
+        key: accepted_visibility_counts(document, task_backgrounds)
+        for key, document in gallery_documents.items()
+    }
     table_rows = []
     for row in sorted(records, key=lambda item: (rank_by_key.get(item["key"], expected_tasks + 1), item["label"].casefold())):
         n = row["n"]
@@ -136,30 +195,376 @@ def render_model_report(summary: dict | None, *, expected_tasks: int = 72) -> st
                     if row["cap_usd"] is not None else "")
         p1_rate = row["first"] / n if n else None
         p3_rate = row["within"] / n if n else None
+        p1_interval = wilson_interval(row["first"], n) if n else None
+        p3_interval = wilson_interval(row["within"], n) if n else None
+        def interval_html(interval):
+            if not isinstance(interval, tuple) or len(interval) != 2:
+                return ""
+            return f'<small>95% Wilson {interval[0]:.1%}–{interval[1]:.1%}</small>'
+        invisible = visibility_counts.get(row["key"])
+        invisible_text = (f'{invisible[0]} / {invisible[1]} accepted'
+                          if isinstance(invisible, tuple) else "not available")
+        invisible_attrs = (f' data-near-invisible="{invisible[0]}" data-accepted-designs="{invisible[1]}"'
+                           if isinstance(invisible, tuple) else "")
+        latency = row.get("latency_ms")
+        latency_text = (
+            f"{latency / 1000:.1f}s per request"
+            if isinstance(latency, (int, float)) and not isinstance(latency, bool)
+            and math.isfinite(latency) and latency >= 0 else "not reported"
+        )
         table_rows.append(
             f'<tr data-leaderboard-row data-source="official" data-testid="model-report-row-{html_escape(row["key"], quote=True)}" data-model-key="{html_escape(row["key"], quote=True)}" '
             f'data-score-pass1="{leaderboard_numeric_attr(p1_rate)}" data-score-pass3="{leaderboard_numeric_attr(p3_rate)}" '
-            f'data-coverage="{n}" data-cost="{leaderboard_numeric_attr(row["cost_number"])}">'
+            f'data-coverage="{n}" data-cost="{leaderboard_numeric_attr(row["cost_number"])}" '
+            f'data-latency-ms="{leaderboard_numeric_attr(row["latency_ms"])}"{invisible_attrs}>'
             f'<td>{html_escape(rank)}</td><th scope="row">{html_escape(row["label"])}</th>'
-            f'<td>{row["first"]} / {n} <small>{first_pct}</small></td>'
-            f'<td>{row["within"]} / {n} <small>{within_pct}</small></td>'
-            f'<td>{n} of {expected_tasks} evaluated{cap_note}</td><td>{html_escape(row["cost"])}</td></tr>')
+            f'<td>{row["first"]} / {n} <small>{first_pct}</small>{interval_html(p1_interval)}</td>'
+            f'<td>{row["within"]} / {n} <small>{within_pct}</small>{interval_html(p3_interval)}</td>'
+            f'<td>{html_escape(invisible_text)}</td>'
+            f'<td>{n} of {expected_tasks} evaluated{cap_note}</td><td>{html_escape(row["cost"])}</td>'
+            f'<td>{html_escape(latency_text)}</td></tr>')
 
-    body = ("".join(table_rows) if table_rows else '<tr><td colspan="6">No model results have been published.</td></tr>')
+    body = ("".join(table_rows) if table_rows else '<tr><td colspan="8">No model results have been published.</td></tr>')
     chart = ("".join(chart_rows) if chart_rows else '<li role="status">No model results have been published.</li>')
     return (
         '<section class="pramaan-model-report" data-testid="model-report" aria-label="Canonical model results">'
         '<h3>Model results</h3><p>Deterministic geometric scores. Provider errors are excluded from evaluated counts and scores.</p>'
-        '<section class="pramaan-model-chart" data-testid="model-report-chart" aria-label="Within-three success by model">'
-        '<h4>Verified within three proposals</h4><p>Bars show within-three rates; the table lists exact counts and costs.</p>'
-        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: the table lists every model’s rates and costs.</p></section>'
-        '<div class="pramaan-leaderboard-scroll"><table class="pramaan-model-table" data-testid="model-report-table" data-leaderboard-table>'
+        + '<section id="leaderboard-composition" class="pramaan-model-chart" data-testid="model-report-chart" tabindex="0" aria-label="First-try outcomes and within-three results by model">'
+        '<h4>First try, then within three proposals</h4><p>Each stacked bar divides first attempts into passed, broke a rule, and unreadable; within-three counts appear beside it.</p>'
+        '<ul class="pramaan-model-composition-legend" aria-label="First-try outcome legend">'
+        '<li><span class="is-pass" aria-hidden="true"></span>Passed</li>'
+        '<li><span class="is-rule-fail" aria-hidden="true"></span>Broke a rule</li>'
+        '<li><span class="is-unreadable" aria-hidden="true"></span>Unreadable</li></ul>'
+        '<ol>' + chart + '</ol><p class="pramaan-model-chart-alt">Text alternative: first-try counts and within-three results are written beside every bar; the table repeats the rates and costs.</p></section>'
+        + _render_results_matrix(records, gallery_documents, suite_tasks or [], task_backgrounds or {})
+        + _render_first_try_failures_chart(records, gallery_documents)
+        + _render_cost_frontier_chart(records, expected_tasks)
+        + '<section id="leaderboard-full-results" class="pramaan-model-full-results"><h4>Full results</h4>'
+        + '<div class="pramaan-leaderboard-scroll"><table class="pramaan-model-table" data-testid="model-report-table" data-leaderboard-table>'
         '<caption>One row per model; missing provider answers are excluded.</caption>'
-        '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Evaluated</th><th scope="col">Cost</th></tr></thead>'
+        '<thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">First try</th><th scope="col">Within three tries</th><th scope="col">Near-invisible</th><th scope="col">Evaluated</th><th scope="col">Cost</th><th scope="col">Mean request time</th></tr></thead>'
         '<tbody>' + body + '</tbody></table></div>'
-        '<p class="pramaan-model-footnote" data-testid="visibility-limitation">The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.</p>'
-        '<p class="pramaan-model-footnote">One unsatisfiable task remains in every model’s denominator.</p>'
+        + _visibility_footnote(visibility_counts)
+        + '<p class="pramaan-model-footnote">One unsatisfiable task remains in every model’s denominator.</p></section>'
+        '<dialog class="pramaan-chart-detail-dialog" data-testid="chart-detail-dialog" '
+        'aria-labelledby="pramaan-chart-detail-title">'
+        '<h3 id="pramaan-chart-detail-title" data-chart-detail-title>Model result details</h3>'
+        '<p data-chart-detail-body></p>'
+        '<div class="pramaan-ui-actions"><a class="pramaan-ui-button secondary" data-chart-detail-arena hidden>Open this brief in the Arena</a>'
+        '<button type="button" class="pramaan-ui-button secondary" data-chart-detail-close>Close</button></div></dialog>'
         '</section>')
+
+
+def _render_cost_frontier_chart(records: list[dict], expected_tasks: int) -> str:
+    points = []
+    for row in records:
+        cost = _estimated_usd_cost_number(row.get("overall", {}))
+        if row["n"] != expected_tasks or cost is None or row["n"] <= 0:
+            continue
+        points.append({**row, "estimated_cost": cost, "rate": row["within"] / row["n"]})
+    if not points:
+        return ('<section id="leaderboard-cost" class="pramaan-model-cost" data-testid="model-cost-chart" tabindex="0" '
+                'aria-label="Estimated cost against pass rate"><h4>Cost against within three</h4>'
+                '<p role="status">A complete saved cost comparison is not available.</p></section>')
+
+    # Logarithmic cost coordinates keep low-cost models readable beside the higher-cost runs.
+    x0, x1, y0, y1 = 78.0, 700.0, 350.0, 58.0
+    costs = [point["estimated_cost"] for point in points]
+    min_log = math.log10(min(costs))
+    max_log = math.log10(max(costs))
+    if max_log == min_log:
+        max_log += 1
+    def xy(point):
+        x = x0 + (math.log10(point["estimated_cost"]) - min_log) / (max_log - min_log) * (x1 - x0)
+        y = y0 - point["rate"] * (y0 - y1)
+        return x, y
+
+    frontier = []
+    best_rate = -1.0
+    for point in sorted(points, key=lambda item: (item["estimated_cost"], -item["rate"], item["label"].casefold())):
+        if point["rate"] > best_rate:
+            frontier.append(point)
+            best_rate = point["rate"]
+    frontier_keys = {point["key"] for point in frontier}
+    path = " ".join(("M" if index == 0 else "L") + f"{xy(point)[0]:.2f},{xy(point)[1]:.2f}"
+                     for index, point in enumerate(frontier))
+    svg = [
+        '<svg class="pramaan-cost-plot" viewBox="0 0 760 430" role="img" '
+        'aria-label="Estimated evaluation cost in US dollars on a logarithmic horizontal axis; within-three pass rate vertically. Points are labeled by model; a dashed line marks the Pareto frontier.">',
+        '<line x1="78" y1="350" x2="700" y2="350" class="axis"/><line x1="78" y1="58" x2="78" y2="350" class="axis"/>',
+    ]
+    tick_values = [value for value in (0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0)
+                   if min(costs) <= value <= max(costs)]
+    for value in tick_values:
+        x = x0 + (math.log10(value) - min_log) / (max_log - min_log) * (x1 - x0)
+        svg.append(f'<line x1="{x:.2f}" y1="350" x2="{x:.2f}" y2="355" class="axis"/>')
+        svg.append(f'<text x="{x:.2f}" y="374" text-anchor="middle" class="tick" data-cost-tick="{value:g}">${value:g}</text>')
+    for pct in (0, 25, 50, 75, 100):
+        y = y0 - pct / 100 * (y0 - y1)
+        svg.append(f'<line x1="73" y1="{y:.2f}" x2="78" y2="{y:.2f}" class="axis"/>')
+        svg.append(f'<text x="66" y="{y + 4:.2f}" text-anchor="end" class="tick">{pct}%</text>')
+    svg.append(f'<path d="{path}" class="frontier" aria-label="Pareto frontier"/>')
+    label_boxes: list[tuple[float, float, float, float]] = []
+    label_positions = {}
+    label_points = sorted(points, key=lambda item: (xy(item)[1], xy(item)[0], item["label"].casefold()))
+    vertical_offsets = (0, -14, 14, -28, 28, -42, 42, -56, 56, -70, 70, -84, 84, -98, 98)
+    for point in label_points:
+        x, y = xy(point)
+        label = html_escape(point["label"], quote=True)
+        width = max(28.0, len(point["label"]) * 6.4)
+        preferred_sides = (1, -1) if x < (x0 + x1) / 2 else (-1, 1)
+        chosen = None
+        for side in preferred_sides:
+            anchor = "start" if side > 0 else "end"
+            label_x = x + side * 10
+            left, right = (label_x, label_x + width) if side > 0 else (label_x - width, label_x)
+            for offset in vertical_offsets:
+                label_y = y + offset
+                top, bottom = label_y - 10, label_y + 3
+                if left < 48 or right > 752 or top < 45 or bottom > 384:
+                    continue
+                if any(left < other_right + 5 and right + 5 > other_left
+                       and top < other_bottom + 3 and bottom + 3 > other_top
+                       for other_left, other_top, other_right, other_bottom in label_boxes):
+                    continue
+                chosen = (label_x, label_y, anchor, left, top, right, bottom, side)
+                break
+            if chosen:
+                break
+        if chosen is None:
+            raise ValueError(f"Could not place a non-overlapping cost label for {point['label']}")
+        label_x, label_y, anchor, left, top, right, bottom, side = chosen
+        label_boxes.append((left, top, right, bottom))
+        label_positions[point["key"]] = (x, y, label_x, label_y, anchor, left, top, right, bottom, side)
+
+    for point in sorted(points, key=lambda item: item["label"].casefold()):
+        x, y, label_x, label_y, anchor, left, top, right, bottom, side = label_positions[point["key"]]
+        label = html_escape(point["label"], quote=True)
+        key = html_escape(point["key"], quote=True)
+        cost = point["estimated_cost"]
+        rate_pct = point["rate"] * 100
+        frontier_attr = "true" if point["key"] in frontier_keys else "false"
+        svg.append(
+            f'<g class="point{" is-frontier" if point["key"] in frontier_keys else ""}" tabindex="0" role="img" '
+            f'data-model-key="{key}" data-testid="model-cost-point-{key}" '
+            f'data-touch-detail="cost" data-detail-model="{label}" '
+            f'data-estimated-cost="{cost:.8f}" data-within-three="{point["within"]}" '
+            f'data-denominator="{point["n"]}" data-frontier="{frontier_attr}">'
+            f'<title>{label}: estimated USD {cost:.2f}; {point["within"]}/{point["n"]} within three proposals</title>'
+            f'<path class="label-leader" d="M{x:.2f},{y:.2f} L{(left if side > 0 else right):.2f},{max(top + 3, min(bottom - 3, y)):.2f}" aria-hidden="true"/>'
+            f'<circle cx="{x:.2f}" cy="{y:.2f}" r="6"/>'
+            f'<text x="{label_x:.2f}" y="{label_y:.2f}" text-anchor="{anchor}" class="point-label" '
+            f'data-label-box="{left:.2f},{top:.2f},{right:.2f},{bottom:.2f}">{label}</text></g>'
+        )
+    svg.extend([
+        '<text x="389" y="410" text-anchor="middle" class="axis-label">Estimated evaluation cost (USD, log scale)</text>',
+        '<text x="18" y="205" transform="rotate(-90 18 205)" text-anchor="middle" class="axis-label">Within three</text>',
+        '</svg>',
+    ])
+    frontier_count = len(frontier)
+    return (
+        '<section id="leaderboard-cost" class="pramaan-model-cost" data-testid="model-cost-chart" tabindex="0" '
+        'aria-label="Estimated cost against within-three pass rate">'
+        '<h4>Cost against within three</h4>'
+        '<p>Dashed line shows the Pareto frontier: lower estimated evaluation cost and a higher within-three rate. '
+        'Costs are estimates, request settings differ by provider, and the horizontal axis is logarithmic.</p>'
+        + "".join(svg)
+        + f'<p class="pramaan-model-cost-alt">Text alternative: {len(points)} complete models plotted from saved estimates; '
+        f'{frontier_count} are on the displayed cost / pass frontier. Every point has its model name, estimated USD cost, '
+        'within-three count, and denominator in its focus tooltip and data record.</p></section>'
+    )
+
+
+def _render_results_matrix(records: list[dict], gallery_documents: dict,
+                           suite_tasks: list[dict], task_backgrounds: dict[str, str]) -> str:
+    tasks = [task for task in suite_tasks if isinstance(task, dict) and isinstance(task.get("id"), str)]
+    tasks.sort(key=lambda task: (str(task.get("grammar", "")), str(task.get("id", ""))))
+    if not tasks:
+        return ('<section id="leaderboard-results-matrix" class="pramaan-results-matrix" '
+                'data-testid="model-results-matrix" tabindex="0"><h4>Results matrix</h4>'
+                '<p role="status">The frozen task list is unavailable in this build.</p></section>')
+    grammar_groups: list[tuple[str, list[dict]]] = []
+    for task in tasks:
+        grammar = str(task.get("grammar", "Unclassified"))
+        if not grammar_groups or grammar_groups[-1][0] != grammar:
+            grammar_groups.append((grammar, []))
+        grammar_groups[-1][1].append(task)
+    group_header = ''.join(
+        f'<th class="grammar-group" scope="colgroup" colspan="{len(group)}">{html_escape(grammar.replace("_", " ").title())}</th>'
+        for grammar, group in grammar_groups
+    )
+
+
+    task_header = ''.join(
+        f'<th scope="col" title="{html_escape(str(task.get("state", "")) + " · " + str(task.get("brief", "")), quote=True)}">'
+        f'{index + 1}</th>' for index, task in enumerate(tasks)
+    )
+    rows = []
+    for row in sorted(records, key=lambda item: item["label"].casefold()):
+        model_key = str(row["key"])
+        model_docs = gallery_documents.get(model_key, {})
+        model_tasks = model_docs.get("tasks") if isinstance(model_docs, dict) else {}
+        model_tasks = model_tasks if isinstance(model_tasks, dict) else {}
+        cells = []
+        for index, task in enumerate(tasks):
+            task_id = str(task["id"])
+            saved = model_tasks.get(task_id)
+            attempts = saved.get("attempts") if isinstance(saved, dict) else None
+            attempts = [item for item in attempts if isinstance(item, dict)] if isinstance(attempts, list) else []
+            first_pass = bool(attempts and attempts[0].get("passed") is True)
+            passing = next((item for item in attempts if item.get("passed") is True), None)
+            if first_pass:
+                state, state_label = "first", "Passed first try"
+                attempt_label = "attempt 1"
+            elif passing:
+                state, state_label = "repair", "Passed after repair"
+                attempt_label = f"attempt {passing.get('index', 'unknown')}"
+            elif attempts:
+                state, state_label = "fail", "Did not pass"
+                attempt_label = f"{len(attempts)} attempts; no passing result"
+            else:
+                state, state_label = "not-run", "Not run"
+                attempt_label = "no attempt saved"
+            near_invisible = bool(passing and accepted_pattern_is_low_visibility(
+                passing, task_backgrounds.get(task_id)
+            ))
+            task_name = html_escape(task_id, quote=True)
+            state_name = html_escape(str(task.get("state", "State")), quote=True)
+            brief = html_escape(str(task.get("brief", "")), quote=True)
+            model_label = html_escape(str(row["label"]), quote=True)
+            accessible = html_escape(
+                f'{row["label"]} · {state_label} · {task.get("state", "State")} · '
+                f'{task_id} · {attempt_label}' + (" · near-invisible accepted design" if near_invisible else ""),
+                quote=True,
+            )
+            pass_number = None
+            if passing:
+                candidate_index = passing.get("index")
+                pass_number = candidate_index if type(candidate_index) is int and 1 <= candidate_index <= 3 else next(
+                    (attempt_index for attempt_index, attempt in enumerate(attempts, 1) if attempt is passing),
+                    None,
+                )
+                attempt_label = f"attempt {pass_number}" if pass_number is not None else "passing attempt"
+            hatch = " is-near-invisible" if near_invisible else ""
+            cells.append(
+                f'<td><a class="pramaan-matrix-cell is-{state}{hatch}" '
+                f'href="#/leaderboard?task={task_name}" data-testid="matrix-cell-{model_key}-{task_name}" '
+                f'data-matrix-cell data-touch-detail="matrix" data-detail-model="{model_label}" '
+                f'data-detail-state="{state_name}" data-detail-task="{task_name}" '
+                f'data-detail-result="{html_escape(state_label, quote=True)}" '
+                f'data-detail-attempt="{html_escape(attempt_label, quote=True)}" data-detail-brief="{brief}" '
+                f'data-model-key="{html_escape(model_key, quote=True)}" '
+                f'data-task-id="{task_name}" data-cell-state="{state}" '
+                f'data-near-invisible="{str(near_invisible).lower()}" '
+                f'title="{accessible} · {brief}" aria-label="{accessible}">'
+                f'<span class="sr-only">{html_escape(state_label)}: {attempt_label}</span>'
+                f'<span aria-hidden="true">{pass_number if pass_number is not None else "×" if state == "fail" else "—"}</span></a></td>'
+            )
+        rows.append(
+            f'<tr data-testid="matrix-row-{html_escape(model_key, quote=True)}">'
+            f'<th scope="row" class="matrix-model">{html_escape(str(row["label"]))}</th>'
+            + ''.join(cells) + '</tr>'
+        )
+    return (
+        '<section id="leaderboard-results-matrix" class="pramaan-results-matrix" '
+        'data-testid="model-results-matrix" tabindex="0" aria-label="Saved model results across benchmark tasks">'
+        '<h4>Results matrix</h4>'
+        '<p>Tap, focus, or hover a cell for its model, task, state, and attempt; use its detail card to open that brief in the Arena. '
+        'Hatching marks an accepted result with under 2% visible ink.</p>'
+        '<div class="pramaan-results-matrix-scroll" role="region" tabindex="0" aria-label="Scrollable model by task results matrix">'
+        '<table><thead><tr><th class="matrix-model matrix-corner" scope="col" rowspan="2">Model</th>'
+        + group_header + '</tr><tr>' + task_header + '</tr></thead><tbody>' + ''.join(rows)
+        + '</tbody></table></div>'
+        '<ul class="pramaan-matrix-legend" aria-label="Results matrix legend">'
+        '<li><span class="is-first" aria-hidden="true">1</span>Passed on attempt 1</li>'
+        '<li><span class="is-repair" aria-hidden="true">2/3</span>Passed on attempt 2 or 3</li>'
+        '<li><span class="is-fail" aria-hidden="true">×</span>Did not pass</li>'
+        '<li><span class="is-not-run" aria-hidden="true">—</span>Not run</li>'
+        '<li><span class="is-hatched" aria-hidden="true"></span>Accepted, under 2% visible ink</li></ul>'
+        '<p class="pramaan-model-cost-alt">Text alternative: rows identify models; columns are grouped by grammar, and each linked cell names its task, state, result, and attempt.</p>'
+        '</section>'
+    )
+
+
+def _render_first_try_failures_chart(records: list[dict], gallery_documents: dict) -> str:
+    """Count saved first-attempt failing checks, separating unreadable outputs."""
+    counts: dict[str, int] = {}
+    total_observed = 0
+    for row in records:
+        document = gallery_documents.get(row["key"], {})
+        tasks = document.get("tasks") if isinstance(document, dict) else {}
+        for task in tasks.values() if isinstance(tasks, dict) else []:
+            attempts = task.get("attempts") if isinstance(task, dict) else None
+            first = attempts[0] if isinstance(attempts, list) and attempts and isinstance(attempts[0], dict) else None
+            if first is None or first.get("passed") is not False:
+                continue
+            failing = first.get("failing_checks")
+            if not isinstance(failing, list):
+                continue
+            total_observed += 1
+            if "candidate_parse" in failing:
+                counts["__unreadable__"] = counts.get("__unreadable__", 0) + 1
+                continue
+            for check_id in set(item for item in failing if isinstance(item, str)):
+                counts[check_id] = counts.get(check_id, 0) + 1
+    categories = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    maximum = max((value for _, value in categories), default=0)
+    bars = []
+    for check_id, count in categories:
+        unreadable = check_id == "__unreadable__"
+        label = "Unreadable output" if unreadable else check_label(check_id)
+        css_kind = " is-unreadable" if unreadable else ""
+        bars.append(
+            f'<li data-testid="first-try-failure-{html_escape(check_id, quote=True)}" '
+            f'data-check-id="{html_escape(check_id, quote=True)}" data-count="{count}">'
+            f'<span class="pramaan-failure-label">{html_escape(label)}</span>'
+            f'<span class="pramaan-failure-track" role="img" aria-label="{html_escape(label, quote=True)}: {count} first attempts">'
+            f'<span class="pramaan-failure-bar{css_kind}" style="width:{(count / maximum * 100) if maximum else 0:.3f}%"></span></span>'
+            f'<b>{count}</b></li>'
+        )
+    body = ''.join(bars) if bars else '<li role="status">No failed first attempts are present in saved records.</li>'
+    return (
+        '<section id="leaderboard-failing-checks" class="pramaan-first-failures" '
+        'data-testid="first-try-failures-chart" tabindex="0" aria-label="Most common first-try failing checks">'
+        '<h4>What fails on the first try?</h4>'
+        '<p>Counts use saved first attempts across model-task pairs. A task contributes at most once to each check; '
+        'unreadable outputs are counted separately.</p>'
+        f'<ol>{body}</ol>'
+        f'<p class="pramaan-model-cost-alt">Text alternative: {len(categories)} categories summarize {total_observed} '
+        'failed first attempts; the count for each check is printed beside its bar.</p></section>'
+    )
+
+
+def render_models_section_nav(available_markup: str) -> str:
+    """Link only to dashboard sections present in the supplied rendered markup."""
+    sections = (
+        ("leaderboard-composition", "Composition"),
+        ("leaderboard-results-matrix", "Results matrix"),
+        ("leaderboard-failing-checks", "Failing checks"),
+        ("leaderboard-cost", "Cost"),
+        ("leaderboard-full-results", "Full results"),
+        ("model-arena", "Arena"),
+        ("leaderboard-methodology", "Methodology"),
+        ("leaderboard-community-results", "Community results"),
+    )
+    links = "".join(
+        f'<a href="#{anchor}">{html_escape(label)}</a>'
+        for anchor, label in sections
+        if f'id="{anchor}"' in available_markup
+    )
+    return (f'<nav class="pramaan-leaderboard-nav is-sticky" data-testid="models-section-menu" '
+            f'aria-label="Models dashboard sections">{links}</nav>')
+
+
+def _visibility_footnote(visibility_counts: dict[str, tuple[int, int] | None]) -> str:
+    known = [value for value in visibility_counts.values() if isinstance(value, tuple)]
+    if not known or len(known) != len(visibility_counts):
+        return '<p class="pramaan-model-footnote" data-testid="visibility-limitation">The checker measures drawn shapes, not visibility; saved accepted designs do not provide a complete visibility count in this build. <a href="#/rl">See the Manipur example in Build with it.</a></p>'
+    low_visibility = sum(value[0] for value in known)
+    accepted = sum(value[1] for value in known)
+    return (f'<p class="pramaan-model-footnote" data-testid="visibility-limitation">'
+            f'The checker measures drawn shapes, not visibility: {low_visibility} of {accepted} accepted designs '
+            'show little or no visible ink. <a href="#/rl">See the Manipur example in Build with it.</a></p>')
 
 
 def leaderboard_numeric_attr(value) -> str:

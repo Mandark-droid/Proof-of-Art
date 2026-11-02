@@ -17,7 +17,7 @@ from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 import gradio as gr
-from PIL import Image
+from PIL import Image, ImageDraw
 from pydantic import ValidationError
 from dotenv import load_dotenv
 
@@ -29,13 +29,17 @@ from .export import artifact_bundle, render_highlighted_png, render_png, traject
 from .orchestrate import MAX_BRIEF_CHARS, generate_and_verify, require_integer_control
 from .ui.quilt import render_data_quilt, state_grid_cell, state_grid_style
 from .ui.home import render_reference_wall
-from .ui.compare import render_arena, render_comparison_charts, render_same_brief_wall
+from .ui.compare import render_arena_picker, render_comparison_charts, render_same_brief_wall
 from .ui.leaderboard import (leaderboard_numeric_attr, render_canonical_leaderboard,
-                             render_community_leaderboard, render_model_report)
+                             render_community_leaderboard, render_model_report,
+                             render_models_section_nav)
 from .ui.findings import render_findings_strip
+from .ui.openenv_contract import render_openenv_contract
 from .ui.check_labels import plain_check_label
+from .ui.proof_card import render_proof_card
 from .paths import resolve_project_root
 from .tasks import canonical_jsonl_bytes
+from .visibility import MIN_VISIBLE_SHARE
 from . import VALIDATOR_VERSION
 
 try:
@@ -73,8 +77,8 @@ EVAL_SUITE_SHA256 = "b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84
 EVAL_RESULT_PATH = Path("benchmarks/results/eval-v2.1-beam-20261030.jsonl")
 EVAL_TRAJECTORY_PATH = Path("benchmarks/data/eval-v2.1-trajectories.jsonl")
 EVAL_SUMMARY_PATH = Path("benchmarks/data/eval-v2.1-summary.json")
-PROOF_REPLAY_TRAJECTORY_ID = "beam-hf:gj_bandhani-easy-6:b04b568d84d2"
-PROOF_REPLAY_PROMPT_ID = "gj_bandhani-easy-6"
+PROOF_REPLAY_TRAJECTORY_ID = "beam-hf:hp_kinnauri-shawl-geometric-border-easy-8:b04b568d84d2"
+PROOF_REPLAY_PROMPT_ID = "hp_kinnauri-shawl-geometric-border-easy-8"
 
 
 def _load_frozen_eval_suite():
@@ -128,6 +132,7 @@ BEAM_TRAJECTORIES = {
     "beam_g6_tn_kolam_sikku": ROOT / "examples" / "beam_g6_tn_kolam_sikku.trajectory.json",
     "beam_g7_gj_sidi_saiyyed_jaali": ROOT / "examples" / "beam_g7_gj_sidi_saiyyed_jaali.trajectory.json",
 }
+_SAVED_EXAMPLE_VALUE = re.compile(r"saved:(beam|reference):([a-z0-9][a-z0-9._-]{0,150})\Z")
 
 
 def _tradition_choices(state: str | None):
@@ -150,13 +155,40 @@ def _tradition_by_id(tradition_id: str | None):
 
 
 def _example_choices(state_name: str | None, tradition_id: str | None):
-    """Return worked examples belonging to the currently selected state and tradition."""
+    """Prefer replayed benchmark samples, falling back to state task references."""
     if not state_name or not tradition_id:
         return []
     tradition = _tradition_by_id(tradition_id)
     if tradition is None or state_name not in tradition.states:
         return []
     choices = []
+    tasks = _home_suite_tasks()
+    task_examples = _saved_benchmark_examples_by_task()
+    matching_tasks = [task for task in tasks if task.get("state") == state_name
+                      and task.get("tradition_id") == tradition_id]
+    from_state_fallback = not matching_tasks
+    eligible_tasks = matching_tasks or [task for task in tasks if task.get("state") == state_name]
+    level_order = {"easy": 0, "hard": 1}
+    eligible_tasks.sort(key=lambda task: (level_order.get(str(task.get("level")), 2), str(task.get("id", ""))))
+    for task in eligible_tasks:
+        task_id = task.get("id")
+        material = task_examples.get(task_id) if isinstance(task_id, str) else None
+        if not isinstance(material, dict):
+            continue
+        kind = str(material.get("kind", ""))
+        value = f"saved:{kind}:{task_id}"
+        task_tradition = _tradition_by_id(str(task.get("tradition_id", "")))
+        tradition_name = task_tradition.name if task_tradition else str(task.get("tradition_id", ""))
+        if kind == "beam":
+            prefix = "Beam attempt · verified"
+        else:
+            prefix = "Reference design · checks pass; may differ from brief"
+        suffix = f"{task.get('level', 'task')} · {tradition_name}"
+        if from_state_fallback:
+            suffix += " · switches to task tradition"
+        choices.append((f"{prefix} · {suffix}", value))
+
+    # Keep the hand-picked starter examples available after the benchmark-backed choices.
     for name, path in EXAMPLES.items():
         try:
             pattern = json.loads(path.read_text(encoding="utf-8"))
@@ -175,6 +207,155 @@ def _example_choices(state_name: str | None, tradition_id: str | None):
 def _example_for_selection(state_name: str | None, tradition_id: str | None) -> str:
     choices = _example_choices(state_name, tradition_id)
     return choices[0][1] if choices else ""
+
+
+def _load_example_button_html(example_choices: list[tuple[str, str]]) -> str:
+    if example_choices:
+        return '<button type="button" class="pramaan-ui-button secondary" data-action="example">Load example</button>'
+    return '<button type="button" class="pramaan-ui-button secondary" data-action="example" disabled>Load example</button>'
+
+
+def _replay_saved_pattern(candidate: object, task: dict, saved_checks: object = None):
+    """Replay a saved Beam/reference candidate and return its checked certificate."""
+    if (not isinstance(candidate, dict) or candidate.get("schema_version") not in {"0.1", "0.2"}
+            or not isinstance(task, dict)):
+        return None
+    try:
+        source = json.dumps(candidate, ensure_ascii=False, sort_keys=True, indent=2)
+        pattern, checks, masks, grid, certificate = _verify_json(source)
+    except (TypeError, ValueError, ValidationError, json.JSONDecodeError):
+        return None
+    if not all_pass(checks):
+        return None
+    if pattern.schema_version == "0.2":
+        if (pattern.grammar != task.get("grammar")
+                or pattern.tradition_id != task.get("tradition_id")
+                or not isinstance(task.get("palette"), list)
+                or [colour.upper() for colour in pattern.palette] != [colour.upper() for colour in task["palette"]]):
+            return None
+        profile = task.get("constraint_profile")
+        if isinstance(profile, dict) and pattern.constraints.symmetry != profile.get("symmetry"):
+            return None
+    if saved_checks is not None and saved_checks != checks:
+        return None
+    background = pattern.background_index
+    if type(background) is not int or not 0 <= background < len(pattern.palette):
+        return None
+    visible_share = sum(int(value) != background for value in grid.flat) / grid.size
+    return {"source": source, "pattern": pattern, "checks": checks, "masks": masks,
+            "grid": grid, "certificate": certificate, "visible_share": visible_share}
+
+
+@lru_cache(maxsize=1)
+def _saved_benchmark_examples_by_task() -> dict[str, dict]:
+    """Build one replay-checked example source per frozen benchmark task."""
+    tasks = _home_suite_tasks()
+    tasks_by_id = {task["id"]: task for task in tasks if isinstance(task, dict)
+                   and isinstance(task.get("id"), str)}
+    if len(tasks_by_id) != 72:
+        return {}
+
+    beam_candidates = {}
+    try:
+        records = EVAL_TRAJECTORY_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        records = []
+    for line in records:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        task_id = record.get("prompt_id") if isinstance(record, dict) else None
+        task = tasks_by_id.get(task_id) if isinstance(task_id, str) else None
+        if (task is None or record.get("model_key") != "beam-hf"
+                or record.get("dataset_id") != EVAL_SUITE_ID
+                or record.get("prompt_suite_sha256") != EVAL_SUITE_SHA256
+                or record.get("training_eligible") is not False
+                or record.get("state") != task.get("state")
+                or record.get("tradition_id") != task.get("tradition_id")):
+            continue
+        calls = record.get("calls") if isinstance(record.get("calls"), list) else []
+        for call in reversed(calls):
+            if not isinstance(call, dict) or call.get("accepted") is not True:
+                continue
+            replay = _replay_saved_pattern(
+                call.get("candidate"), task,
+                call.get("verifier_report", {}).get("checks")
+                if isinstance(call.get("verifier_report"), dict) else None,
+            )
+            if replay is not None and replay["visible_share"] >= MIN_VISIBLE_SHARE:
+                beam_candidates[task_id] = replay["source"]
+                break
+
+    references = {row.get("task_id"): row for row in _home_reference_rows()
+                  if isinstance(row, dict) and isinstance(row.get("task_id"), str)}
+    examples = {}
+    for task_id, task in tasks_by_id.items():
+        beam_source = beam_candidates.get(task_id)
+        if beam_source:
+            try:
+                candidate = json.loads(beam_source)
+            except json.JSONDecodeError:
+                candidate = None
+            replay = _replay_saved_pattern(candidate, task)
+            if replay is not None and replay["visible_share"] >= MIN_VISIBLE_SHARE:
+                examples[task_id] = {"kind": "beam", "candidate": candidate, "task": task}
+                continue
+        reference = references.get(task_id)
+        candidate = reference.get("candidate_pattern") if isinstance(reference, dict) else None
+        replay = _replay_saved_pattern(candidate, task, reference.get("checks") if isinstance(reference, dict) else None)
+        if replay is not None:
+            examples[task_id] = {"kind": "reference", "candidate": candidate, "task": task}
+    return examples
+
+
+def _saved_example_descriptor(value: str):
+    match = _SAVED_EXAMPLE_VALUE.fullmatch(value) if isinstance(value, str) else None
+    if not match:
+        return None
+    kind, task_id = match.groups()
+    descriptor = _saved_benchmark_examples_by_task().get(task_id)
+    return descriptor if isinstance(descriptor, dict) and descriptor.get("kind") == kind else None
+
+
+@lru_cache(maxsize=72)
+def _saved_example_result(value: str) -> dict | None:
+    """Render a replay-verified saved benchmark example for the Studio."""
+    descriptor = _saved_example_descriptor(value)
+    if not isinstance(descriptor, dict):
+        return None
+    task = descriptor.get("task")
+    candidate = descriptor.get("candidate")
+    replay = _replay_saved_pattern(candidate, task)
+    if replay is None or (descriptor.get("kind") == "beam" and replay["visible_share"] < MIN_VISIBLE_SHARE):
+        return None
+    pattern, grid, cert = replay["pattern"], replay["grid"], replay["certificate"]
+    image = render_highlighted_png(grid, pattern.palette, [], scale=6, repeats=3)
+    image_uri = _image_data_uri(image)
+    task_id = str(task.get("id", ""))
+    kind = str(descriptor.get("kind"))
+    if kind == "beam":
+        status = "Beam attempt, verified · replayed through the checker; visible ink meets the 2% threshold."
+        origin = "saved_beam_attempt"
+    else:
+        status = "Reference design · checks pass and may differ from the brief."
+        origin = "saved_task_reference"
+    history = {
+        "origin": origin, "task_id": task_id, "state": task.get("state"),
+        "tradition_id": task.get("tradition_id"), "grammar": task.get("grammar"),
+        "original_prompt": task.get("brief"), "training_eligible": False,
+        "all_hard_constraints_pass": True,
+        "visible_share": replay["visible_share"],
+        "checks": replay["checks"], "certificate": cert,
+    }
+    return {
+        "image": image_uri,
+        "gallery": [(image_uri, f"{kind.title()} example · {task_id}")],
+        "source": replay["source"],
+        "certificate": json.dumps(cert, indent=2, ensure_ascii=False),
+        "history": json.dumps(history, indent=2, ensure_ascii=False),
+        "status": status, "bundle": None,
+    }
 
 
 def _tradition_dropdown_update(state: str | None):
@@ -378,6 +559,8 @@ def _remove_gradio_upload(path_text) -> None:
 
 def _publish_community_archive(archive_path: str, *, submitted_by: str | None = None) -> str:
     """Audit then publish a user-consented ZIP through the configured scoped writer."""
+    if not _real_hf_oauth_environment():
+        return "Public publishing is disabled because real Hugging Face OAuth is not configured."
     if (not isinstance(submitted_by, str)
             or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", submitted_by) is None):
         return "Sign in with Hugging Face to publish: use the button at the top of this page"
@@ -411,7 +594,8 @@ def _publish_community_archive(archive_path: str, *, submitted_by: str | None = 
 
 
 def _community_submission_archive_ready() -> bool:
-    return (bool(os.getenv("HF_COMMUNITY_WRITE_TOKEN"))
+    return (_real_hf_oauth_environment()
+            and bool(os.getenv("HF_COMMUNITY_WRITE_TOKEN"))
             and _community_submission_archive_runtime() is not None
             and callable(globals().get("_publish_community_archive")))
 
@@ -421,7 +605,7 @@ def _community_model_choices():
 
 
 def _community_publish_ready() -> bool:
-    if not os.getenv("HF_COMMUNITY_WRITE_TOKEN"):
+    if not _real_hf_oauth_environment() or not os.getenv("HF_COMMUNITY_WRITE_TOKEN"):
         return False
     runtime = _community_runtime()
     if runtime is None:
@@ -657,6 +841,12 @@ def _model_methodology_html(index: dict | None = None, summary: dict | None = No
         thinking = extra_body.get("thinking") if isinstance(extra_body.get("thinking"), dict) else {}
         effort = params.get("reasoning_effort", output_config.get("effort"))
         reasoning_cap = params.get("max_reasoning_tokens", params.get("reasoning_tokens"))
+        overall = arm.get("overall") if isinstance(arm.get("overall"), dict) else {}
+        budget = arm.get("budget") if isinstance(arm.get("budget"), dict) else {}
+        spend_cap = budget.get("cap_usd", overall.get("spend_cap_usd", arm.get("spend_cap_usd")))
+        spend_cap_text = (f"; spend cap USD {spend_cap:g}"
+                          if isinstance(spend_cap, (int, float)) and not isinstance(spend_cap, bool)
+                          else "")
         rows.append(
             f'<li data-model-protocol-row="{html_escape(key, quote=True)}">'
             f'<strong>{html_escape(str(arm.get("label") or key))}</strong> · '
@@ -665,7 +855,8 @@ def _model_methodology_html(index: dict | None = None, summary: dict | None = No
             f'effort {html_escape(value_text(effort))}; '
             f'thinking {html_escape(value_text(thinking.get("type")))}; '
             f'output cap {html_escape(value_text(output_cap))}; '
-            f'reasoning cap {html_escape(value_text(reasoning_cap))}</li>'
+            f'reasoning cap {html_escape(value_text(reasoning_cap))}'
+            f'{html_escape(spend_cap_text)}</li>'
         )
     body = ("".join(rows) if rows else
             '<li>Provider request settings have not been published yet.</li>')
@@ -678,6 +869,58 @@ def _model_methodology_html(index: dict | None = None, summary: dict | None = No
         '<p>One task has a documented unsatisfiable constraint. Rows were collected in two sittings.</p>'
         '</details>'
     )
+
+
+def _benchmark_protocol_note(summary: dict | None) -> str:
+    """Describe the saved run protocol without embedding mutable result figures."""
+    summary = summary if isinstance(summary, dict) else {}
+    protocol = summary.get("protocol") if isinstance(summary.get("protocol"), dict) else {}
+    by_model = summary.get("by_model") if isinstance(summary.get("by_model"), dict) else {}
+    task_count = summary.get("expected_prompt_count")
+    if type(task_count) is not int or task_count <= 0:
+        task_count = 0
+    output_cap = protocol.get("output_token_limit")
+    proposal_limit = protocol.get("proposal_limit")
+    if type(output_cap) is not int or output_cap <= 0:
+        output_cap = 0
+    if type(proposal_limit) is not int or proposal_limit <= 0:
+        proposal_limit = 0
+    all_models_complete = bool(by_model) and all(
+        isinstance(row, dict) and isinstance(row.get("overall"), dict)
+        and row["overall"].get("n") == task_count and task_count > 0
+        for row in by_model.values()
+    )
+    if all_models_complete:
+        lead = (f"Every model ran all {task_count} tasks with the same verifier, a "
+                f"{output_cap:,}-token cap and up to {proposal_limit} proposals.")
+    else:
+        lead = (f"The frozen suite contains {task_count} tasks. The verifier, "
+                f"{output_cap:,}-token cap and up-to-{proposal_limit}-proposal limit were shared.")
+
+    paid_caps = []
+    for key, row in by_model.items():
+        if key == "beam-hf" or not isinstance(row, dict):
+            continue
+        overall = row.get("overall") if isinstance(row.get("overall"), dict) else {}
+        cap = overall.get("spend_cap_usd")
+        if isinstance(cap, (int, float)) and not isinstance(cap, bool):
+            paid_caps.append((str(row.get("label") or key), float(cap)))
+    if paid_caps:
+        counts = {}
+        for _label, cap in paid_caps:
+            counts[cap] = counts.get(cap, 0) + 1
+        common_cap = max(counts, key=lambda value: (counts[value], -value))
+        exceptions = [(label, cap) for label, cap in paid_caps if cap != common_cap]
+        cap_text = f"Each paid model had a USD {common_cap:g} cap"
+        if exceptions:
+            exception_text = ", ".join(
+                f"{label} at USD {cap:g}" for label, cap in exceptions
+            )
+            cap_text += f", except {exception_text}"
+        cap_text += ". "
+    else:
+        cap_text = ""
+    return f"{lead} {cap_text}Request settings differ by provider and are listed in Methodology."
 
 
 def _canonical_state_gallery_html(index: dict | None, state_name: str, model_key: str = "all") -> str:
@@ -736,6 +979,29 @@ _COMMUNITY_DAILY_RUNS: set[tuple[str, str]] = set()
 _COMMUNITY_DAILY_RUNS_LOCK = threading.Lock()
 _COMMUNITY_PROVIDER_ID_RE = re.compile(r"[a-z][a-z0-9_-]{0,31}")
 _COMMUNITY_MODEL_SEGMENT_RE = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+_MOCK_HF_OAUTH_TOKEN = "mock-oauth-token-for-local-dev"
+
+
+def _real_hf_oauth_environment() -> bool:
+    """Return true only when Gradio is configured for real Hugging Face OAuth on Spaces."""
+    return os.getenv("SYSTEM") == "spaces" and bool(os.getenv("OAUTH_CLIENT_ID"))
+
+
+def _is_mock_hf_oauth_token(oauth_token) -> bool:
+    return getattr(oauth_token, "token", None) == _MOCK_HF_OAUTH_TOKEN
+
+
+def _authenticated_hf_username(oauth_profile, oauth_token) -> str | None:
+    """Ignore Gradio's local mock profile, which reflects the Space owner's HF_TOKEN."""
+    if not _real_hf_oauth_environment() or _is_mock_hf_oauth_token(oauth_token):
+        return None
+    token = getattr(oauth_token, "token", None)
+    username = getattr(oauth_profile, "username", None)
+    if (not isinstance(token, str) or not token
+            or not isinstance(username, str)
+            or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", username) is None):
+        return None
+    return username
 
 
 def _valid_community_model_id(model_name: object) -> bool:
@@ -749,10 +1015,10 @@ def _valid_community_model_id(model_name: object) -> bool:
                     for part in parts[1:]))
 
 
-def _community_daily_identity(oauth_profile, request) -> str | None:
+def _community_daily_identity(oauth_profile, request, oauth_token=None) -> str | None:
     """Hash an authenticated user or anonymous Gradio session for in-memory limits."""
-    username = getattr(oauth_profile, "username", None)
-    if isinstance(username, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}", username):
+    username = _authenticated_hf_username(oauth_profile, oauth_token)
+    if username is not None:
         subject = f"hf:{username.casefold()}"
     else:
         session_hash = getattr(request, "session_hash", None)
@@ -824,6 +1090,8 @@ def _run_community_evaluation(model_name: str, provider_api_key: str, consent: b
                               daily_identity: str | None = None,
                               enforce_daily_limit: bool = False) -> str:
     """Run a capped visitor evaluation; publish only with consent and authenticated attribution."""
+    if publish and not _real_hf_oauth_environment():
+        return "Public publishing is disabled because real Hugging Face OAuth is not configured. No provider request was made."
     if consent is not True:
         return "Confirm that provider charges may apply before starting. No provider request or upload was made."
     if isinstance(task_limit, bool) or task_limit not in {12, 72}:
@@ -1223,23 +1491,23 @@ def _initial_custom_state() -> dict:
         "frame": int(profile.get("frame", 0)),
         "min_web": int(profile.get("min_web", 0)),
     }
-    form["example"] = _example_for_selection(state_name, tradition.id if tradition else None)
-    example_result = _initial_example_result(form["example"]) if form["example"] in EXAMPLES else None
+    choices = _example_choices(state_name, tradition.id if tradition else None)
+    # Preserve the familiar Gujarat starter where available while the full saved-data
+    # set remains available in the same selector for every state and tradition.
+    form["example"] = next((value for _label, value in choices if value in EXAMPLES),
+                           choices[0][1] if choices else "")
+    example_result = _example_result_for_ui(form["example"]) if form["example"] else None
     if example_result:
-        try:
-            saved_example = json.loads(example_result[4])
-        except (TypeError, json.JSONDecodeError):
-            saved_example = {}
-        saved_brief = saved_example.get("original_prompt") if isinstance(saved_example, dict) else None
-        if isinstance(saved_brief, str) and saved_brief.strip():
-            form["brief"] = saved_brief
+        form = _form_for_example(form["example"], form)
+        form["brief"] = _example_brief(example_result)
+        form["source"] = example_result.get("source", "")
     return {
         "active_tab": "benchmark", "form": form,
         "about_state": state_name, "benchmark_state": state_name,
         "wall_model": "beam-hf", "wall_mode": "reference",
         "community_loaded": False,
-        "result": (dict(zip(("image", "gallery", "source", "certificate", "history", "status", "bundle"), example_result))
-                   if example_result else {"status": "Choose a worked example to inspect its independent checker report."}),
+        "result": (dict(example_result)
+                   if isinstance(example_result, dict) else {"status": "Choose a worked example to inspect its independent checker report."}),
     }
 
 
@@ -1297,6 +1565,18 @@ def _form_for_tradition(state_name: str, tradition_id: str, previous: dict) -> d
 
 
 def _form_for_example(name: str, previous: dict) -> dict:
+    saved = _saved_example_descriptor(name)
+    if isinstance(saved, dict):
+        task = saved.get("task")
+        if not isinstance(task, dict):
+            return dict(previous)
+        state_name = task.get("state")
+        tradition_id = task.get("tradition_id")
+        if not isinstance(state_name, str) or not isinstance(tradition_id, str):
+            return dict(previous)
+        form = _form_for_tradition(state_name, tradition_id, previous)
+        form.update({"example": name, "brief": str(task.get("brief", ""))})
+        return form
     path = EXAMPLES.get(name)
     if path is None:
         return dict(previous)
@@ -1316,6 +1596,28 @@ def _form_for_example(name: str, previous: dict) -> dict:
     form = _form_for_tradition(state_name, item.id, previous)
     form["example"] = name
     return form
+
+
+def _example_result_for_ui(name: str) -> dict:
+    """Return the lightweight, cached example evidence used by state changes."""
+    saved = _saved_example_result(name)
+    if isinstance(saved, dict):
+        return saved
+    if name not in EXAMPLES:
+        return {"status": "Choose a replay-verified saved example."}
+    image, gallery, source, certificate, history, status, bundle = _initial_example_result(name)
+    return {"image": image, "gallery": gallery, "source": source,
+            "certificate": certificate, "history": history, "status": status,
+            "bundle": bundle}
+
+
+def _example_brief(result: dict) -> str:
+    try:
+        history = json.loads(str(result.get("history", "")))
+    except (TypeError, json.JSONDecodeError):
+        history = {}
+    brief = history.get("original_prompt") if isinstance(history, dict) else None
+    return brief.strip() if isinstance(brief, str) and brief.strip() else ""
 
 
 def _tradition_html_for_state(state_name: str) -> str:
@@ -1369,6 +1671,19 @@ def _proof_replay_html() -> str:
             f'<p class="pramaan-proof-subtitle">{html_escape(SUBTITLE)}</p>', "", 1,
         )
         content = content.replace("Verify it yourself in Studio", "Try it yourself", 1)
+        first_attempt_caption = re.search(r'<figcaption>Attempt (\d+) · did not pass</figcaption>', content)
+        if first_attempt_caption:
+            first_number = first_attempt_caption.group(1)
+            content = content.replace(
+                first_attempt_caption.group(0),
+                f'<figcaption>What the eye sees · attempt {first_number} looks symmetric</figcaption>', 1,
+            )
+            content = re.sub(
+                r'<figcaption>Attempt (\d+) · passed every check</figcaption>',
+                lambda match: (f'<figcaption>What the checker found · one pixel and its mirror differ '
+                               f'in attempt {first_number}; attempt {match.group(1)} passes</figcaption>'),
+                content, count=1,
+            )
 
         def show_first_attempt(match: re.Match[str]) -> str:
             tag, step = match.group(1), match.group(2)
@@ -1472,8 +1787,8 @@ def _home_metrics_html() -> str:
         return str(round(rate * total)) if type(total) is int and total > 0 and isinstance(rate, (int, float)) else "—"
     total_text = str(total) if type(total) is int and total > 0 else "—"
     return ('<section class="pramaan-home-metrics" aria-label="Beam evaluation summary">'
-            f'<article><strong>{count(first)} of {total_text}</strong><span>Beam designs correct on the first try</span></article>'
-            f'<article><strong>{count(after)} of {total_text}</strong><span>Beam designs correct after checker feedback</span></article>'
+            f'<article><strong>{count(first)} of {total_text}</strong><span>Beam designs passing every check on the first try</span></article>'
+            f'<article><strong>{count(after)} of {total_text}</strong><span>Beam designs passing every check after checker feedback</span></article>'
             f'<article><strong>{len(ALL_STATES)}</strong><span>states and territories covered</span></article>'
             '</section>')
 
@@ -1521,30 +1836,44 @@ def _render_proof_replay_html_from_data() -> str:
         accepted = all_pass(checks)
         if accepted is not (call.get("accepted") is True):
             continue
+        saved_report = call.get("verifier_report")
+        if (not isinstance(saved_report, dict)
+                or saved_report.get("all_hard_constraints_pass") is not accepted
+                or saved_report.get("checks") != checks):
+            continue
         if accepted and len(set(int(value) for value in grid.flat)) < 2:
             continue
         failure = next((item for item in checks if item.get("status") == "FAIL"), None)
         witness = (failure or {}).get("counterexample") or {}
         pixel = witness.get("pixel")
-        markers = []
-        if (isinstance(pixel, list) and len(pixel) == 2
-                and all(type(value) is int and 0 <= value < 64 for value in pixel)):
-            markers.append((pixel[0], pixel[1], "#d12f8a"))
-        centers = witness.get("centers")
-        if isinstance(centers, list):
-            markers.extend((point[0], point[1], "#d12f8a") for point in centers
-                           if isinstance(point, list) and len(point) == 2
-                           and all(type(value) is int and 0 <= value < 64 for value in point))
-        image = render_highlighted_png(grid, pattern.palette, markers, scale=3, repeats=2)
+        replay_report = {"all_hard_constraints_pass": accepted, "checks": checks}
+        markers = _witness_markers(replay_report)
+        image = render_png(grid, pattern.palette, scale=3, repeats=1)
+        marker_draw = ImageDraw.Draw(image)
+        for x, y, colour in markers:
+            if 0 <= x < 64 and 0 <= y < 64:
+                centre_x, centre_y = x * 3 + 1, y * 3 + 1
+                radius = 12
+                marker_draw.ellipse((centre_x - radius, centre_y - radius,
+                                     centre_x + radius, centre_y + radius),
+                                    outline=colour, width=3)
+        transform = str(witness.get("transform", ""))
+        if transform == "F_vertical":
+            mirror_line = image.width / 2
+            ImageDraw.Draw(image).line((mirror_line, 0, mirror_line, image.height),
+                                       fill="#FFE600", width=max(1, image.width // 192))
+        reward = call.get("reward")
         buffer = BytesIO()
         image.save(buffer, format="PNG", optimize=True)
-        certificate = make_certificate(pattern, checks, masks, grid) if accepted else None
         attempts.append({
-            "phase": str(call.get("phase") or "attempt"), "accepted": accepted,
+            "index": call.get("call_index"), "phase": str(call.get("phase") or "attempt"),
+            "accepted": accepted,
             "checks": checks, "pixel": pixel if isinstance(pixel, list) else None,
+            "witness": witness, "transform": transform, "reward": reward,
             "witness_marks": markers,
             "image": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
-            "pattern": pattern.model_dump(mode="json"), "certificate": certificate,
+            "pattern": pattern.model_dump(mode="json"),
+            "certificate": make_certificate(pattern, checks, masks, grid) if accepted else None,
         })
     first_failed = next((row for row in attempts if not row["accepted"] and any(
         isinstance(check, dict) and check.get("status") == "FAIL" for check in row["checks"])), None)
@@ -1583,35 +1912,53 @@ def _render_proof_replay_html_from_data() -> str:
             + safe(str(row.get("message", ""))) + '</li>' for row in rows) + '</ul>'
         return visible + '<details class="pramaan-proof-technical"><summary>Technical check details</summary>' + technical + '</details>'
 
-    counterexample = first_failed["pixel"]
-    pixel_text = (f"pixel ({counterexample[0]}, {counterexample[1]})"
-                  if isinstance(counterexample, list) else "topological check witness")
+    witness = first_failed["witness"]
+    original = witness.get("original")
+    transformed = witness.get("transformed")
+    if (isinstance(original, list) and len(original) == 2
+            and isinstance(transformed, list) and len(transformed) == 2):
+        relation = "its mirror" if first_failed["transform"] == "F_vertical" else "its transformed pixel"
+        witness_summary = (
+            f"Pixel ({original[0]}, {original[1]}) and {relation} "
+            f"({transformed[0]}, {transformed[1]}) differ"
+        )
+    elif isinstance(first_failed["pixel"], list):
+        point = first_failed["pixel"]
+        witness_summary = f"Pixel ({point[0]}, {point[1]}) breaks a rule"
+    else:
+        witness_summary = "The checker found a geometric mismatch"
+    failure_reward, passing_reward = first_failed.get("reward"), final_pass.get("reward")
+    if (isinstance(failure_reward, (int, float)) and not isinstance(failure_reward, bool)
+            and isinstance(passing_reward, (int, float)) and not isinstance(passing_reward, bool)):
+        witness_summary += f" · reward {failure_reward} → {passing_reward}"
+    witness_summary = html_escape(witness_summary)
     certificate = final_pass["certificate"] or {}
-    digest = str(certificate.get("mask_sha256", ""))
     pattern_json = json.dumps(final_pass["pattern"], ensure_ascii=False, separators=(",", ":"))
     pattern_b64 = base64.b64encode(pattern_json.encode("utf-8")).decode("ascii")
     steps = [
         f'<div class="pramaan-proof-step" data-proof-step="0" hidden><p><b>The brief</b></p><p>{brief}</p></div>',
-        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt 1 · did not pass</b></p>'
+        f'<div class="pramaan-proof-step" data-proof-step="1"><p><b>Attempt {first_failed["index"]} · did not pass</b></p>'
         + ''.join('<p class="pramaan-proof-failure-summary" data-proof-witness-mark><strong>'
                   + safe(plain_check_label(check)) + ': failed</strong></p>'
                   for check in first_checks if check.get("status") == "FAIL")
         + image_html(first_failed, "First failed attempt tile with the failing witness marked") + '</div>',
-        f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>What needs attention · attempt 1</b></p>{check_list(first_checks)}</div>',
+        f'<div class="pramaan-proof-step" data-proof-step="2" hidden><p><b>What needs attention · attempt {first_failed["index"]}</b></p>{check_list(first_checks)}</div>',
     ]
-    if counterexample:
-        steps.append(f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden><p><b>Counterexample · {pixel_text}</b></p>{image_html(first_failed, "Counterexample pixel outlined in magenta on the first attempt")}</div>')
-    attempt_number = 1
+    if witness:
+        steps.append(
+            f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden>'
+            f'<p><b>Witness · {witness_summary}</b></p>'
+            + image_html(first_failed, "The saved counterexample and its transformed pixel marked on the first attempt")
+            + '</div>')
     for row in attempts:
         if row is first_failed or row is final_pass:
             continue
-        attempt_number += 1
         if row["accepted"]:
             continue
         steps.append(
             f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" hidden>'
-            f'<p><b>Repair {attempt_number} · still fails</b></p>'
-            + image_html(row, f"Repair attempt {attempt_number} tile")
+            f'<p><b>Attempt {row["index"]} · still fails</b></p>'
+            + image_html(row, f"Attempt {row['index']} tile")
             + check_list([item for item in row["checks"] if isinstance(item, dict)])
             + '</div>')
         if row["pixel"]:
@@ -1623,16 +1970,18 @@ def _render_proof_replay_html_from_data() -> str:
                 + '</div>')
     steps.append(
         f'<div class="pramaan-proof-step" data-proof-step="{len(steps)}" data-proof-result hidden>'
-        '<p><b>Repair · all checks pass</b></p>'
-        + image_html(final_pass, "Repaired tile; all deterministic checks pass")
+        f'<p><b>Attempt {final_pass["index"]} · all checks pass</b></p>'
+        + image_html(final_pass, f"Passing tile from attempt {final_pass['index']}; all deterministic checks pass")
         + check_list([item for item in final_pass["checks"] if isinstance(item, dict)])
         + '</div>')
     certificate_step = len(steps)
+    proof_card_html = render_proof_card(
+        final_pass["certificate"], image_uri=final_pass["image"], state=state,
+        tradition=tradition, reward=final_pass.get("reward"),
+    )
     steps.append(
         f'<div class="pramaan-proof-step" data-proof-step="{certificate_step}" hidden>'
-        '<p><b>Replayable certificate</b></p><p>Mask SHA-256</p>'
-        + f'<code class="pramaan-proof-digest">{safe(digest)}</code>'
-        + image_html(final_pass, "Final verified tile") + '</div>')
+        + proof_card_html + '</div>')
     return (
         '<article class="pramaan-ui-card pramaan-proof-replay" id="proof-replay" data-testid="proof-replay" '
         'aria-label="Proof Replay of a saved Beam design">'
@@ -1641,16 +1990,24 @@ def _render_proof_replay_html_from_data() -> str:
         f'<p class="pramaan-proof-brief"><strong>Brief</strong> {brief}</p>'
         f'<div class="pramaan-proof-stage" data-proof-stage aria-live="polite">{"".join(steps)}</div>'
         '<div class="pramaan-proof-controls">'
-        '<button type="button" class="pramaan-ui-button" data-proof-replay data-testid="proof-replay-play">Replay proof</button>'
+        '<button type="button" class="pramaan-ui-button secondary" data-proof-replay data-testid="proof-replay-play">Replay proof</button>'
         '<button type="button" class="pramaan-ui-button secondary" data-proof-step data-testid="proof-replay-step">Step</button>'
-        '<span class="pramaan-proof-progress" data-proof-progress role="status">Attempt 1 of replay</span>'
+        f'<span class="pramaan-proof-progress" data-proof-progress role="status">Attempt {first_failed["index"]} of replay</span>'
         '</div>'
-        f'<button type="button" class="pramaan-ui-button secondary" data-proof-verify '
+        f'<button type="button" class="pramaan-ui-button primary" data-proof-verify '
         f'data-pattern-b64="{pattern_b64}" data-testid="proof-verify-yourself">Try it yourself</button>'
         '</div><figure class="pramaan-proof-art">'
+        f'<div class="pramaan-proof-comparison" data-proof-comparison data-witness-transform="{html_escape(first_failed["transform"], quote=True)}">'
+        '<div><img class="pramaan-proof-tile" data-proof-comparison-failed '
+        f'src="{first_failed["image"]}" alt="Attempt {first_failed["index"]} with the saved symmetry witness marked" width="192" height="192" decoding="async">'
+        f'<figcaption>What the eye sees · attempt {first_failed["index"]} looks symmetric</figcaption></div>'
+        f'<p class="pramaan-proof-witness-summary" data-testid="proof-witness-summary">{witness_summary}</p>'
+        '<div><img class="pramaan-proof-tile" data-proof-comparison-passing '
+        f'src="{final_pass["image"]}" alt="Attempt {final_pass["index"]} with every check passing" width="192" height="192" decoding="async">'
+        f'<figcaption>What the checker found · one pixel and its mirror differ in attempt {first_failed["index"]}; attempt {final_pass["index"]} passes</figcaption></div></div>'
         + f'<img class="pramaan-proof-tile" data-proof-active-tile src="{first_failed["image"]}" '
-        'alt="First failed tile with its exact pixel counterexample outlined" width="384" height="384" decoding="async">'
-        + f'<figcaption data-proof-figure-caption>Attempt 1 · did not pass · {state}</figcaption>'
+        'alt="First failed tile with its saved symmetry witness marked" width="192" height="192" decoding="async">'
+        + f'<figcaption data-proof-figure-caption>Attempt {first_failed["index"]} · did not pass · {state}</figcaption>'
         + '</figure></article>'
     )
 
@@ -1693,6 +2050,19 @@ def _render_custom_app(ui_state: dict) -> str:
             download_html = f'<a class="pramaan-ui-button" download="pramaan-run-bundle.zip" href="data:application/zip;base64,{encoded}">Download run bundle</a>'
         except OSError:
             download_html = '<p class="pramaan-muted">The temporary download has expired. Re-run the verifier to create a new bundle.</p>'
+    try:
+        certificate_data = json.loads(certificate)
+    except (TypeError, json.JSONDecodeError):
+        certificate_data = None
+    if isinstance(certificate_data, dict):
+        certificate_checks_html = render_proof_card(
+            certificate_data, image_uri=preview_uri, state=state_name,
+            tradition=item.name if item else "", download_html=download_html,
+            replay_href="#/overview",
+        )
+        download_footer_html = ""
+    else:
+        download_footer_html = download_html
 
     example_choices = _example_choices(state_name, tradition_id)
     example_options = [(value, label) for label, value in example_choices]
@@ -1707,8 +2077,7 @@ def _render_custom_app(ui_state: dict) -> str:
         )
     elif item:
         example_guidance = (
-            f'<p class="pramaan-muted">No worked example is available for {html_escape(state_name)} · '
-            f'{html_escape(item.name)} yet. Change either selector to browse matching examples.</p>'
+            '<p class="pramaan-muted">No saved example for this state; edit the brief and use Generate with Beam</p>'
         )
     else:
         example_guidance = (
@@ -1724,8 +2093,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + example_guidance
         + _field("Worked example for this tradition", "example", selected_example, options=example_options)
         + '<div class="pramaan-studio-actions" aria-label="Pattern actions">'
-        + ('<button type="button" class="pramaan-ui-button secondary" data-action="example">Load example</button>'
-           if example_choices else '<button type="button" class="pramaan-ui-button secondary" data-action="example" disabled>Load example</button>')
+        + _load_example_button_html(example_choices)
         + '<button type="button" class="pramaan-ui-button" data-action="generate"'
         + ("" if beam_available else ' disabled title="Beam is not configured in this build"')
         + '>Generate with Beam</button><button type="button" class="pramaan-ui-button secondary" data-action="recheck">Recheck my edit</button></div>'
@@ -1771,7 +2139,7 @@ def _render_custom_app(ui_state: dict) -> str:
         + f'<div class="pramaan-ui-subpanel" data-panel="checks">{certificate_checks_html}</div>'
         + f'<div class="pramaan-ui-subpanel" data-panel="attempts" hidden><pre>{html_escape(history)}</pre></div>'
         + f'<div class="pramaan-ui-subpanel pramaan-ui-gallery" data-panel="previews" hidden>{"".join(gallery_html) or "<p class=\"pramaan-muted\">Proposal previews will appear here.</p>"}</div>'
-        + download_html + '</article></div></section>'
+        + download_footer_html + '</article></div></section>'
     )
 
     benchmark_state = ui_state.get("benchmark_state", state_name)
@@ -1869,9 +2237,13 @@ def _render_custom_app(ui_state: dict) -> str:
             festival_lens_states=festival_states, festival_lens_active=festival_lens_active,
         )
     suite_task_rows = _home_suite_tasks()
-    arena_html = render_arena(
-        gallery_index, gallery_arm_documents, suite_id=EVAL_SUITE_ID,
-        suite_sha256=EVAL_SUITE_SHA256, prompt_id=PROOF_REPLAY_PROMPT_ID,
+    arena_task_ids = {row.get("id") for row in suite_task_rows if isinstance(row, dict)}
+    selected_arena_task = ui_state.get("arena_prompt_id", PROOF_REPLAY_PROMPT_ID)
+    if selected_arena_task not in arena_task_ids:
+        selected_arena_task = PROOF_REPLAY_PROMPT_ID
+    arena_html = render_arena_picker(
+        gallery_index, gallery_arm_documents, suite_task_rows, suite_id=EVAL_SUITE_ID,
+        suite_sha256=EVAL_SUITE_SHA256, selected_prompt_id=selected_arena_task,
         replay_prompt_id=PROOF_REPLAY_PROMPT_ID,
         selected_model_keys=_arena_default_model_keys(_benchmark_summary()),
         task_backgrounds={row["id"]: row["palette"][0] for row in suite_task_rows
@@ -1892,39 +2264,28 @@ def _render_custom_app(ui_state: dict) -> str:
         f'<h1>{html_escape(HEADLINE)}</h1>'
         f'<p>{html_escape(SUBTITLE)} AI designs patterns from 36 Indian craft traditions. An independent checker verifies every rule the design claims, or shows the exact pixel that breaks it.</p></div>'
         + _proof_replay_html()
-        + '<nav class="pramaan-home-actions" aria-label="Start exploring">'
-        '<a class="pramaan-ui-button" href="#proof-replay">Watch a proof</a>'
-        '<a class="pramaan-ui-button secondary" href="#/studio">Try it</a>'
-        '<a class="pramaan-home-text-link" href="/web/">Use it as an RL environment</a></nav>'
         + _home_metrics_html()
-        + '<p class="pramaan-home-compare-link"><a href="#/leaderboard">See how 10 models compare</a></p>'
+        + '<nav class="pramaan-home-actions" aria-label="Start exploring">'
+        '<a class="pramaan-home-text-link" href="#/leaderboard">Models</a>'
+        '<a class="pramaan-home-text-link" href="/web/">Use it as an RL environment</a></nav>'
         + home_wall + '</section>'
     )
     community_models = _community_model_choices()
     community_status = str(ui_state.get("community_status", ""))
     community_ready = bool(community_models)
-    community_publish_ready = community_ready and _community_publish_ready()
-    archive_ready = _community_submission_archive_ready()
-    archive_status = str(ui_state.get("community_archive_status", ""))
     archive_contribution = (
-        '<article class="pramaan-ui-card pramaan-community-contribution"><p class="pramaan-ui-eyebrow">Contribute a trajectory archive</p>'
+        '<article class="pramaan-ui-card pramaan-community-contribution"><p class="pramaan-ui-eyebrow">Contribute by pull request</p>'
         '<h3>Share replayable benchmark work</h3>'
-        '<p>Upload a ZIP for manifest, suite, and task checks, then verifier replay. Accepted, sanitized records publish to the separate community dataset. No model is called.</p>'
-        '<label for="pramaan-community-archive">Submission archive (.zip)</label>'
-        '<input id="pramaan-community-archive" data-field="community_archive_file" type="file" accept=".zip,application/zip"'
-        + ("" if archive_ready else ' disabled title="The scoped community write secret and archive verifier are not configured"')
-        + '>'
-        + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_archive_consent"'
-        + ("" if archive_ready else " disabled")
-        + '> I consent to public release of sanitized, verifier-replayed designs and benchmark metadata if the audit passes.</label>'
-        + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_archive_submit"'
-        + ("" if archive_ready else ' disabled title="Configure the scoped community write secret before enabling archive contributions"')
-        + '>Audit and contribute archive</button></div>'
-        + f'<p class="pramaan-ui-muted" role="status" data-community-archive-status>{html_escape(archive_status or ("Archive contributions are disabled until the scoped HF_COMMUNITY_WRITE_TOKEN and archive verifier are configured." if not archive_ready else "Sign in with Hugging Face to publish: use the button at the top of this page"))}</p>'
+        '<p>Space publishing is off. Run the frozen suite locally, package the replay-audited rows, then open a pull request on the separate '
+        '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs" target="_blank" rel="noopener noreferrer">community dataset</a>. '
+        'The maintainer audits and replays each archive before merging. Community records stay separate from official benchmark and training data.</p>'
+        '<ol><li>Run: <code>uv run --project . python benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --model your-model-key --limit 12 --output benchmarks/results/my-run.jsonl</code></li>'
+        '<li>Pack: <code>uv run --project . python -m scripts.pack_submission benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip</code></li>'
+        '<li>Upload with <code>create_pr=True</code> using the command in Build with it.</li></ol>'
         + '</article>'
     )
     community = (
-        '<article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Opt-in community evaluation</p>'
+        '<article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">Private community evaluation</p>'
         '<h3>Run one model on frozen eval-v2.1</h3>'
         '<p>Run 12 tasks, or estimate the full 72-task suite before confirming. Both use a 4,096-token cap and up to three proposals per task. Sampling: Beam/DeepSeek 0.4; Anthropic default with low effort. '
         'Only priced models are accepted. The hard USD 10 run cap permits one capped run per account or browser session per UTC day. The in-memory limit resets on restart. Provider charges may differ. Early stops show coverage; different task sets are not ranked together.</p>'
@@ -1943,39 +2304,54 @@ def _render_custom_app(ui_state: dict) -> str:
         + 'This run may incur provider charges; I authorize use of my key.</label>'
         + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_full_run_cost_consent"> '
         + 'For a full suite, I reviewed the no-call estimate and authorize charges up to the Space\'s USD 10 hard cap.</label>'
-        + '<label class="pramaan-ui-check"><input type="checkbox" data-field="community_publish_consent"> '
-        + 'I consent to publish replay-verified designs and metrics under CC BY 4.0. Model identity is self-reported and unverified; I will follow provider terms.</label>'
-        + '<p class="pramaan-ui-muted">Private results stay in this session, not the dataset. Public submissions need Hugging Face sign-in and separate consent. Space storage may be lost on restart.</p>'
+        + '<p class="pramaan-ui-muted">Results stay private in this session and are not added to a dataset. To share them, open a pull request on the community dataset using the instructions above. Space storage may be lost on restart.</p>'
         + f'<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_run"'
         + ("" if community_ready else ' disabled title="Community evaluation helpers are not in this build"')
-        + '>Run privately</button><button type="button" class="pramaan-ui-button" data-action="community_publish"'
-        + ("" if community_publish_ready else ' disabled title="Public submissions require the Space write secret and authenticated publisher support"')
-        + '>Run and publish</button></div>'
+        + '>Run privately</button></div>'
         + f'<p class="pramaan-ui-muted" role="status" data-community-status>{html_escape(community_status or ("The community runner is not enabled in this Space build yet." if not community_ready else "No community run has been submitted in this session."))}</p>'
         + '</article>'
         + archive_contribution
     )
     model_summary = _benchmark_summary()
+    task_backgrounds = {
+        task["id"]: task["palette"][0]
+        for task in _home_suite_tasks()
+        if isinstance(task, dict) and isinstance(task.get("id"), str)
+        and isinstance(task.get("palette"), list) and task["palette"]
+    }
+    model_report_html = render_model_report(
+        model_summary, gallery_documents=gallery_arm_documents,
+        task_backgrounds=task_backgrounds, suite_tasks=suite_task_rows,
+    )
+    findings_strip_html = render_findings_strip(
+        model_summary, gallery_documents=gallery_arm_documents,
+        task_backgrounds=task_backgrounds,
+    )
+    methodology_html = _model_methodology_html(gallery_index, model_summary)
+    community_results_html = (
+        '<details id="leaderboard-community-results" class="pramaan-leaderboard-method"><summary>Community runs</summary>'
+        + _community_leaderboard_html(community_snapshot)
+        + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_refresh">Refresh public community runs</button></div>'
+        + community + '</details>'
+    )
+    available_dashboard_markup = (
+        model_report_html
+        + findings_strip_html + '<div id="model-arena">' + arena_html + '</div>'
+        + methodology_html + community_results_html
+    )
     leaderboard = (
         '<section><p class="pramaan-ui-intro">Compare outcomes and replay attempts for one brief.</p><article class="pramaan-ui-card">'
         '<p class="pramaan-ui-eyebrow">Canonical benchmark</p><h2>Model leaderboard</h2>'
-        + '<nav class="pramaan-leaderboard-nav" aria-label="Leaderboard sections">'
-        + '<a href="#leaderboard-ranking">Ranking</a><a href="#model-arena">Arena</a>'
-        + '<a href="#leaderboard-full-results">Community results</a><a href="#leaderboard-methodology">Methodology</a></nav>'
+        + render_models_section_nav(available_dashboard_markup)
         + '<div class="pramaan-leaderboard-controls" aria-label="Filter and sort model results">'
         + '<label>Find a model<input type="search" data-leaderboard-control data-leaderboard-search placeholder="Search model or provider"></label>'
         + '<label>Provenance<select data-leaderboard-control data-leaderboard-provenance><option value="all">All runs</option><option value="official">Canonical</option><option value="community">Community</option></select></label>'
         + '<label>Sort by<select data-leaderboard-control data-leaderboard-sort><option value="pass3">Within three</option><option value="pass1">First try</option><option value="coverage">Evaluated tasks</option><option value="cost">Cost</option></select></label>'
         + '<button type="button" class="pramaan-ui-button secondary" data-leaderboard-reset>Reset</button><span role="status" aria-live="polite" data-leaderboard-count></span></div>'
-        + '<section id="leaderboard-ranking" aria-label="Model ranking">'
-        + render_model_report(model_summary)
-        + '</section>'
-        + render_findings_strip(model_summary)
-        + _model_methodology_html(gallery_index, model_summary)
-        + '<details id="leaderboard-full-results" class="pramaan-leaderboard-method"><summary>Community runs</summary>'
-        + _community_leaderboard_html(community_snapshot)
-        + '<div class="pramaan-ui-actions"><button type="button" class="pramaan-ui-button secondary" data-action="community_refresh">Refresh public community runs</button></div>'
-        + community + '</details></article></section>'
+        + model_report_html
+        + findings_strip_html + '<div id="model-arena">' + arena_html + '</div>'
+        + methodology_html + community_results_html
+        + '</article></section>'
     )
     about_state = ui_state.get("about_state", state_name)
     traditions = (
@@ -1990,13 +2366,23 @@ def _render_custom_app(ui_state: dict) -> str:
         + _field("Browse state / territory", "about_state", about_state, options=state_options)
         + _tradition_html_for_state(about_state) + '</article></details>'
     )
+    from .ui.known_gap import render_known_gap_panel
     rl = (
         '<section><p class="pramaan-ui-intro">Use the verifier in an agent or RL workflow.</p><article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">OpenEnv</p><h2>Use the verifier as an environment</h2>'
         '<p>Reward 1.0 means every hard geometry check passes. Other results earn bounded partial credit; parse errors, truncation, or missing checks score 0. Reward measures neither visibility nor cultural authenticity.</p>'
-        '<pre><code>from pramaan_env import PramaanEnv, PramaanAction\nenv = PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space")\nobservation = env.reset(suite="eval-v2.1", seed=0)\nobservation = env.step(PramaanAction(pattern_json=pattern_json))</code></pre>'
-        '<a class="pramaan-ui-button secondary" href="/web/" target="_blank" rel="noopener noreferrer">Open the interactive environment</a></article>'
+        '<pre><code>from pramaan_env import PramaanEnv, PramaanAction\nwith PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space").sync() as env:\n    obs = env.reset(task_id="hp_kinnauri-shawl-geometric-border-easy-8").observation\n    result = env.step(PramaanAction(pattern_json=pattern_json))\n    print(result.reward, result.done)</code></pre>'
+        '<a class="pramaan-ui-button primary" href="/web/" target="_blank" rel="noopener noreferrer">Open the interactive environment</a></article>'
+        + render_openenv_contract()
+        + '<article class="pramaan-ui-card"><p class="pramaan-ui-eyebrow">GRPO reward adapter</p>'
+        '<p>Reward function tested. No model has been trained on the Pramaan environment yet. '
+        'The adapter resets a separate <code>train-v1</code> episode for each completion; never train on the held-out evaluation suite.</p>'
+        '<pre><code>from pramaan_env.reward_fn import pramaan_reward\ntrainer = GRPOTrainer(reward_funcs=[pramaan_reward], ...)</code></pre></article>'
+        + render_known_gap_panel(
+            gallery_arm_documents, task_backgrounds,
+            ROOT / "assets" / "reference-thumbnails" / "mn_moirang-phee-moirang-pheejin-stepped-triangle-border-easy-14.png",
+        )
         + '<details class="pramaan-ui-card"><summary>How the benchmark is measured</summary>'
-        + '<p>Source: 72 tasks across 36 states. Paid models share 47 tasks and order, the verifier, a 4,096-token cap, and up to three proposals per task; each has a USD 10 cap and may stop early. Beam’s 72-task baseline is separate. Costs, tokens, and latency are reported apart from quality.</p>'
+        + f'<p>{html_escape(_benchmark_protocol_note(model_summary))}</p>'
         + _benchmark_summary_html() + _community_leaderboard_html(community_snapshot) + '</details></section>'
     )
     builder_resources = (
@@ -2010,14 +2396,19 @@ def _render_custom_app(ui_state: dict) -> str:
         '<article class="pramaan-ui-card"><h2>Pramaan collection</h2><p>Browse the public Space and related datasets together.</p>'
         '<a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener noreferrer">Open the collection</a></article>'
         '</div><article class="pramaan-ui-card pramaan-builder-runner">'
-        '<h3>Add and run a model</h3><p>Add its provider and model key in <code>benchmarks/models.json</code>, then select it on the command line:</p>'
-        '<pre><code>benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --model your-model-key --limit 12 --output benchmarks/results/my-run.jsonl</code></pre>'
-        '<p>Package the replay-audited rows for community submission:</p>'
-        '<pre><code>scripts/pack_submission.py benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip</code></pre>'
+        '<h3>Add and run a model</h3><p>Add its provider and model key in <code>benchmarks/models.json</code>, then run the frozen suite locally:</p>'
+        '<pre><code>uv run --project . python benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --model your-model-key --limit 12 --output benchmarks/results/my-run.jsonl</code></pre>'
+        '<h3>Submit by pull request</h3><p>Space publishing is off. Sign in with Hugging Face, package the result, then open a pull request on the separate '
+        '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs" target="_blank" rel="noopener noreferrer">community dataset</a>. '
+        'The upload proposes a change; the maintainer audits and replays the archive before merging.</p>'
+        '<p>Pack the replay-audited rows:</p>'
+        '<pre><code>uv run --project . python -m scripts.pack_submission benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip</code></pre>'
+        '<p>Upload the ZIP and create a pull request:</p>'
+        '<pre><code>uv run --project . python -c "from huggingface_hub import HfApi; HfApi().upload_file(path_or_fileobj=\'benchmarks/results/my-run.zip\', path_in_repo=\'submissions/my-run.zip\', repo_id=\'kshitijthakkar/pramaan-community-runs\', repo_type=\'dataset\', commit_message=\'Submit replay-audited community run\', create_pr=True)"</code></pre>'
         '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Open the source repository</a></article>'
         '</section>'
     )
-    models = leaderboard + '<div id="model-arena">' + arena_html + '</div>'
+    models = leaderboard
     build_with_it = rl + builder_resources + traditions
     tabs = (("benchmark", "Home", benchmark), ("leaderboard", "Models", models),
             ("studio", "Try it", studio), ("rl", "Build with it", build_with_it))
@@ -2040,6 +2431,7 @@ def _render_custom_app(ui_state: dict) -> str:
 
 def _handle_custom_event(event: gr.EventData, previous_state: dict,
                          oauth_profile: gr.OAuthProfile | None = None,
+                         oauth_token: gr.OAuthToken | None = None,
                          request: gr.Request | None = None):
     state = dict(previous_state or _initial_custom_state())
     active_tab = getattr(event, "active_tab", None)
@@ -2054,8 +2446,34 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
             form = _form_for_tradition(state_name, options[0].id, form)
         else:
             form["state"], form["tradition"], form["palette"] = state_name, "", ""
+        choices = _example_choices(state_name, form.get("tradition"))
+        if choices:
+            example_name = choices[0][1]
+            form = _form_for_example(example_name, form)
+            result = _example_result_for_ui(example_name)
+            form["brief"] = _example_brief(result)
+            form["source"] = result["source"]
+            state["result"] = result
+        else:
+            form["example"] = ""
+            form["brief"] = ""
+            form["source"] = ""
+            state["result"] = {
+                "status": "No saved example for this state; edit the brief and use Generate with Beam"
+            }
     elif action == "tradition":
         form = _form_for_tradition(str(form.get("state", "")), str(getattr(event, "tradition", form.get("tradition", ""))), form)
+        choices = _example_choices(form.get("state"), form.get("tradition"))
+        if choices:
+            example_name = choices[0][1]
+            form = _form_for_example(example_name, form)
+            result = _example_result_for_ui(example_name)
+            form["brief"] = _example_brief(result)
+            form["source"] = result.get("source", "")
+            state["result"] = result
+        else:
+            form.update(example="", brief="", source="")
+            state["result"] = {"status": "No saved example for this tradition."}
     state["form"] = form
     if action == "about_state":
         state["about_state"] = str(getattr(event, "about_state", ""))
@@ -2067,6 +2485,10 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
         gallery_state = str(getattr(event, "gallery_state", ""))
         if gallery_state in ALL_STATES:
             state["benchmark_state"] = gallery_state
+    elif action == "arena_task":
+        task_id = str(getattr(event, "task_id", ""))
+        if task_id in {row.get("id") for row in _home_suite_tasks() if isinstance(row, dict)}:
+            state["arena_prompt_id"] = task_id
     elif action == "gallery_model":
         state["gallery_model"] = str(getattr(event, "gallery_model", "all"))
     elif action in {"wall_model", "wall_mode"}:
@@ -2111,14 +2533,16 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
                 f"{cap_outcome}No provider request was made.")
     elif action == "example":
         name = str(getattr(event, "example", ""))
-        if name not in EXAMPLES:
+        if name not in EXAMPLES and _saved_example_descriptor(name) is None:
             state["result"] = {"status": "Choose one of the built-in examples."}
         else:
-            image, gallery, source, certificate, history, status, bundle = load_example(name)
-            state["form"] = _form_for_example(name, form)
-            state["result"] = {"image": image, "gallery": gallery, "source": source,
-                               "certificate": certificate, "history": history, "status": status,
-                               "bundle": bundle}
+            form = _form_for_example(name, form)
+            result = _example_result_for_ui(name)
+            if "image" in result:
+                form["brief"] = _example_brief(result)
+                form["source"] = result.get("source", "")
+            state["form"] = form
+            state["result"] = result
     elif action == "generate":
         try:
             values = generate(
@@ -2148,7 +2572,12 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
     elif action in {"community_run", "community_publish"}:
         # The API key is read only from this transient event and is never copied to `state` or `form`.
         publish = action == "community_publish"
-        if publish and not isinstance(getattr(oauth_profile, "username", None), str):
+        username = _authenticated_hf_username(oauth_profile, oauth_token)
+        if publish and not _real_hf_oauth_environment():
+            state["community_status"] = "Public publishing is disabled because real Hugging Face OAuth is not configured. No provider request was made."
+        elif publish and _is_mock_hf_oauth_token(oauth_token):
+            state["community_status"] = "Public publishing is disabled because this sign-in is a local mock, not Hugging Face OAuth. No provider request was made."
+        elif publish and username is None:
             state["community_status"] = "Sign in with Hugging Face before submitting public results. No provider request was made."
         elif publish and getattr(event, "community_publish_consent", False) is not True:
             state["community_status"] = "Check the separate public dataset consent box before submitting. No provider request was made."
@@ -2163,20 +2592,23 @@ def _handle_custom_event(event: gr.EventData, previous_state: dict,
                 getattr(event, "community_api_key", ""),
                 getattr(event, "community_charge_consent", False) is True,
                 publish=publish,
-                submitted_by=getattr(oauth_profile, "username", None) if publish else None,
+                submitted_by=username if publish else None,
                 task_limit=task_limit,
                 full_run_cost_acknowledged=(getattr(event, "community_full_run_cost_consent", False) is True),
                 reviewed_estimate=state.get("community_estimate"),
-                daily_identity=_community_daily_identity(oauth_profile, request),
+                daily_identity=_community_daily_identity(oauth_profile, request, oauth_token),
                 enforce_daily_limit=True,
             )
     elif action == "community_archive_submit":
-        username = getattr(oauth_profile, "username", None)
+        username = _authenticated_hf_username(oauth_profile, oauth_token)
         consent = getattr(event, "community_archive_consent", False) is True
         archive_path = getattr(event, "community_archive_path", None)
         try:
-            if (not isinstance(username, str)
-                    or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", username) is None):
+            if not _real_hf_oauth_environment():
+                state["community_archive_status"] = "Public publishing is disabled because real Hugging Face OAuth is not configured."
+            elif _is_mock_hf_oauth_token(oauth_token):
+                state["community_archive_status"] = "Public publishing is disabled because this sign-in is a local mock, not Hugging Face OAuth."
+            elif username is None:
                 state["community_archive_status"] = "Sign in with Hugging Face to publish: use the button at the top of this page"
             elif not consent:
                 state["community_archive_status"] = "Check the publication consent box before submitting. No archive was audited or published."
@@ -2273,11 +2705,11 @@ PRAMAAN_CSS = """
   --pramaan-muted: #455463;
   --pramaan-on-accent: #ffffff;
   --pramaan-pass: #126b50;
-  --pramaan-pass-bg: #e5f1ec;
+  --pramaan-pass-bg: #c6e4d7;
   --pramaan-fail: #9b2948;
   --pramaan-fail-bg: #f7e9eb;
   --pramaan-pending: #67430f;
-  --pramaan-pending-bg: #f0e9dc;
+  --pramaan-pending-bg: #e1d097;
   --pramaan-checker: #ece7de;
   --pramaan-shadow: #172f4a;
   --pramaan-chart-1: #176a66;
@@ -2302,11 +2734,11 @@ html.dark, body.dark, .dark {
   --pramaan-muted: #cbd6e0;
   --pramaan-on-accent: #10272a;
   --pramaan-pass: #83dfb6;
-  --pramaan-pass-bg: #173c32;
+  --pramaan-pass-bg: #245840;
   --pramaan-fail: #ff9bad;
   --pramaan-fail-bg: #492531;
   --pramaan-pending: #f2d18d;
-  --pramaan-pending-bg: #443820;
+  --pramaan-pending-bg: #51401c;
   --pramaan-checker: #36424e;
   --pramaan-shadow: #000000;
   --pramaan-chart-1: #75d0c5;
@@ -2331,11 +2763,11 @@ html.light, body.light {
   --pramaan-muted: #455463;
   --pramaan-on-accent: #ffffff;
   --pramaan-pass: #126b50;
-  --pramaan-pass-bg: #e5f1ec;
+  --pramaan-pass-bg: #c6e4d7;
   --pramaan-fail: #9b2948;
   --pramaan-fail-bg: #f7e9eb;
   --pramaan-pending: #67430f;
-  --pramaan-pending-bg: #f0e9dc;
+  --pramaan-pending-bg: #e1d097;
   --pramaan-checker: #ece7de;
   --pramaan-shadow: #172f4a;
   --pramaan-chart-1: #176a66;
@@ -2361,11 +2793,11 @@ html.light, body.light {
     --pramaan-muted: #cbd6e0;
     --pramaan-on-accent: #10272a;
     --pramaan-pass: #83dfb6;
-    --pramaan-pass-bg: #173c32;
+    --pramaan-pass-bg: #245840;
     --pramaan-fail: #ff9bad;
     --pramaan-fail-bg: #492531;
     --pramaan-pending: #f2d18d;
-    --pramaan-pending-bg: #443820;
+    --pramaan-pending-bg: #51401c;
     --pramaan-checker: #36424e;
     --pramaan-shadow: #000000;
     --pramaan-chart-1: #75d0c5;
@@ -2476,7 +2908,7 @@ html.light, body.light {
 .pramaan-benchmark-kicker { color: var(--pramaan-teal); font-size: .72rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
 .pramaan-findings { background: color-mix(in srgb, var(--pramaan-card) 88%, transparent); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: .9rem 0; min-width: 0; padding: 1rem; }
 .pramaan-findings h2 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: 1.4rem; margin: 0 0 .6rem; }
-.pramaan-findings-grid { display: grid; gap: .65rem; grid-template-columns: repeat(3,minmax(0,1fr)); min-width: 0; }
+.pramaan-findings-grid { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); min-width: 0; }
 .pramaan-findings-grid article { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 12px; display: grid; gap: .2rem; min-width: 0; padding: .7rem; }
 .pramaan-findings-grid strong { color: var(--pramaan-indigo); }
 .pramaan-findings-grid span { font-size: 1.05rem; font-variant-numeric: tabular-nums; font-weight: 750; overflow-wrap: anywhere; }
@@ -2503,6 +2935,7 @@ html.light, body.light {
 .pramaan-leaderboard-hero-text-alt { background: var(--pramaan-card); border-left: 3px solid var(--pramaan-teal); padding: .45rem .6rem; }
 .pramaan-leaderboard-hero-list > li.is-partial { border-style: dashed; border-color: var(--pramaan-pending); }
 .pramaan-leaderboard-scroll { max-width: 100%; overflow-x: auto; }
+.pramaan-ui-table-wrap { max-width: 100%; overflow-x: auto; }
 .pramaan-leaderboard { border-collapse: collapse; font-size: .83rem; min-width: 1040px; width: 100%; }
 .pramaan-leaderboard th, .pramaan-leaderboard td { border-bottom: 1px solid var(--pramaan-line); padding: .65rem .55rem; text-align: left; vertical-align: top; }
 .pramaan-leaderboard th { color: var(--pramaan-indigo); }
@@ -2512,7 +2945,8 @@ html.light, body.light {
 .pramaan-grammar-cell small { color: inherit !important; font-size: .6rem !important; margin: 0 !important; }
 .pramaan-canonical-leaderboard h3 { margin-top: 1.2rem; }
 .pramaan-canonical-leaderboard ul { color: var(--pramaan-muted); font-size: .85rem; padding-left: 1.2rem; }
-.pramaan-leaderboard-nav { display: flex; flex-wrap: wrap; gap: .45rem; margin: .75rem 0; }
+.pramaan-leaderboard-nav { display: flex; flex-wrap: nowrap; gap: .45rem; margin: .75rem 0; overflow-x: auto; overscroll-behavior-inline: contain; }
+.pramaan-leaderboard-nav.is-sticky { background: var(--pramaan-paper); padding: .35rem 0; position: sticky; top: 3.25rem; z-index: 18; }
 .pramaan-leaderboard-nav a { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-indigo); font-size: .82rem; font-weight: 700; padding: .38rem .7rem; text-decoration: none; }
 .pramaan-leaderboard-controls { align-items: end; background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; display: flex; flex-wrap: wrap; gap: .65rem; margin: .8rem 0 1rem; padding: .75rem; }
 .pramaan-leaderboard-controls label { color: var(--pramaan-indigo); display: grid; font-size: .76rem; font-weight: 700; gap: .25rem; min-width: 145px; }
@@ -2521,20 +2955,99 @@ html.light, body.light {
 .pramaan-leaderboard-method { border-top: 1px solid var(--pramaan-line); margin-top: 1rem; padding-top: .8rem; }
 .pramaan-leaderboard-method p { color: var(--pramaan-muted); font-size: .86rem; }
 .pramaan-model-report { min-width: 0; }
+.pramaan-model-chart:focus-visible, .pramaan-model-cost:focus-visible,
+.pramaan-results-matrix:focus-visible,
+.pramaan-first-failures:focus-visible {
+  outline: 3px solid var(--pramaan-indigo); outline-offset: 3px;
+}
 .pramaan-model-chart { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; margin: .9rem 0 1.1rem; padding: .9rem; }
 .pramaan-model-chart h4 { margin: .1rem 0 .3rem; }
 .pramaan-model-chart > p, .pramaan-model-chart-alt, .pramaan-model-chart li small { color: var(--pramaan-muted); font-size: .8rem; }
 .pramaan-model-chart ol { display: grid; gap: .55rem; list-style: none; margin: .7rem 0; padding: 0; }
 .pramaan-model-chart li { min-width: 0; }
 .pramaan-model-bar-label { display: flex; flex-wrap: wrap; gap: .2rem .7rem; justify-content: space-between; font-size: .82rem; }
-.pramaan-model-bar-track { background: var(--pramaan-line); border-radius: 99px; height: 13px; margin: .27rem 0 .12rem; overflow: hidden; position: relative; }
+.pramaan-model-bar-track { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 99px; height: 13px; margin: .27rem 0 .12rem; overflow: hidden; position: relative; }
 .pramaan-model-bar { background: var(--pramaan-indigo); border-radius: 99px; display: block; height: 100%; }
+.pramaan-model-bar-stacked { border: 1px solid var(--pramaan-line); border-radius: 7px; display: flex; height: 24px; }
+.pramaan-model-bar-segment { display: block; flex: 0 0 auto; height: 100%; }
+.pramaan-model-bar-segment.is-pass { background: var(--pramaan-pass); }
+.pramaan-model-bar-segment.is-rule-fail { background: var(--pramaan-fail); }
+.pramaan-model-bar-segment.is-unreadable { background: var(--pramaan-chart-3); }
+.pramaan-model-composition-legend { align-items: center; display: flex; flex-wrap: wrap; gap: .45rem 1rem; list-style: none; margin: .5rem 0; padding: 0; }
+.pramaan-model-composition-legend li { align-items: center; color: var(--pramaan-ink); display: inline-flex; font-size: .8rem; gap: .35rem; }
+.pramaan-model-composition-legend span { border: 1px solid var(--pramaan-line); border-radius: 4px; display: inline-block; height: 14px; width: 20px; }
+.pramaan-model-composition-legend .is-pass { background: var(--pramaan-pass); }
+.pramaan-model-composition-legend .is-rule-fail { background: var(--pramaan-fail); }
+.pramaan-model-composition-legend .is-unreadable { background: var(--pramaan-chart-3); }
+.pramaan-model-cost { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: .9rem 0 1.1rem; min-width: 0; padding: clamp(.75rem,2vw,1rem); }
+.pramaan-model-cost h4 { color: var(--pramaan-indigo); margin: .1rem 0 .3rem; }
+.pramaan-model-cost > p { color: var(--pramaan-muted); font-size: .82rem; line-height: 1.4; }
+.pramaan-cost-plot { display: block; height: auto; max-width: 100%; overflow: visible; width: 100%; }
+.pramaan-cost-plot .axis { stroke: var(--pramaan-muted); stroke-width: 1.5; }
+.pramaan-cost-plot .tick, .pramaan-cost-plot .axis-label { fill: var(--pramaan-muted); font-family: inherit; font-size: 12px; }
+.pramaan-cost-plot .axis-label { fill: var(--pramaan-ink); font-size: 13px; font-weight: 700; }
+.pramaan-cost-plot .frontier { fill: none; stroke: var(--pramaan-madder); stroke-dasharray: 6 4; stroke-width: 2.5; }
+.pramaan-cost-plot .point circle { fill: var(--pramaan-chart-1); stroke: var(--pramaan-card-raised); stroke-width: 2; }
+.pramaan-cost-plot .point.is-frontier circle { r: 7; stroke: var(--pramaan-madder); stroke-width: 2.5; }
+.pramaan-cost-plot .point-label { fill: var(--pramaan-ink); font-family: inherit; font-size: 11px; font-weight: 700; paint-order: stroke; stroke: var(--pramaan-card-raised); stroke-linejoin: round; stroke-width: 3px; }
+.pramaan-cost-plot .label-leader { fill: none; stroke: var(--pramaan-muted); stroke-width: 1; }
+.pramaan-cost-plot .point:focus { outline: none; }
+.pramaan-cost-plot .point:focus-visible circle { stroke: var(--pramaan-indigo); stroke-width: 4; }
+.pramaan-model-cost-alt { background: var(--pramaan-card-subtle); border-left: 3px solid var(--pramaan-madder); padding: .45rem .6rem; }
+.pramaan-model-full-results { margin-top: 1.3rem; }
+.pramaan-model-full-results > h4 { color: var(--pramaan-indigo); margin: .1rem 0 .6rem; }
+.pramaan-chart-detail-dialog { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 16px; color: var(--pramaan-ink); max-height: min(85vh,680px); max-width: min(560px,calc(100vw - 24px)); padding: 1rem; width: calc(100% - 2rem); }
+.pramaan-chart-detail-dialog::backdrop { background: rgba(8,14,22,.62); }
+.pramaan-chart-detail-dialog h3 { color: var(--pramaan-indigo); margin: 0 0 .55rem; }
+.pramaan-chart-detail-dialog p { color: var(--pramaan-muted); line-height: 1.5; overflow-wrap: anywhere; }
+.pramaan-chart-detail-dialog [data-chart-detail-close]:focus-visible, .pramaan-chart-detail-dialog [data-chart-detail-arena]:focus-visible { outline: 3px solid var(--pramaan-indigo); outline-offset: 3px; }
+.pramaan-cost-plot .point { cursor: pointer; }
+.pramaan-first-failures { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: .9rem 0 1.1rem; min-width: 0; padding: clamp(.75rem,2vw,1rem); }
+.pramaan-first-failures h4 { color: var(--pramaan-indigo); margin: .1rem 0 .3rem; }
+.pramaan-first-failures > p { color: var(--pramaan-muted); font-size: .82rem; line-height: 1.4; }
+.pramaan-first-failures ol { display: grid; gap: .5rem; list-style: none; margin: .8rem 0; padding: 0; }
+.pramaan-first-failures li { align-items: center; display: grid; gap: .55rem; grid-template-columns: minmax(8rem, 1fr) minmax(5rem, 3fr) auto; }
+.pramaan-failure-label { color: var(--pramaan-ink); font-size: .82rem; }
+.pramaan-failure-track { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 99px; display: block; height: 16px; overflow: hidden; }
+.pramaan-failure-bar { background: var(--pramaan-fail); border-radius: inherit; display: block; height: 100%; }
+.pramaan-failure-bar.is-unreadable { background: var(--pramaan-chart-3); }
+.pramaan-first-failures li b { color: var(--pramaan-ink); font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+.pramaan-results-matrix { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: .9rem 0 1.1rem; min-width: 0; padding: clamp(.65rem,1.7vw,.9rem); }
+.pramaan-results-matrix h4 { color: var(--pramaan-indigo); margin: .1rem 0 .3rem; }
+.pramaan-results-matrix > p { color: var(--pramaan-muted); font-size: .82rem; line-height: 1.4; }
+.pramaan-results-matrix-scroll { border: 1px solid var(--pramaan-line); border-radius: 10px; max-width: 100%; overflow: auto; overscroll-behavior: contain; }
+.pramaan-results-matrix table { border-collapse: separate; border-spacing: 0; font-size: .72rem; inline-size: max-content; min-inline-size: 100%; }
+.pramaan-results-matrix th, .pramaan-results-matrix td { background: var(--pramaan-card-raised); border-bottom: 1px solid var(--pramaan-line); border-right: 1px solid var(--pramaan-line); padding: .22rem; text-align: center; }
+.pramaan-results-matrix thead { position: sticky; top: 0; z-index: 3; }
+.pramaan-results-matrix thead th { background: var(--pramaan-card-subtle); color: var(--pramaan-indigo); min-width: 30px; }
+.pramaan-results-matrix .grammar-group { font-size: .68rem; min-width: 0; }
+.pramaan-results-matrix .matrix-model { background: var(--pramaan-card-subtle); left: 0; min-width: 142px; position: sticky; text-align: left; z-index: 2; }
+.pramaan-results-matrix .matrix-corner { z-index: 5; }
+.pramaan-matrix-cell { align-items: center; border-radius: 5px; display: inline-grid; font-size: .76rem; font-weight: 800; height: 27px; justify-items: center; text-decoration: none; width: 27px; }
+.pramaan-matrix-cell.is-first { background: var(--pramaan-pass-bg); color: var(--pramaan-pass); }
+.pramaan-matrix-cell.is-repair { background: var(--pramaan-pending-bg); color: var(--pramaan-pending); }
+.pramaan-matrix-cell.is-fail { background: var(--pramaan-fail-bg); color: var(--pramaan-fail); }
+.pramaan-matrix-cell.is-not-run { background: var(--pramaan-card-subtle); color: var(--pramaan-muted); }
+.pramaan-matrix-cell.is-near-invisible { background-image: repeating-linear-gradient(135deg,transparent 0 4px,var(--pramaan-fail) 4px 5px); }
+.pramaan-matrix-cell:focus-visible { outline: 3px solid var(--pramaan-indigo); outline-offset: 1px; }
+.pramaan-matrix-legend { display: flex; flex-wrap: wrap; gap: .45rem .85rem; list-style: none; margin: .65rem 0; padding: 0; }
+.pramaan-matrix-legend li { align-items: center; color: var(--pramaan-ink); display: inline-flex; font-size: .75rem; gap: .35rem; }
+.pramaan-matrix-legend li > span { align-items: center; border: 1px solid var(--pramaan-line); border-radius: 5px; display: inline-grid; font-weight: 800; height: 23px; justify-items: center; min-width: 25px; padding: 0 .18rem; width: auto; }
+.pramaan-matrix-legend .is-first { background: var(--pramaan-pass-bg); color: var(--pramaan-pass); }
+.pramaan-matrix-legend .is-repair { background: var(--pramaan-pending-bg); color: var(--pramaan-pending); }
+.pramaan-matrix-legend .is-fail { background: var(--pramaan-fail-bg); color: var(--pramaan-fail); }
+.pramaan-matrix-legend .is-not-run { background: var(--pramaan-card-subtle); color: var(--pramaan-muted); }
+.pramaan-matrix-legend .is-hatched { background: repeating-linear-gradient(135deg,var(--pramaan-card-raised) 0 4px,var(--pramaan-fail) 4px 5px); }
+.sr-only { clip: rect(0,0,0,0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
+.pramaan-model-first-try { color: var(--pramaan-muted); font-size: .78rem; line-height: 1.35; margin: .18rem 0 .35rem; }
 .pramaan-model-table { border-collapse: collapse; font-size: .84rem; min-width: 720px; width: 100%; }
 .pramaan-model-table th, .pramaan-model-table td { border-bottom: 1px solid var(--pramaan-line); padding: .65rem .55rem; text-align: left; vertical-align: top; }
 .pramaan-model-table tbody th small, .pramaan-model-table td small { color: var(--pramaan-muted); display: block; }
 .pramaan-model-footnote { color: var(--pramaan-muted); font-size: .82rem; }
-.pramaan-arena-picker { margin: .7rem 0; }
-.pramaan-arena-picker fieldset { border: 1px solid var(--pramaan-line); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .4rem; padding: .7rem; }
+.pramaan-arena-model-picker { margin: .7rem 0; }
+.pramaan-arena-model-picker fieldset { border: 1px solid var(--pramaan-line); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-top: .4rem; padding: .7rem; }
+.pramaan-arena-brief-select { align-items: center; color: var(--pramaan-ink); display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0; }
+.pramaan-arena-brief-select select { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 8px; color: var(--pramaan-ink); flex: 1 1 16rem; font: inherit; min-height: 42px; padding: .45rem .6rem; }
 .pramaan-same-brief-wall { display: grid; gap: .8rem; }
 .pramaan-arena { background: color-mix(in srgb, var(--pramaan-card) 82%, transparent); border: 1px solid var(--pramaan-line); border-radius: 16px; margin: 1rem 0; min-width: 0; padding: 1rem; }
 .pramaan-arena h3 { color: var(--pramaan-indigo); margin: .2rem 0 .45rem; }
@@ -2667,7 +3180,7 @@ html.light, body.light {
 .pramaan-ui-grid { display: grid; gap: .6rem; grid-template-columns: repeat(2,minmax(0,1fr)); }
 .pramaan-ui-check { align-items: center; display: flex; gap: .55rem; margin: .75rem 0; }
 .pramaan-ui-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1rem; }
-.pramaan-ui-preview { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; height: auto; margin: .75rem auto 1rem; max-width: 100%; }
+.pramaan-ui-preview { background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; height: auto; margin: .75rem auto 1rem; max-width: 420px; width: 100%; }
 .pramaan-ui-placeholder { align-items: center; background: var(--pramaan-card-subtle); border: 1px dashed var(--pramaan-line); border-radius: 14px; color: var(--pramaan-muted); display: flex; justify-content: center; margin: .8rem 0; min-height: 230px; text-align: center; }
 .pramaan-ui-result pre, .pramaan-ui-card pre { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 10px; max-height: 26rem; overflow: auto; padding: .8rem; white-space: pre-wrap; word-break: break-word; }
 .pramaan-ui-certificate-checks { display: grid; gap: .35rem; list-style: none; margin: 0; padding: 0; }
@@ -2676,6 +3189,40 @@ html.light, body.light {
 .pramaan-ui-check-fail > span { color: var(--pramaan-fail); font-weight: 900; }
 .pramaan-ui-certificate-details { margin-top: .75rem; }
 .pramaan-ui-certificate-details summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; }
+.pramaan-proof-card { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 12px; display: grid; gap: .55rem; min-width: 0; padding: .75rem; }
+.pramaan-proof-card.is-proven { border-color: var(--pramaan-pass); }
+.pramaan-proof-card.is-unproven { border-color: var(--pramaan-fail); }
+.pramaan-proof-card-heading { align-items: center; display: flex; gap: .75rem; min-width: 0; }
+.pramaan-proof-card-image { aspect-ratio: 1; background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 8px; flex: 0 0 auto; max-height: 116px; object-fit: contain; width: min(28%,116px); }
+.pramaan-proof-card-heading h3 { margin: 0; }
+.pramaan-proof-card-context, .pramaan-proof-card-result, .pramaan-proof-card-reward, .pramaan-proof-card-note, .pramaan-proof-card-witness { color: var(--pramaan-ink); line-height: 1.4; margin: 0; }
+.pramaan-proof-card-result { font-weight: 800; }
+.pramaan-proof-card-checks, .pramaan-proof-card-exclusions ul { display: grid; gap: .3rem; list-style: none; margin: 0; padding: 0; }
+.pramaan-proof-card-check { display: flex; gap: .4rem; line-height: 1.35; }
+.pramaan-proof-card-check.is-pass > span { color: var(--pramaan-pass); font-weight: 800; }
+.pramaan-proof-card-check.is-fail > span { color: var(--pramaan-fail); font-weight: 900; }
+.pramaan-proof-card-hashes { display: grid; gap: .25rem; margin: 0; }
+.pramaan-proof-card-hashes > div { display: grid; gap: .2rem; grid-template-columns: minmax(110px,.4fr) minmax(0,1fr); }
+.pramaan-proof-card-hashes dt { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-proof-card-hashes dd { margin: 0; overflow-wrap: anywhere; }
+.pramaan-proof-card-exclusions { border-top: 1px solid var(--pramaan-line); display: grid; gap: .35rem; padding-top: .5rem; }
+.pramaan-proof-card-exclusions ul { list-style: disc; padding-left: 1.2rem; }
+.pramaan-proof-card-exclusions li { line-height: 1.35; }
+.pramaan-proof-card-copy-status { color: var(--pramaan-muted); font-size: .8rem; }
+@media (min-width: 1100px) {
+  .pramaan-ui-result { display: grid; column-gap: 1rem; grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .pramaan-ui-result > .pramaan-ui-eyebrow, .pramaan-ui-result > .pramaan-muted,
+  .pramaan-ui-result > h2, .pramaan-ui-result > .pramaan-ui-subtabs { grid-column: 1 / -1; }
+  .pramaan-ui-result > .pramaan-ui-preview, .pramaan-ui-result > .pramaan-ui-placeholder { grid-column: 1; grid-row: 4; }
+  .pramaan-ui-result > [data-panel="checks"] { grid-column: 2; grid-row: 4; margin-top: .75rem; }
+  .pramaan-ui-result > .pramaan-ui-subtabs { grid-row: 5; }
+  .pramaan-ui-result > [data-panel="source"], .pramaan-ui-result > [data-panel="attempts"],
+  .pramaan-ui-result > [data-panel="previews"] { grid-column: 1 / -1; }
+}
+@media (max-width: 1099px) {
+  .pramaan-ui-result { display: block; }
+  .pramaan-ui-result > .pramaan-ui-preview { margin: .75rem auto 1rem; max-width: 420px; width: 100%; }
+}
 .pramaan-ui-subpanel[hidden], .pramaan-ui-tabpanel[hidden] { display: none !important; }
 .pramaan-ui-gallery, .pramaan-ui-card-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); }
 .pramaan-ui-gallery figure { margin: 0; }
@@ -2736,10 +3283,15 @@ html.light, body.light {
 .pramaan-quilt-legend [data-tile-state="accepted-other-model"] span { border-style: dashed; }
 .pramaan-quilt-legend [data-tile-state="not-evaluated"] span { background: transparent; border-color: var(--pramaan-line); }
 .pramaan-quilt-legend [data-tile-state="community-run"] span { background: radial-gradient(circle at 80% 20%,var(--pramaan-madder) 0 2px,transparent 3px),var(--pramaan-card); }
-.pramaan-brandbar { align-items: center; background: linear-gradient(115deg,var(--pramaan-card),var(--pramaan-card)); border: 1px solid var(--pramaan-line); border-radius: 16px; box-shadow: 0 5px 20px color-mix(in srgb, var(--pramaan-shadow) 6%, transparent); box-sizing: border-box; display: flex; gap: .65rem; height: 60px; margin: 0 0 .7rem; max-height: 64px; overflow: hidden; padding: .35rem .7rem; }
-.pramaan-brandbar .pramaan-logo { flex: 0 0 42px; height: 42px; object-fit: contain; width: 42px; }
+.pramaan-brandbar { align-items: center; background: linear-gradient(115deg,var(--pramaan-card),var(--pramaan-card)); border: 1px solid var(--pramaan-line); border-radius: 16px; box-shadow: 0 5px 20px color-mix(in srgb, var(--pramaan-shadow) 6%, transparent); box-sizing: border-box; column-gap: .65rem; display: grid; grid-template-columns: 42px minmax(0,1fr); grid-template-rows: 42px auto; height: auto; margin: 0 0 .7rem; max-height: none; min-height: 60px; overflow: visible; padding: .35rem .7rem; row-gap: .1rem; }
+.pramaan-brandbar .pramaan-logo { grid-column: 1; grid-row: 1 / span 2; height: 42px; object-fit: contain; width: 42px; }
+.pramaan-brand-name { grid-column: 2; grid-row: 1; }
 .pramaan-brand-name { color: var(--pramaan-indigo); font-size: 1.05rem; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin: 0; }
 .pramaan-brand-name em { color: var(--pramaan-madder); font-size: .92rem; font-style: normal; font-weight: 550; }
+.pramaan-brand-links { align-items: center; display: flex; flex: 0 0 auto; gap: .7rem; grid-column: 2; grid-row: 2; justify-content: flex-start; margin-left: 0; min-width: 0; white-space: nowrap; }
+.pramaan-brand-links a { border-radius: 4px; color: var(--pramaan-teal); font-size: .78rem; font-weight: 700; text-decoration: none; }
+.pramaan-brand-links a:hover { text-decoration: underline; }
+.pramaan-brand-links a:focus-visible { outline: 2px solid var(--pramaan-teal); outline-offset: 3px; }
 .pramaan-ui-masthead .pramaan-masthead { margin-top: 0; }
 .pramaan-ui-disclaimer { align-items: center; background: var(--pramaan-card); border-left: 4px solid var(--pramaan-madder); border-radius: 8px 14px 14px 8px; color: var(--pramaan-muted); display: flex; font-size: .82rem; justify-content: space-between; margin: 0 0 .55rem; padding: .45rem .7rem; }
 .pramaan-ui-disclaimer[hidden] { display: none !important; }
@@ -2755,24 +3307,37 @@ html.light, body.light {
 .pramaan-ui-card summary { cursor: pointer; font-weight: 700; }
 .pramaan-ui-card a { color: var(--pramaan-teal); }
 .pramaan-ui-footnote { margin: 1rem 0; text-align: center; }
-.pramaan-proof-replay { align-items: center; display: grid; gap: clamp(1rem,3vw,2.5rem); grid-template-columns: minmax(0,1.15fr) minmax(210px,.85fr); margin: 0 0 1rem; overflow: hidden; padding: clamp(1rem,3vw,2rem); }
+.pramaan-proof-replay { align-items: center; display: grid; gap: clamp(1rem,3vw,2.5rem); grid-template-columns: minmax(0,.85fr) minmax(210px,1.15fr); margin: 0 0 1rem; overflow: hidden; padding: clamp(1rem,3vw,2rem); }
 .pramaan-proof-copy, .pramaan-proof-art { min-width: 0; }
-.pramaan-proof-replay h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2.25rem,6vw,4.8rem); letter-spacing: -.04em; line-height: .98; margin: .05rem 0 .65rem; }
+.pramaan-proof-replay h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2rem,4vw,3.65rem); letter-spacing: -.04em; line-height: .98; margin: .05rem 0 .65rem; text-wrap: balance; }
 .pramaan-proof-context { color: var(--pramaan-teal); font-size: .8rem; font-weight: 700; overflow-wrap: anywhere; }
 .pramaan-proof-brief { font-size: .96rem; line-height: 1.45; margin: .65rem 0; }
-.pramaan-proof-stage { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; min-height: 120px; padding: .8rem; }
+.pramaan-proof-stage { display: none; }
+.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-stage { background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 14px; display: block; min-height: 120px; padding: .8rem; }
 .pramaan-proof-step[hidden] { display: none !important; }
 .pramaan-proof-tile { aspect-ratio: 1; background: var(--pramaan-card-raised); border: 1px solid var(--pramaan-line); border-radius: 10px; display: block; height: auto; max-height: 250px; max-width: 100%; object-fit: contain; width: min(100%,250px); }
 .pramaan-proof-art { margin: 0; }
 .pramaan-proof-art .pramaan-proof-tile { margin-inline: auto; max-height: 340px; width: min(100%,340px); }
+.pramaan-proof-comparison { align-items: start; display: grid; gap: .55rem; grid-template-areas: "failed passed" "summary summary"; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.pramaan-proof-comparison > div:first-child { grid-area: failed; min-width: 0; }
+.pramaan-proof-comparison > div:last-child { grid-area: passed; min-width: 0; }
+.pramaan-proof-comparison .pramaan-proof-tile { max-height: 320px; width: min(100%,320px); }
+.pramaan-proof-comparison > p { grid-area: summary; margin: 0; text-align: center; }
+.pramaan-proof-witness-summary { color: var(--pramaan-ink); font-size: .86rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.pramaan-proof-art [data-proof-active-tile] { display: none; }
+.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-comparison { display: none; }
+.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-art [data-proof-active-tile] { display: block; }
 .pramaan-proof-art figcaption { color: var(--pramaan-muted); font-size: .78rem; margin-top: .45rem; overflow-wrap: anywhere; text-align: center; }
 .pramaan-proof-checks { display: grid; gap: .32rem; list-style: none; margin: .45rem 0 0; padding: 0; }
 .pramaan-proof-checks li { align-items: start; display: grid; font-size: .82rem; gap: .35rem; grid-template-columns: 1rem minmax(90px,.35fr) minmax(0,1fr); line-height: 1.3; overflow-wrap: anywhere; }
 .pramaan-proof-checks .is-pass > span:first-child { color: var(--pramaan-pass); font-weight: 800; }
 .pramaan-proof-checks .is-fail > span:first-child { color: var(--pramaan-fail); font-weight: 900; }
 .pramaan-proof-controls { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; margin: .7rem 0; }
+.pramaan-proof-controls .pramaan-ui-button { background: transparent; border-color: transparent; color: var(--pramaan-muted); min-height: 34px; padding: .35rem .5rem; }
 .pramaan-proof-controls .pramaan-ui-button, .pramaan-proof-copy > [data-proof-verify] { min-height: 40px; }
-.pramaan-proof-progress { color: var(--pramaan-muted); font-size: .78rem; }
+.pramaan-ui-button.primary { background: var(--pramaan-teal); border-color: var(--pramaan-teal); box-shadow: 0 6px 16px color-mix(in srgb, var(--pramaan-shadow) 18%, transparent); color: var(--pramaan-on-accent); }
+.pramaan-proof-progress { color: var(--pramaan-muted); display: none; font-size: .78rem; }
+.pramaan-proof-replay[data-proof-started="true"] .pramaan-proof-progress { display: inline; }
 .pramaan-proof-digest { display: block; font-size: .76rem; overflow-wrap: anywhere; }
 .pramaan-proof-technical { color: var(--pramaan-muted); font-size: .78rem; margin-top: .45rem; }
 .pramaan-proof-technical summary { cursor: pointer; }
@@ -2793,14 +3358,18 @@ html.light, body.light {
 @media (max-width: 600px) {
   .pramaan-proof-replay { grid-template-columns: minmax(0,1fr); }
   .pramaan-proof-art { grid-row: 1; }
+  .pramaan-proof-comparison { gap: .25rem; grid-template-areas: "failed passed" "summary summary"; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .pramaan-proof-comparison .pramaan-proof-tile { max-height: 150px; width: min(100%,150px); }
   .pramaan-proof-art .pramaan-proof-tile { max-height: 210px; width: min(100%,210px); }
   .pramaan-proof-stage { min-height: 100px; }
   .pramaan-proof-step .pramaan-proof-tile { display: none; }
   .pramaan-proof-checks li { grid-template-columns: .9rem minmax(76px,.35fr) minmax(0,1fr); }
-  .pramaan-brandbar { border-radius: 12px; gap: .45rem; height: 54px; padding: .3rem .5rem; }
-  .pramaan-brandbar .pramaan-logo { flex-basis: 38px; height: 38px; width: 38px; }
-  .pramaan-brand-name { font-size: .96rem; }
-  .pramaan-brand-name em { font-size: .82rem; }
+  .pramaan-brandbar { border-radius: 12px; column-gap: .45rem; grid-template-columns: 38px minmax(0,1fr); grid-template-rows: 38px auto; min-height: 54px; padding: .3rem .5rem; row-gap: .08rem; }
+  .pramaan-brandbar .pramaan-logo { height: 38px; width: 38px; }
+  .pramaan-brand-name { font-size: .88rem; }
+  .pramaan-brand-name em { font-size: .72rem; }
+  .pramaan-brand-links { gap: .28rem; }
+  .pramaan-brand-links a { font-size: .64rem; }
   .pramaan-ui, .pramaan-state-mosaic-scroll { max-width: 100%; min-width: 0; width: 100%; }
   .pramaan-state-mosaic { min-width: 340px; }
   .pramaan-state-tile { border-radius: 4px; padding: 1px; }
@@ -2809,20 +3378,32 @@ html.light, body.light {
   .pramaan-ui-disclaimer { font-size: .72rem; }
 }
 .pramaan-home-intro { color: var(--pramaan-text); font-size: clamp(1rem,2vw,1.2rem); line-height: 1.45; margin: .25rem auto .8rem; max-width: 920px; text-align: center; }
-.pramaan-home-intro h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2.3rem,6vw,4.5rem); letter-spacing: -.04em; line-height: 1; margin: .1rem 0 .5rem; }
+.pramaan-home-intro h1 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(2rem,4vw,3.4rem); letter-spacing: -.04em; line-height: 1; margin: .1rem 0 .5rem; text-wrap: balance; }
 #pramaan-hf-login-row { display: none; }
 .pramaan-home-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .55rem; justify-content: center; margin-top: .6rem; }
 .pramaan-home-text-link { color: var(--pramaan-teal); font-size: .9rem; font-weight: 700; padding: .5rem; }
-.pramaan-home-metrics { display: grid; gap: .65rem; grid-template-columns: repeat(3,minmax(0,1fr)); margin: .8rem 0 1.25rem; }
-.pramaan-home-metrics article { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 14px; display: grid; gap: .2rem; padding: .8rem; text-align: center; }
-.pramaan-home-metrics strong { color: var(--pramaan-indigo); font-size: clamp(1.2rem,3vw,1.8rem); font-variant-numeric: tabular-nums; }
-.pramaan-home-metrics span { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-home-metrics { display: grid; gap: .5rem; grid-template-columns: repeat(3,minmax(0,1fr)); margin: .5rem 0 .8rem; }
+.pramaan-home-metrics article { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 14px; display: grid; gap: .15rem; padding: .55rem .7rem; text-align: center; }
+.pramaan-home-metrics strong { color: var(--pramaan-indigo); font-size: clamp(1.1rem,2.6vw,1.6rem); font-variant-numeric: tabular-nums; }
+.pramaan-home-metrics span { color: var(--pramaan-muted); font-size: .76rem; }
 .pramaan-home-wall { margin: 1rem 0; }
 .pramaan-home-wall-heading { align-items: end; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; margin-bottom: .65rem; }
 .pramaan-home-wall-heading h2 { color: var(--pramaan-indigo); font-family: Georgia,serif; font-size: clamp(1.8rem,4vw,2.6rem); margin: 0; }
 .pramaan-home-wall-heading p:last-child { color: var(--pramaan-muted); margin: .3rem 0; max-width: 68ch; }
 .pramaan-home-reference-note { color: var(--pramaan-muted); font-size: .82rem; }
+.pramaan-wall-model-picker { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 10px; padding: .45rem .65rem; }
+.pramaan-wall-model-picker summary { color: var(--pramaan-teal); cursor: pointer; font-size: .86rem; font-weight: 750; }
+.pramaan-wall-model-picker[open] .pramaan-wall-models { margin-top: .55rem; }
 .pramaan-wall-controls { align-items: start; display: grid; gap: .65rem; margin: .65rem 0; }
+.pramaan-wall-grammar-picker { display: flex; flex-wrap: wrap; gap: .35rem; }
+.pramaan-wall-grammar-chip { align-items: center; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-text); cursor: pointer; display: inline-flex; font: inherit; gap: .35rem; min-height: 38px; padding: .35rem .65rem; }
+.pramaan-wall-grammar-chip[aria-pressed="true"] { background: var(--pramaan-indigo); border-color: var(--pramaan-indigo); color: var(--pramaan-on-accent); }
+.pramaan-wall-grammar-chip small { color: var(--pramaan-muted); font-size: .72rem; }
+.pramaan-wall-grammar-chip[aria-pressed="true"] small { color: var(--pramaan-on-accent); }
+.gradio-container .pramaan-ui .pramaan-wall-grammar-chip[aria-pressed="true"] small { color: var(--pramaan-on-accent) !important; }
+.pramaan-wall-grammar-chip:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; }
+.pramaan-wall-grammar-status { color: var(--pramaan-muted); font-size: .82rem; margin: -.35rem 0 0; }
+.pramaan-wall-state.is-grammar-dimmed { filter: grayscale(.75); opacity: .24; }
 .pramaan-wall-models { display: flex; flex-wrap: wrap; gap: .4rem; }
 .pramaan-wall-model-chip { align-items: flex-start; background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; color: var(--pramaan-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: .04rem; max-width: 100%; padding: .35rem .75rem; text-align: left; }
 .pramaan-wall-model-chip[aria-checked="true"] { background: var(--pramaan-teal); border-color: var(--pramaan-teal); color: var(--pramaan-on-accent); }
@@ -2837,16 +3418,19 @@ html.light, body.light {
 .pramaan-wall-legend [data-status="repair"] { color: var(--pramaan-pending); }
 .pramaan-wall-legend [data-status="fail"] { color: var(--pramaan-fail); }
 .pramaan-wall-legend [data-status="none"] { color: var(--pramaan-muted); }
-.pramaan-home-wall-grid { display: grid; gap: clamp(2px,.45vw,6px); grid-template-columns: repeat(10,minmax(0,1fr)); grid-template-rows: repeat(9,minmax(0,1fr)); margin: .6rem auto; max-width: 980px; width: 100%; }
+.pramaan-home-wall-grid { display: grid; gap: clamp(1px,.25vw,3px); grid-template-columns: repeat(10,minmax(0,1fr)); grid-template-rows: repeat(9,minmax(0,1fr)); margin: .6rem auto; max-width: 1420px; width: 100%; }
 .pramaan-wall-state { aspect-ratio: 1; min-width: 0; position: relative; }
-.pramaan-wall-tile { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: clamp(3px,.6vw,9px); color: var(--pramaan-text); cursor: pointer; display: block; height: 100%; overflow: hidden; padding: 0; position: relative; text-align: left; width: 100%; }
+.pramaan-wall-tile { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: clamp(3px,.6vw,9px); color: var(--pramaan-text); cursor: pointer; display: block; height: 100%; overflow: hidden; padding: 0; position: relative; text-align: left; transition: box-shadow .12s ease, transform .12s ease; width: 100%; }
+.pramaan-wall-tile:hover { box-shadow: 0 5px 14px color-mix(in srgb,var(--pramaan-shadow) 18%,transparent); transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .pramaan-wall-tile { transition: none; } .pramaan-wall-tile:hover { transform: none; } }
 .pramaan-wall-state-sheet-source { display: none !important; }
 .pramaan-wall-tile:focus-visible, .pramaan-wall-model-chip:focus-visible, .pramaan-wall-mode:focus-visible { outline: 3px solid var(--pramaan-teal); outline-offset: 2px; z-index: 2; }
 .pramaan-wall-art { display: block; height: 100%; image-rendering: pixelated; object-fit: cover; width: 100%; }
 .pramaan-wall-empty-art, .pramaan-wall-placeholder { align-items: center; background: repeating-linear-gradient(135deg,var(--pramaan-card-subtle) 0 6px,var(--pramaan-line) 6px 7px); color: var(--pramaan-muted); display: flex; justify-content: center; min-height: 90px; text-align: center; }
-.pramaan-wall-state-name { background: color-mix(in srgb,var(--pramaan-card) 90%,transparent); bottom: 0; color: var(--pramaan-text); font-size: max(12px,clamp(.52rem,.7vw,.72rem)); font-weight: 750; left: 0; line-height: 1.1; overflow: hidden; padding: 2px 3px; position: absolute; right: 0; text-overflow: ellipsis; white-space: nowrap; }
-.pramaan-wall-marks { background: var(--pramaan-card); border: 1px solid var(--pramaan-line); border-radius: 999px; display: flex; gap: 2px; padding: 0 3px; position: absolute; right: 2px; top: 2px; }
-.pramaan-wall-mark { font-size: 12px; font-weight: 900; line-height: 1.25; }
+.pramaan-wall-name-row { align-items: center; background: color-mix(in srgb,var(--pramaan-card) 90%,transparent); bottom: 0; display: flex; font-size: max(12px,clamp(.52rem,.7vw,.72rem)); font-weight: 750; gap: 3px; justify-content: space-between; left: 0; line-height: 1.1; min-width: 0; overflow: hidden; padding: 2px 3px; position: absolute; right: 0; }
+.pramaan-wall-state-name { color: var(--pramaan-text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pramaan-wall-marks { background: transparent; border: 0; display: flex; flex: 0 0 auto; gap: 2px; padding: 0; }
+.pramaan-wall-mark { font-size: 12px; border: 1px solid currentColor; border-radius: 3px; font-weight: 900; line-height: 1.2; min-width: 0; padding: 0 2px; text-align: center; }
 .pramaan-wall-mark[data-status="first"] { color: var(--pramaan-pass); }
 .pramaan-wall-mark[data-status="repair"] { color: var(--pramaan-pending); }
 .pramaan-wall-mark[data-status="fail"] { color: var(--pramaan-fail); }
@@ -2892,6 +3476,14 @@ html.light, body.light {
 .pramaan-ui-advanced-rules summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; padding: .3rem 0; }
 .pramaan-ui-sources, .pramaan-ui-diwali { border-top: 1px solid var(--pramaan-line); margin-top: .8rem; padding-top: .5rem; }
 .pramaan-ui-sources summary, .pramaan-ui-diwali summary { color: var(--pramaan-teal); cursor: pointer; font-weight: 750; }
+.pramaan-openenv-contract { margin-top: .8rem; }
+.pramaan-openenv-contract h4 { margin: 1rem 0 .35rem; }
+.pramaan-openenv-contract table { border-collapse: collapse; font-size: .82rem; width: 100%; }
+.pramaan-openenv-contract th, .pramaan-openenv-contract td { border-bottom: 1px solid var(--pramaan-line); padding: .4rem; text-align: left; vertical-align: top; }
+.pramaan-known-gap-tiles { display: grid; gap: .75rem; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.pramaan-known-gap-tiles figure { margin: 0; min-width: 0; }
+.pramaan-known-gap-tiles img { aspect-ratio: 1; background: var(--pramaan-card-subtle); border: 1px solid var(--pramaan-line); border-radius: 12px; display: block; image-rendering: pixelated; max-width: 100%; object-fit: contain; width: 100%; }
+.pramaan-known-gap-tiles figcaption { color: var(--pramaan-muted); font-size: .82rem; padding-top: .3rem; }
 @media (max-width: 600px) {
   .pramaan-home-metrics { gap: .35rem; }
   .pramaan-home-metrics article { border-radius: 10px; padding: .55rem .35rem; }
@@ -2900,9 +3492,10 @@ html.light, body.light {
   .pramaan-home-wall-grid .pramaan-wall-state { grid-column: auto !important; grid-row: auto !important; }
   .pramaan-wall-tile { display: grid; grid-template-rows: minmax(0,1fr) auto; text-align: center; }
   .pramaan-wall-art { grid-row: 1; height: auto; min-height: 0; object-fit: contain; }
-  .pramaan-wall-state-name { bottom: auto; font-size: clamp(7px,2vw,10px); grid-row: 2; left: auto; line-height: 1.05; overflow: visible; padding: 2px 1px 3px; position: static; right: auto; text-align: center; text-overflow: clip; white-space: normal; }
-  .pramaan-wall-marks { border-radius: 6px; gap: 1px; padding: 0 2px; right: 2px; top: 2px; }
-  .pramaan-wall-mark { font-size: 9px; line-height: 1.1; }
+  .pramaan-wall-name-row { bottom: auto; font-size: clamp(7px,2vw,10px); grid-row: 2; left: auto; line-height: 1.05; overflow: hidden; padding: 2px 1px 3px; position: static; right: auto; text-align: left; white-space: normal; }
+  .pramaan-wall-state-name { bottom: auto; position: static; white-space: normal; }
+  .pramaan-wall-marks { gap: 1px; }
+  .pramaan-wall-mark { font-size: 9px; line-height: 1.1; min-width: 8px; }
   .pramaan-wall-models { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: .25rem; width: 100%; }
   .pramaan-wall-model-chip { flex: 0 0 auto; max-width: 9rem; padding: .25rem .55rem; }
   .pramaan-wall-model-chip small { font-size: 10px; }
@@ -2917,7 +3510,13 @@ def _brand_header_html() -> str:
     logo_html = (f'<img class="pramaan-logo" src="{logo_uri}" '
                  'alt="Pramaan geometric loop mark" fetchpriority="high">' if logo_uri else "")
     return (f'<header class="pramaan-brandbar">{logo_html}'
-            '<h1 class="pramaan-brand-name">Pramaan <em>Proof of Art</em></h1></header>')
+            '<h1 class="pramaan-brand-name">Pramaan <em>Proof of Art</em></h1>'
+            '<nav class="pramaan-brand-links" aria-label="Project links">'
+            '<a href="https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1" target="_blank" rel="noopener noreferrer">Dataset</a>'
+            '<a href="https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/" target="_blank" rel="noopener noreferrer">OpenEnv</a>'
+            '<a href="https://huggingface.co/collections/kshitijthakkar/pramaan-proof-of-art" target="_blank" rel="noopener noreferrer">Collection</a>'
+            '<a href="https://github.com/Mandark-droid/Proof-of-Art" target="_blank" rel="noopener noreferrer">Code</a>'
+            '</nav></header>')
 
 
 def _verify_json(source: str):
@@ -3188,7 +3787,7 @@ function activateTab(key) {
   const valid = ['benchmark', 'leaderboard', 'studio', 'rl'];
   if (!valid.includes(key)) key = 'benchmark';
   const loginRow = document.querySelector('#pramaan-hf-login-row');
-  const communityDisclosure = element.querySelector('#leaderboard-full-results');
+  const communityDisclosure = element.querySelector('#leaderboard-community-results');
   element.dataset.activeTab = key;
   if (communityDisclosure && !communityDisclosure.dataset.loginVisibilityBound) {
     communityDisclosure.dataset.loginVisibilityBound = 'true';
@@ -3211,6 +3810,13 @@ function applyRoute() {
   const key = path === '/leaderboard' ? 'leaderboard' : path === '/studio' ? 'studio' :
     path === '/build' || path === '/rl' ? 'rl' : 'benchmark';
   activateTab(key);
+  if (path === '/leaderboard' && params.has('task')) {
+    const taskId = params.get('task') || '';
+    if (/^[a-z0-9][a-z0-9._-]{0,150}$/.test(taskId) && window.__pramaanArenaTask !== taskId) {
+      window.__pramaanArenaTask = taskId;
+      trigger('click', { action: 'arena_task', task_id: taskId, active_tab: 'leaderboard' });
+    }
+  }
   if (path === '/states' && params.has('state') && window.__pramaanAppliedHash !== raw) {
     window.__pramaanAppliedHash = raw;
     trigger('click', { action: 'gallery_state_select', gallery_state: params.get('state'), active_tab: key });
@@ -3227,6 +3833,19 @@ if (quiltSheet) {
   quiltSheet.querySelector('[data-quilt-close]')?.addEventListener('click', () => quiltSheet.close());
   quiltSheet.addEventListener('close', () => quiltSheetOpener?.focus());
 }
+element.querySelectorAll('[data-copy-certificate]').forEach(button => {
+  button.addEventListener('click', async () => {
+    const status = button.parentElement?.querySelector('.pramaan-proof-card-copy-status');
+    try {
+      const raw = atob(button.dataset.certificateB64 || '');
+      const bytes = Uint8Array.from(raw, character => character.charCodeAt(0));
+      await navigator.clipboard.writeText(new TextDecoder().decode(bytes));
+      if (status) status.textContent = 'Certificate JSON copied.';
+    } catch (_error) {
+      if (status) status.textContent = 'Copy is unavailable in this browser.';
+    }
+  });
+});
 const proofReplay = element.querySelector('[data-testid="proof-replay"]');
 if (proofReplay) {
   const proofSteps = Array.from(proofReplay.querySelectorAll('.pramaan-proof-step[data-proof-step]'));
@@ -3269,9 +3888,9 @@ if (proofReplay) {
   proofReplay.addEventListener('wheel', stopProofPlayback, {passive:true});
   proofReplay.addEventListener('touchstart', stopProofPlayback, {passive:true});
   proofReplay.addEventListener('focusin', stopProofPlayback);
-  proofReplay.querySelector('[data-proof-replay]')?.addEventListener('click', playProof);
+  proofReplay.querySelectorAll('[data-proof-replay]').forEach(button => button.addEventListener('click', playProof));
   proofReplay.querySelector('[data-testid="proof-replay-step"]')?.addEventListener('click', () => {
-    stopProofPlayback(); showProofStep(proofIndex + 1);
+    stopProofPlayback(); proofReplay.dataset.proofStarted = 'true'; showProofStep(proofIndex + 1);
   });
   proofReplay.querySelector('[data-proof-verify]')?.addEventListener('click', event => {
     stopProofPlayback();
@@ -3307,6 +3926,61 @@ if (proofReplay) {
   }
 }
 element.addEventListener('click', async function(event) {
+  const detailClose = event.target.closest('[data-chart-detail-close]');
+  if (detailClose) {
+    detailClose.closest('[data-testid="chart-detail-dialog"]')?.close();
+    return;
+  }
+  const detailTarget = event.target.closest('[data-touch-detail]');
+  if (detailTarget) {
+    event.preventDefault();
+    const dialog = element.querySelector('[data-testid="chart-detail-dialog"]');
+    const title = dialog?.querySelector('[data-chart-detail-title]');
+    const body = dialog?.querySelector('[data-chart-detail-body]');
+    const arenaLink = dialog?.querySelector('[data-chart-detail-arena]');
+    const kind = detailTarget.dataset.touchDetail;
+    const model = detailTarget.dataset.detailModel || 'Model';
+    if (arenaLink) { arenaLink.hidden = true; arenaLink.removeAttribute('href'); }
+    if (kind === 'matrix') {
+      if (title) title.textContent = `${model} · ${detailTarget.dataset.detailState || 'State'}`;
+      if (body) body.textContent = `${detailTarget.dataset.detailResult || 'Result'} · ${detailTarget.dataset.detailTask || 'Task'} · ${detailTarget.dataset.detailAttempt || 'No attempt saved'}. ${detailTarget.dataset.detailBrief || ''}${detailTarget.dataset.nearInvisible === 'true' ? ' Passes the checks, but almost nothing is visible.' : ''}`;
+      if (arenaLink) {
+        arenaLink.href = `#/leaderboard?task=${encodeURIComponent(detailTarget.dataset.detailTask || '')}`;
+        arenaLink.hidden = false;
+      }
+    } else if (kind === 'cost') {
+      const amount = Number(detailTarget.dataset.estimatedCost);
+      const passed = Number(detailTarget.dataset.withinThree);
+      const total = Number(detailTarget.dataset.denominator);
+      if (title) title.textContent = `${model} · estimated cost`;
+      if (body) body.textContent = `Estimated evaluation cost: USD ${Number.isFinite(amount) ? amount.toFixed(2) : 'not available'}. Within three proposals: ${passed}/${total}. Request settings differ by provider, and the estimates are not directly comparable as provider bills.`;
+    }
+    if (dialog && !dialog.open) dialog.showModal();
+    return;
+  }
+  const grammarChoice = event.target.closest('[data-wall-grammar-choice]');
+  if (grammarChoice) {
+    const selected = grammarChoice.dataset.wallGrammarChoice;
+    grammarChoice.closest('.pramaan-home-wall')?.querySelectorAll('[data-wall-grammar-choice]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button === grammarChoice));
+    });
+    const wall = grammarChoice.closest('.pramaan-home-wall');
+    let matching = 0;
+    wall?.querySelectorAll('.pramaan-wall-state').forEach(tile => {
+      const grammars = (tile.dataset.wallGrammars || '').split(/\s+/).filter(Boolean);
+      const matches = selected === 'all' || grammars.includes(selected);
+      tile.classList.toggle('is-grammar-dimmed', !matches);
+      if (matches) matching += 1;
+    });
+    const status = wall?.querySelector('[data-wall-grammar-status]');
+    if (status) {
+      const label = grammarChoice.dataset.wallGrammarLabel || 'Selected grammar';
+      const briefCount = grammarChoice.querySelector('small')?.textContent || '';
+      status.textContent = selected === 'all' ? 'All states are shown at full brightness.' :
+        `${label} · ${briefCount}; ${matching} matching state tiles stay bright and all other tiles remain visible but dimmed.`;
+    }
+    return;
+  }
   const wallChoice = event.target.closest('[data-wall-model-choice], [data-wall-mode-choice]');
   if (wallChoice) {
     const wall = wallChoice.closest('.pramaan-home-wall');
@@ -3506,6 +4180,12 @@ element.addEventListener('click', async function(event) {
   }
 });
 element.addEventListener('keydown', function(event) {
+  const detailTarget = event.target.closest('[data-touch-detail]');
+  if (detailTarget && ['Enter', ' '].includes(event.key)) {
+    event.preventDefault();
+    detailTarget.click();
+    return;
+  }
   const modelChip = event.target.closest('[data-wall-model-choice]');
   if (modelChip && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
     const chips = Array.from(modelChip.closest('[data-wall-models], .pramaan-wall-models')
@@ -3579,6 +4259,14 @@ element.addEventListener('input', function(event) {
   if (event.target.matches('[data-leaderboard-search]')) applyLeaderboardControls();
 });
 element.addEventListener('change', function(event) {
+  const briefChoice = event.target.closest('[data-arena-brief-picker]');
+  if (briefChoice) {
+    const collection = briefChoice.closest('[data-testid="arena-brief-picker"]');
+    collection?.querySelectorAll('[data-arena-brief-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.arenaBriefPanel !== briefChoice.value;
+    });
+    return;
+  }
   const choice = event.target.closest('[data-arena-model-choice]');
   if (!choice) return;
   const selected = new Set(Array.from(element.querySelectorAll('[data-arena-model-choice]:checked'), node => node.dataset.arenaModelChoice));

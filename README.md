@@ -33,13 +33,34 @@ suggested_hardware: cpu-basic
 
 **Public demo:** [Pramaan on Hugging Face Spaces](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art).
 
-**Beam baseline (eval-v2.1):** 23.6% correct on the first try · 65.3% within three proposals · 36 states and Union Territories covered.
+**Demo music:** Bombay Summer by Shane Ivers, [CC BY 4.0](https://www.silvermansound.com).
 
-Pramaan is a generative-art benchmark inspired by Indian geometric craft traditions. Models propose structured PatternDSL designs; an independent deterministic checker evaluates declared rules on a fixed 64×64 raster, returns concrete counterexamples, and produces replayable certificates. The benchmark covers seven grammars, from Ajrakh-inspired repeat geometry to Sikku Kolam loops and Jaali lattices.
+**Beam baseline (eval-v2.1):** Beam designs pass every check on the first try 23.6% of the time (17 of 72), and pass all checks within three proposals 65.3% of the time (47 of 72) · 36 states and Union Territories covered.
+
+Pramaan is a generative-art benchmark inspired by Indian geometric craft traditions. Models propose structured PatternDSL designs; an independent deterministic checker evaluates declared rules on a fixed 64×64 raster, returns concrete counterexamples, and produces replayable certificates. The benchmark covers seven grammars, including dot fields, repeat patterns, Sikku Kolam loops, and Jaali lattices.
 
 These designs are mathematical reinterpretations, not artisan-authentic work, ritual guidance, or physical printing guarantees. They do not replace craft practitioners. Ajrakh is practiced in Gujarat, Rajasthan, and Sindh in Pakistan. See [CITATIONS.md](CITATIONS.md) for cultural and technical references.
 
 The project includes a Gradio Space, a sourced traditions registry covering 36 states and Union Territories, a 10-model leaderboard and comparison Arena, and an OpenEnv reinforcement-learning environment. Some examples draw on festival welcome patterns; the wider collection preserves the distinct traditions and communities represented by its sources.
+
+## Examples
+
+### A replay with a visible counterexample
+
+This Himachal Pradesh Kinnauri replay shows three Beam attempts from one saved benchmark trajectory. The first two fail the symmetry check; the third passes every check. The witness marks identify the pixel mismatch on attempt 1, and the rewards are read from the saved run.
+
+![Three replay-verified Kinnauri attempts, with the first symmetry counterexample marked](assets/kinnauri-proof-replay-strip.png)
+
+Pixel (16, 21) and its mirror (47, 21) differ.
+
+### Beam designs that the checker passed
+
+These gallery examples passed the checker. They are illustrative gallery examples, separate from the benchmark results below.
+
+| | | |
+| --- | --- | --- |
+| ![Gujarat — Bandhani dot field](assets/beam_g2_gj_bandhani_preview.png)<br>Gujarat — Bandhani | ![Assam — Gamosa border and motif band](assets/beam_g4_as_gamosa_grid_preview.png)<br>Assam — Gamosa | ![Tamil Nadu — Sikku Kolam weave](assets/beam_g6_tn_kolam_sikku_preview.png)<br>Tamil Nadu — Sikku Kolam |
+| ![Bihar — Aripana rotational field](assets/beam_g5_br_aripana_rotational_preview.png)<br>Bihar — Aripana | ![Jharkhand — Singhbhum mural bands](assets/beam_g3_jh_singhbhum_bands_preview.png)<br>Jharkhand — Singhbhum mural bands | ![Gujarat — Sidi Saiyyed Jaali lattice](assets/beam_g7_gj_sidi_saiyyed_jaali_preview.png)<br>Gujarat — Sidi Saiyyed Jaali |
 
 ## Run locally
 
@@ -53,14 +74,29 @@ python app.py
 
 The app opens with a checked example and works without model credentials. To enable local Beam generation, copy `.env.example` to `.env` and set `HF_TOKEN`. For the hosted Space, set it in **Settings → Secrets** with Inference Providers access. The token is used server-side; never put it in tracked files or browser inputs. Each worker permits one active generation, queues up to 32 app events, and defaults to a 40-request UTC-day cap including repairs and transient retries. Lower the cap with `PRAMAAN_DAILY_MODEL_CALL_CAP` in Space variables.
 
-Prompts are sent to Hugging Face Inference Providers only when live generation is requested. Private runs are kept in the visitor's session; generated files use temporary worker storage, downloads expire after one hour, and the Gradio file cache is cleaned hourly. If the community contribution flow is enabled, publishing requires separate consent and replay checks. Those records are separate from the official training and benchmark datasets and are not added to them automatically. The built-in example works offline.
+Prompts are sent to Hugging Face Inference Providers only when live generation is requested. Private runs are kept in the visitor's session; generated files use temporary worker storage, downloads expire after one hour, and the Gradio file cache is cleaned hourly. Space publishing is off. To share a community result, open a pull request on the community dataset; submissions are replay-audited before a maintainer merges them. Those records remain separate from the official training and benchmark datasets. The built-in example works offline.
 
 ## Run the benchmark and submit
 
-- **On the Space:** open the Models tab's community evaluation panel, enter a provider/model ID (for example, `huggingface/org/model` or a nested route such as `huggingface/together/meta-llama/Llama-3.3-70B-Instruct`), and supply your own provider key. Only priced model routes are accepted; estimate first. The run is capped at USD 10. The key passes through the Space to the provider, so use a disposable key with a provider-side limit. Publishing is a separate opt-in and sends replay-checked, sanitized results to the [community dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-community-runs). The model name is self-reported and unverified.
-- **Locally:** add an entry to `benchmarks/models.json` with a unique `key`, provider, supported `api_style`, `model_id`, HTTPS `base_url`, `api_key_env`, `request_params`, and known `pricing`; place the key only in your local environment. A key such as `my-lab/new-model` is allowed. Then run `python benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl --models benchmarks/models.json --model my-lab/new-model --output benchmarks/results/my-run.jsonl`. To submit, run `python scripts/pack_submission.py benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip`, then upload the ZIP through the Space's Contribute flow. The packer creates a SHA-256 manifest and rejects mismatched suites, duplicate tasks, or credential-bearing data; the Space independently replays submissions before publication. Community results remain separate from the official benchmark and training datasets.
+- **On the Space:** the Models tab can run a private community evaluation using your provider key. Results remain in your session and are not published from the Space.
+- **Locally:** add an entry to `benchmarks/models.json` with a unique `key`, provider, supported `api_style`, `model_id`, HTTPS `base_url`, `api_key_env`, `request_params`, and known `pricing`; place the key only in your local environment. A key such as `my-lab/new-model` is allowed. Then run and package your result:
 
-## Reproducible examples
+```bash
+uv run --project . python benchmarks/run.py --suite benchmarks/suites/eval-v2.1.jsonl \
+  --models benchmarks/models.json --model my-lab/new-model --output benchmarks/results/my-run.jsonl
+uv run --project . python -m scripts.pack_submission \
+  benchmarks/results/my-run.jsonl benchmarks/results/my-run.zip
+```
+
+Sign in to Hugging Face locally with `hf auth login`, then upload the archive as a proposed dataset change. The upload opens a pull request; it does not publish accepted rows until the maintainer audits and merges it:
+
+```bash
+uv run --project . python -c "from huggingface_hub import HfApi; HfApi().upload_file(path_or_fileobj='benchmarks/results/my-run.zip', path_in_repo='submissions/my-run.zip', repo_id='kshitijthakkar/pramaan-community-runs', repo_type='dataset', commit_message='Submit replay-audited community run', create_pr=True)"
+```
+
+The packer creates a SHA-256 manifest and rejects mismatched suites, duplicate tasks, or credential-bearing data. Community model names are self-reported and unverified; accepted rows remain separate from the official benchmark and training datasets.
+
+## Replay certificates and trajectories
 
 The [examples directory](examples) contains design files, certificates, and saved trajectories for passing, repaired, and deliberately failing patterns. Gallery-only samples are illustrative; they are not benchmark results or training records. Run `python scripts/check_builtin_examples.py` to replay the bundled certificates and trajectories. To inspect the intentionally failing D4 design, run:
 
@@ -69,6 +105,8 @@ python -m pramaan.verify --design examples/ajrakh_d4_counterexample.pattern.json
 ```
 
 Exit code `1` is expected for this fixture because D4 symmetry fails; `certificate_replay.matches` should be `true` when the saved failure report matches fresh replay.
+
+The Space Home page replays the saved Himachal Pradesh Kinnauri geometric-border example. Its proof card shows the checked attempt, witness, reward, design and pixel hashes, validator version, and certificate exclusions so the result can be independently recomputed.
 
 ## What is checked
 
@@ -94,6 +132,8 @@ The completed `eval-v2.1` comparison covers the same 72 task IDs for all ten mod
 | GPT-6 Luna | 72/72 | 2.8% | 12.5% | 10.7k | 21.9 s | $0.16 | $10 |
 | GPT-6.1 Sol | 72/72 | 79.2% | 91.7% | 3.5k | 20.2 s | $1.51 | $10 |
 | GPT-6.1 Terra | 72/72 | 52.8% | 79.2% | 5.4k | 25.5 s | $0.96 | $10 |
+
+Beam's saved first-attempt outcomes were 17 passes, 42 readable designs that broke a rule, and 13 unreadable proposals; 47 of 72 tasks passed within three proposals.
 
 The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.
 
@@ -125,18 +165,56 @@ The checks use integer-grid raster masks and pinned Pillow drawing conventions; 
 - [Training dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1) with SFT, repair, preference, and trajectory exports. This is the published `train-v1` snapshot; the corrected `train-v1.2` briefs have not yet been evaluated or exported as training records.
 - [OpenEnv dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-openenv) with separate training and evaluation transition splits.
 
-The Space, source repository, benchmark results, training export, and RL transitions are published as distinct artifacts. The published training snapshot does not grow automatically when someone runs a model; private run traces remain private unless a visitor separately opts into the community contribution flow.
+The Space, source repository, benchmark results, training export, and RL transitions are published as distinct artifacts. The published training snapshot does not grow automatically when someone runs a model; private run traces remain private unless a contributor submits a dataset pull request and it is audited and merged.
 ## RL environment
 
-The same Docker Space serves the Studio at [`/studio`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/studio/) and the OpenEnv playground at [`/web`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/). The environment uses no model credentials: each action is parsed and checked by the deterministic verifier, which returns a finite reward from 0 to 1 and a replayable certificate when the design passes. The reward measures declared geometric checks; it does not test whether the rendered design has visible ink.
+The same Docker Space serves the Studio at [`/studio`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/studio/) and the OpenEnv playground at [`/web`](https://kshitijthakkar-pramaan-proof-of-art.hf.space/web/). The environment uses no model credentials; each action is parsed and checked by the deterministic verifier. Its reward bands are:
+
+| Reward | Meaning |
+| --- | --- |
+| `0` | Unreadable or rejected input, including an invalid verifier report. |
+| `0.2` to under `0.8` | Readable design that passes some, but not all, hard checks. |
+| `1.0` | Every hard check passes; the environment returns a replayable certificate. |
+
+The reward measures declared geometric checks; it does not test whether the rendered design has visible ink. The `/web` playground includes Beam's saved Himachal Kinnauri symmetry failure and witness.
 
 ```python
-from pramaan_env import PramaanAction, PramaanEnv
+import json
+from pathlib import Path
 
-with PramaanEnv(base_url="https://kshitijthakkar-pramaan-proof-of-art.hf.space").sync() as env:
-    obs = env.reset(task_id="tn_kolam-easy-22").observation
-    result = env.step(PramaanAction(pattern_json=my_policy(obs.prompt_messages)))
-    print(result.reward, result.done)
+from pramaan_env import PramaanAction
+from pramaan_env.server.environment import PramaanEnvironment
+
+task_id = "hp_kinnauri-shawl-geometric-border-easy-8"
+row = next(
+    json.loads(line)
+    for line in Path("benchmarks/results/eval-v2.1-beam-20261030.jsonl").read_text().splitlines()
+    if json.loads(line).get("prompt_id") == task_id
+)
+first = next(attempt["candidate"] for attempt in row["attempts"] if attempt["index"] == 1)
+third = next(attempt["candidate"] for attempt in row["attempts"] if attempt["index"] == 3)
+
+for candidate in (first, third):  # replay saved attempts 1 and 3 in fresh episodes
+    env = PramaanEnvironment()
+    env.reset(task_id=task_id, suite="eval-v2.1")
+    result = env.step(PramaanAction(pattern_json=json.dumps(candidate)))
+    print(result.reward)  # 0.725, then 1.0
+```
+
+The Kinnauri snippet replays held-out examples for demonstration; the held-out eval suite is not for training. For training, the tested reward adapter resets a separate `train-v1` episode for each completion. It was tested on saved passing and failing designs plus unreadable input. **No model has been trained on the Pramaan environment yet.** TRL wiring has not been run.
+
+```python
+from pramaan_env import PramaanAction
+from pramaan_env.server.environment import PramaanEnvironment
+
+def pramaan_reward(completions, task_id, **kwargs):
+    rewards = []
+    for completion, task in zip(completions, task_id):
+        text = completion if isinstance(completion, str) else completion[0]["content"]
+        env = PramaanEnvironment()
+        env.reset(task_id=task, suite="train-v1")
+        rewards.append(env.step(PramaanAction(pattern_json=text)).reward)
+    return rewards
 ```
 
 ## Datasets

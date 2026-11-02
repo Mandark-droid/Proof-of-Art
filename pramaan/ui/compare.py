@@ -32,6 +32,7 @@ def render_arena(
     replay_prompt_id: str,
     selected_model_keys: list[str] | None = None,
     task_backgrounds: dict[str, str] | None = None,
+    include_model_picker: bool = True,
 ) -> str:
     """Show all available model attempts for one frozen, identical benchmark brief."""
     if (not isinstance(index, dict) or index.get("suite_id") != suite_id
@@ -58,10 +59,10 @@ def render_arena(
 
     chosen = set(selected_model_keys or [key for key, _label, _task in available[:4]])
     chosen.add("beam-hf")
-    selector = ('<details class="pramaan-arena-picker"><summary>Choose models to show</summary><fieldset>' +
+    selector = ('<details class="pramaan-arena-model-picker"><summary>Choose models to show</summary><fieldset>' +
                 ''.join(f'<label><input type="checkbox" data-arena-model-choice="{html.escape(key, quote=True)}"'
                          f'{" checked" if key in chosen else ""}> {html.escape(label)}</label>'
-                         for key, label, _task in selected) + '</fieldset></details>')
+                         for key, label, _task in selected) + '</fieldset></details>') if include_model_picker else ""
 
     briefs = {task.get("brief") for _key, _label, task in available
               if isinstance(task.get("brief"), str)}
@@ -137,6 +138,88 @@ def render_arena(
             f'<p class="pramaan-same-brief-prompt">{brief}</p>'
             '<p>Attempts replay saved records; marks show geometric-check outcomes.</p>'
               + selector + '<div class="pramaan-arena-grid">' + "".join(cards) + '</div></section>')
+
+
+ARENA_PICKER_TASK_IDS = (
+    "hp_kinnauri-shawl-geometric-border-easy-8",
+    "tn_kolam-easy-22",
+    "gj_bandhani-easy-6",
+    "jh_sohrai-khovar-wall-painting-easy-9",
+    "mz_mizo-puanchei-easy-16",
+    "pb_phulkari-and-bagh-counted-thread-embroidery-easy-19",
+)
+
+
+def render_arena_picker(
+    index: dict | None,
+    arm_documents: dict[str, dict],
+    suite_tasks: list[dict],
+    *,
+    suite_id: str,
+    suite_sha256: str,
+    replay_prompt_id: str,
+    selected_prompt_id: str,
+    selected_model_keys: list[str] | None = None,
+    task_backgrounds: dict[str, str] | None = None,
+) -> str:
+    """Render a small set of saved same-brief Arenas and switch between them locally."""
+    tasks_by_id = {task.get("id"): task for task in suite_tasks
+                   if isinstance(task, dict) and isinstance(task.get("id"), str)}
+    choices = [(task_id, tasks_by_id[task_id]) for task_id in ARENA_PICKER_TASK_IDS
+               if task_id in tasks_by_id]
+    if not choices:
+        return '<section class="pramaan-arena" data-testid="arena"><p role="status">No pre-rendered example briefs are available.</p></section>'
+    task_ids = {task_id for task_id, _task in choices}
+    active_id = selected_prompt_id if selected_prompt_id in task_ids else ARENA_PICKER_TASK_IDS[0]
+    if active_id not in task_ids:
+        active_id = choices[0][0]
+    options = []
+    panels = []
+    for task_id, task in choices:
+        safe_id = html.escape(task_id, quote=True)
+        state = str(task.get("state") or "State")
+        level = str(task.get("level") or "").title()
+        brief_label = f"{state} · {level} brief" if level else f"{state} brief"
+        options.append(
+            f'<option value="{safe_id}" data-testid="arena-brief-option-{safe_id}"'
+            f'{" selected" if task_id == active_id else ""}>{html.escape(brief_label)}</option>'
+        )
+        panel = render_arena(
+            index, arm_documents, suite_id=suite_id, suite_sha256=suite_sha256,
+            prompt_id=task_id, replay_prompt_id=replay_prompt_id,
+            selected_model_keys=selected_model_keys, task_backgrounds=task_backgrounds,
+            include_model_picker=False,
+        )
+        panels.append(
+            f'<div class="pramaan-arena-brief-panel" data-arena-brief-panel="{safe_id}" '
+            f'data-testid="arena-brief-panel-{safe_id}"'
+            + ("" if task_id == active_id else " hidden") + ">" + panel + "</div>"
+        )
+    arms = index.get("arms") if isinstance(index, dict) and isinstance(index.get("arms"), list) else []
+    selected = set(selected_model_keys or [])
+    selected.add("beam-hf")
+    model_options = []
+    for arm in arms:
+        if not isinstance(arm, dict):
+            continue
+        key = arm.get("key")
+        if not isinstance(key, str) or not _ARM_KEY.fullmatch(key):
+            continue
+        label = model_display_name(key, arm.get("label"))
+        model_options.append(
+            f'<label><input type="checkbox" data-arena-model-choice="{html.escape(key, quote=True)}"'
+            f'{" checked" if key in selected else ""}> {html.escape(label)}</label>'
+        )
+    model_picker = ('<details class="pramaan-arena-model-picker"><summary>Choose models to show</summary><fieldset>'
+                    + "".join(model_options) + "</fieldset></details>")
+    return (
+        '<section class="pramaan-arena-collection" data-testid="arena-brief-picker" '
+        'aria-label="Choose a saved comparison brief">'
+        '<label class="pramaan-arena-brief-select">Choose a brief'
+        '<select data-arena-brief-picker aria-label="Choose a saved comparison brief">'
+        + "".join(options) + '</select></label>'
+        + model_picker + '<div class="pramaan-arena-brief-panels">' + "".join(panels) + '</div></section>'
+    )
 
 
 def render_same_brief_wall(

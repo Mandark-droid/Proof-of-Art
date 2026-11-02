@@ -41,3 +41,25 @@ def accepted_pattern_is_low_visibility(attempt: object, background_colour: objec
     visible_pixels = sum(count for count, colour in counts if colour != background)
     visible_share = visible_pixels / total_pixels if total_pixels else 0.0
     return visible_share < MIN_VISIBLE_SHARE
+
+
+def accepted_visibility_counts(document: object, task_backgrounds: object) -> tuple[int, int] | None:
+    """Return low-visibility and accepted counts from a saved model gallery."""
+    tasks = document.get("tasks") if isinstance(document, dict) else None
+    if not isinstance(tasks, dict) or not isinstance(task_backgrounds, dict):
+        return None
+    low_visibility = accepted = 0
+    for task_id, task in tasks.items():
+        attempts = task.get("attempts") if isinstance(task, dict) else None
+        attempts = attempts if isinstance(attempts, list) else []
+        accepted_attempt = next((attempt for attempt in reversed(attempts)
+                                 if isinstance(attempt, dict) and attempt.get("passed") is True), None)
+        if accepted_attempt is None:
+            continue
+        background = task_backgrounds.get(task_id)
+        if (not isinstance(background, str) or not _HEX_COLOUR.fullmatch(background)
+                or not isinstance(accepted_attempt.get("tile_png_b64"), str)):
+            return None
+        accepted += 1
+        low_visibility += accepted_pattern_is_low_visibility(accepted_attempt, background)
+    return low_visibility, accepted

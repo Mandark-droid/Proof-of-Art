@@ -1,3 +1,5 @@
+assets/pramaan-mark.png filter=lfs diff=lfs merge=lfs -text
+assets/space-card.png filter=lfs diff=lfs merge=lfs -text
 assets/pramaan-mark.png -text
 assets/demo.gif -text
 assets/pramaan_beam_repair_walkthrough.gif -text

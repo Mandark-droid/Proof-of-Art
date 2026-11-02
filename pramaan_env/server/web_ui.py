@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import html
 import base64
+from functools import lru_cache
 from io import BytesIO
 import json
 from pathlib import Path
 from typing import Any
 
 import gradio as gr
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from pramaan.dsl import parse_pattern
 from pramaan.render import render
@@ -18,14 +19,89 @@ from pramaan.paths import resolve_project_root
 
 
 ROOT = resolve_project_root(__file__)
-PASSING_TASK_ID = "as_gamosa-red-on-white-border-and-motif-band-easy-2"
-PASSING_EXAMPLE = ROOT / "examples" / "beam_g4_as_gamosa_grid.pattern.json"
-FAILING_EXAMPLE = "{ this is intentionally not valid PatternDSL JSON"
+PASSING_TASK_ID = "hp_kinnauri-shawl-geometric-border-easy-8"
+REPLAY_RESULTS = ROOT / "benchmarks" / "results" / "eval-v2.1-beam-20261030.jsonl"
+UNREADABLE_EXAMPLE = "{ this is intentionally not valid PatternDSL JSON"
+
+
+@lru_cache(maxsize=1)
+def _load_saved_kinnauri_examples() -> tuple[str, str, str]:
+    """Return the saved Beam first and third candidates for the Kinnauri task."""
+    for line in REPLAY_RESULTS.read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("prompt_id") != PASSING_TASK_ID or row.get("model_key") != "beam-hf":
+            continue
+        attempts = row.get("attempts", [])
+        first = next((item for item in attempts if item.get("index") == 1), None)
+        third = next((item for item in attempts if item.get("index") == 3), None)
+        if first and third and isinstance(first.get("candidate"), dict) and isinstance(third.get("candidate"), dict):
+            return (
+                PASSING_TASK_ID,
+                json.dumps(first["candidate"], ensure_ascii=False),
+                json.dumps(third["candidate"], ensure_ascii=False),
+            )
+    raise FileNotFoundError(f"saved Beam Kinnauri replay is missing from {REPLAY_RESULTS}")
+
+
+_, FAILING_EXAMPLE, PASSING_EXAMPLE = _load_saved_kinnauri_examples()
+
+
+def _witness_markers(checks: list[dict[str, Any]]) -> list[dict[str, int]]:
+    """Extract in-bounds witness coordinates from a verifier check result."""
+    markers: list[dict[str, int]] = []
+    for check in checks:
+        if check.get("status") != "FAIL":
+            continue
+        witness = check.get("counterexample") or check.get("witness") or {}
+        for key in ("original", "transformed"):
+            point = witness.get(key)
+            if isinstance(point, (list, tuple)) and len(point) == 2:
+                x, y = point
+                if isinstance(x, int) and isinstance(y, int) and 0 <= x < 64 and 0 <= y < 64:
+                    markers.append({"x": x, "y": y})
+    return markers
+
+
+def _render_pattern(pattern_json: str, witness_markers: list[dict[str, int]] | None = None) -> str:
+    """Render a submitted DSL pattern and optional replay-derived witness rings."""
+    if not isinstance(pattern_json, str) or len(pattern_json.encode("utf-8")) > 20_000:
+        return ""
+    try:
+        pattern = parse_pattern(pattern_json)
+        _masks, grid = render(pattern)
+        palette = [tuple(int(color[index:index + 2], 16) for index in (1, 3, 5)) for color in pattern.palette]
+        image = Image.new("RGB", (64, 64))
+        image.putdata([palette[int(index)] for index in grid.flat])
+        image = image.resize((384, 384), Image.Resampling.NEAREST)
+        if witness_markers:
+            draw = ImageDraw.Draw(image)
+            for marker in witness_markers:
+                x, y = marker["x"] * 6 + 3, marker["y"] * 6 + 3
+                draw.ellipse((x - 9, y - 9, x + 9, y + 9), outline=(236, 72, 153), width=3)
+        buffer = BytesIO()
+        image.save(buffer, format="PNG", optimize=True)
+        return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    except (ValueError, TypeError, IndexError):
+        return ""
+
+
+def _render_preview_request(request_json: str) -> str:
+    """Render the one-argument Gradio server-function payload and its witness."""
+    try:
+        request = json.loads(request_json)
+        if not isinstance(request, dict):
+            return ""
+        pattern_json = request.get("pattern_json")
+        witness = request.get("witness")
+        markers = _witness_markers([{"status": "FAIL", "counterexample": witness}]) if witness else None
+        return _render_pattern(pattern_json, markers)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return ""
 
 _PYTHON_SNIPPET = '''import requests
 
 base = "https://kshitijthakkar-pramaan-proof-of-art.hf.space"
-requests.post(f"{base}/web/reset", json={"task_id": "as_gamosa-red-on-white-border-and-motif-band-easy-2"}).raise_for_status()
+requests.post(f"{base}/web/reset", json={"task_id": "hp_kinnauri-shawl-geometric-border-easy-8"}).raise_for_status()
 result = requests.post(f"{base}/web/step", json={"action": {"pattern_json": open("design.pattern.json").read()}}).json()
 print("reward:", result["reward"], "done:", result["done"])
 '''
@@ -66,7 +142,7 @@ html,body{width:100%;min-width:0}body,.gradio-container{width:100%;min-width:0;m
   <a href="/studio/" aria-label="Open Pramaan Studio">Studio home ↑</a></header>
   <section class="poa-legend" aria-label="Reward guide">
     <div><b class="poa-red">0 · Rejected</b>Parse failure, truncated input, or an invalid verifier report.</div>
-    <div><b class="poa-gold">0 &lt; reward &lt; 1 · Partial</b>A valid design passes some hard checks; the observation lists failures.</div>
+    <div><b class="poa-gold">0.2 to under 0.8 · Partial</b>A valid design passes some hard checks; the observation lists failures.</div>
     <div><b class="poa-green">1.0 · Proven</b>Every hard check passes; the environment returns a certificate.</div>
   </section>
   <section class="poa-panel poa-task"><div class="poa-kicker">Current challenge</div><div id="poa-brief" aria-live="polite">Loading a replay-verified example…</div></section>
@@ -74,12 +150,15 @@ html,body{width:100%;min-width:0}body,.gradio-container{width:100%;min-width:0;m
     <div class="poa-panel"><label class="poa-label" for="poa-pattern">PatternDSL JSON</label>
       <textarea id="poa-pattern" class="poa-pattern" spellcheck="false" aria-label="PatternDSL JSON"></textarea>
       <div class="poa-actions"><button id="poa-pass" class="poa-btn" type="button">Load example</button>
-        <button id="poa-fail" class="poa-btn secondary" type="button">Load a failing example</button>
+        <button id="poa-fail" class="poa-btn secondary" type="button">Load a symmetry failure</button>
+        <button id="poa-unreadable" class="poa-btn secondary" type="button">Load an unreadable example</button>
         <button id="poa-reset" class="poa-btn secondary" type="button">Reset</button>
         <button id="poa-run" class="poa-btn gold" type="button">Run one verifier step</button></div>
     </div>
     <div class="poa-panel poa-result"><div class="poa-kicker">Verifier result</div>
       <div id="poa-status" class="poa-status" role="status" aria-live="polite">Connecting to the OpenEnv checker…</div>
+      <label class="poa-label" for="poa-reward-meter">Reward</label><meter id="poa-reward-meter" min="0" max="1" value="0">0</meter>
+      <p>Attempt <span id="poa-attempt">—</span> · Episode done: <span id="poa-done">—</span></p>
       <img id="poa-preview" class="poa-preview" alt="Rendered pattern preview" hidden>
       <h3>Checks</h3><ul id="poa-checks" class="poa-checks"><li>Waiting for a verifier step.</li></ul>
       <details class="poa-details"><summary>Raw observation JSON</summary><pre id="poa-observation">Waiting for the first observation.</pre></details></div>
@@ -95,6 +174,7 @@ _JS = r'''(async () => {
   root.dataset.ready = "true";
   const passing = __PASSING_PATTERN__;
   const failing = __FAILING_PATTERN__;
+  const unreadable = __UNREADABLE_PATTERN__;
   const taskId = __PASSING_TASK_ID__;
   const input = root.querySelector("#poa-pattern");
   const brief = root.querySelector("#poa-brief");
@@ -102,6 +182,9 @@ _JS = r'''(async () => {
   const output = root.querySelector("#poa-observation");
   const preview = root.querySelector("#poa-preview");
   const checks = root.querySelector("#poa-checks");
+  const meter = root.querySelector("#poa-reward-meter");
+  const attempt = root.querySelector("#poa-attempt");
+  const done = root.querySelector("#poa-done");
   const show = (result) => {
     const obs = result?.observation || {};
     brief.textContent = [obs.state, obs.tradition_id, obs.brief].filter(Boolean).join(" · ");
@@ -120,14 +203,18 @@ _JS = r'''(async () => {
       checks.append(item);
     }
     const reward = result?.reward;
+    meter.value = typeof reward === "number" ? reward : 0;
+    attempt.textContent = obs.attempt ?? "—";
+    done.textContent = String(Boolean(result?.done));
     if (reward === 1) status.textContent = `Verified · reward ${reward.toFixed(1)} · certificate issued · attempt ${obs.attempt}/3`;
-    else if (reward === 0) status.textContent = `Not verified · reward 0 · inspect the parse error or counterexample · attempt ${obs.attempt}/3`;
+    else if (reward === 0) status.textContent = `Not verified · Reward 0 · inspect the parse error or counterexample · attempt ${obs.attempt}/3`;
     else if (typeof reward === "number") status.textContent = `Partial reward ${reward.toFixed(3)} · revise the failed checks · attempt ${obs.attempt}/3`;
     else status.textContent = `Episode ready · ${obs.task_id || "task loaded"} · submit a design for a verifier result`;
   };
-  const reset = async () => {
+  const reset = async (pattern = passing) => {
     status.textContent = "Resetting the episode…";
     const result = await server.reset_episode(taskId);
+    input.value = pattern;
     show(result);
     return result;
   };
@@ -137,19 +224,25 @@ _JS = r'''(async () => {
   });
   root.querySelector("#poa-fail").addEventListener("click", async () => {
     input.value = failing;
-    try { await reset(); status.textContent = "Failing example loaded. Run one step to see the parse failure and reward 0."; }
+    try { await reset(failing); status.textContent = "Saved Beam attempt 1 loaded. Run one step to inspect the symmetry witness and partial reward."; }
     catch (error) { status.textContent = `Reset failed: ${error}`; }
+  });
+  root.querySelector("#poa-unreadable").addEventListener("click", () => {
+    input.value = unreadable;
+    status.textContent = "Unreadable example loaded. Run one verifier step to see reward 0.";
   });
   root.querySelector("#poa-reset").addEventListener("click", async () => {
     input.value = passing;
-    try { await reset(); } catch (error) { status.textContent = `Reset failed: ${error}`; }
+    try { await reset(passing); } catch (error) { status.textContent = `Reset failed: ${error}`; }
   });
   root.querySelector("#poa-run").addEventListener("click", async () => {
     status.textContent = "Checking the design…";
     try {
       const result = await server.run_step(input.value);
       show(result);
-      const image = await server.render_pattern(input.value);
+      const witness = (result?.observation?.checks || []).some((check) => check.status === "FAIL")
+        ? (result.observation.checks.find((check) => check.status === "FAIL")?.counterexample || null) : null;
+      const image = await server.render_pattern(JSON.stringify({pattern_json: input.value, witness}));
       if (image) { preview.src = image; preview.hidden = false; }
       else { preview.removeAttribute("src"); preview.hidden = true; }
     } catch (error) { status.textContent = `Step failed: ${error}`; }
@@ -170,6 +263,7 @@ def _markup() -> str:
 def _javascript(passing_pattern: str) -> str:
     return (_JS.replace("__PASSING_PATTERN__", json.dumps(passing_pattern))
             .replace("__FAILING_PATTERN__", json.dumps(FAILING_EXAMPLE))
+            .replace("__UNREADABLE_PATTERN__", json.dumps(UNREADABLE_EXAMPLE))
             .replace("__PASSING_TASK_ID__", json.dumps(PASSING_TASK_ID)))
 
 
@@ -183,7 +277,7 @@ def build_pramaan_web(
 ) -> gr.Blocks:
     """Build a custom HTML playground backed by OpenEnv's session manager."""
     del action_fields, metadata, is_chat_env, quick_start_md
-    passing_pattern = PASSING_EXAMPLE.read_text(encoding="utf-8")
+    passing_pattern = PASSING_EXAMPLE
 
     async def reset_episode(task_id: str = PASSING_TASK_ID) -> dict[str, Any]:
         return await web_manager.reset_environment({"task_id": task_id})
@@ -191,24 +285,8 @@ def build_pramaan_web(
     async def run_step(pattern_json: str) -> dict[str, Any]:
         return await web_manager.step_environment({"pattern_json": pattern_json or ""})
 
-    def render_pattern(pattern_json: str) -> str:
-        """Render submitted DSL as a small PNG data URL; never execute model output."""
-        if not isinstance(pattern_json, str) or len(pattern_json.encode("utf-8")) > 20_000:
-            return ""
-        try:
-            pattern = parse_pattern(pattern_json)
-            _masks, grid = render(pattern)
-            palette = [tuple(int(color[index:index + 2], 16) for index in (1, 3, 5))
-                       for color in pattern.palette]
-            pixels = [palette[int(index)] for index in grid.flat]
-            image = Image.new("RGB", (64, 64))
-            image.putdata(pixels)
-            image = image.resize((384, 384), Image.Resampling.NEAREST)
-            buffer = BytesIO()
-            image.save(buffer, format="PNG", optimize=True)
-            return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
-        except (ValueError, TypeError, IndexError):
-            return ""
+    def render_pattern(request_json: str) -> str:
+        return _render_preview_request(request_json)
 
     with gr.Blocks(title=title) as blocks:
         gr.HTML(

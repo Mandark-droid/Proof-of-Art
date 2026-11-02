@@ -1,0 +1,37 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Replay built-in example certificate
+        run: python -m pramaan.verify --design examples/ajrakh_starfield.pattern.json --certificate examples/ajrakh_starfield.certificate.json --json
+      - name: Replay all built-in examples
+        run: python scripts/check_builtin_examples.py
+      - name: Audit public Beam benchmark candidates
+        run: python scripts/check_benchmark_results.py benchmarks/data/beam-hf-shared-first-v2.jsonl --model beam-hf --require-complete
+      - name: Scan publishable files
+        run: python scripts/check_public_tree.py
+      - name: Verify offline Gradio app configuration
+        run: python scripts/check_app_configuration.py
+      - name: Compile Python sources
+        run: python -m compileall -q pramaan app.py tests scripts benchmarks
