@@ -6,6 +6,7 @@ import uvicorn
 from fastapi import Request
 from fastapi.responses import FileResponse, RedirectResponse
 from openenv.core.env_server.http_server import create_app
+from starlette.middleware.gzip import GZipMiddleware
 
 from pramaan.app import PRAMAAN_CSS, build_demo, create_brand_theme
 from pramaan.paths import resolve_project_root
@@ -70,6 +71,13 @@ async def normalize_public_mount_paths(request: Request, call_next):
             target += "?" + query.decode("latin-1")
         return RedirectResponse(target, status_code=307)
     return await call_next(request)
+
+
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=1024,
+    exclude_content_types=("text/event-stream",),
+)
 
 
 app = gr.mount_gradio_app(

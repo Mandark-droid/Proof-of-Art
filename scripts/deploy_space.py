@@ -31,7 +31,7 @@ ALLOWED_FILES = (
     "scripts/push_hub_datasets.py", "scripts/update_hub_cards.py",
 )
 ALLOWED_DIRS = (
-    "assets", "benchmarks/data", "benchmarks/suites", "examples", "pramaan",
+    "assets", "media", "benchmarks/data", "benchmarks/suites", "examples", "pramaan",
     "pramaan_env", "server",
 )
 HUB_EMAIL = "kshitijthakkar" + "@users.noreply.huggingface.co"
@@ -238,6 +238,7 @@ def deploy(source: Path, paths: list[Path], stage: Path) -> None:
             "git", "clone", "--quiet", "--depth=1", "--single-branch", "--branch", "main",
             remote_url, str(clone),
         ], check=True, env=env)
+        subprocess.run(["git", "-C", str(clone), "lfs", "install", "--local"], check=True, env=env)
         head = subprocess.run(
             ["git", "-C", str(clone), "rev-parse", "HEAD"],
             check=True, capture_output=True, text=True,
