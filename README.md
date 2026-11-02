@@ -45,6 +45,12 @@ The project includes a Gradio Space, a sourced traditions registry covering 36 s
 
 ## Examples
 
+### Pramaan demo
+
+![Pramaan demo: replayable geometric designs checked by the verifier](assets/pramaan-demo-v7.gif)
+
+[Watch the demo video](media/pramaan-demo-v7.mp4) · [Poster](media/pramaan-demo-v7-poster.png)
+
 ### A replay with a visible counterexample
 
 This Himachal Pradesh Kinnauri replay shows three Beam attempts from one saved benchmark trajectory. The first two fail the symmetry check; the third passes every check. The witness marks identify the pixel mismatch on attempt 1, and the rewards are read from the saved run.
