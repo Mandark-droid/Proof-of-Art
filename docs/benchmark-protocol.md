@@ -2,13 +2,13 @@
 
 *AI drew it. Math checked it.* Proof of art that you can verify.
 
-Pramaan's published comparison is the completed `eval-v2.1` run. It evaluates ten models on the same 72 frozen tasks across 36 Indian states and Union Territories. The suite digest is `b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a`; the public export contains 720 model-task rows.
+Pramaan's published comparison is the completed `eval-v2.1` run. It evaluates eleven models on the same 72 frozen tasks across 36 Indian states and Union Territories. The suite digest is `b04b568d84d2568fd261789819d4e925844dba5afe9c5962275ee571d84e4e3a`; the public export contains 792 model-task rows.
 
 ## Shared evaluation
 
-Every model received the same ordered task IDs, initial prompt, deterministic verifier, 4,096-token output ceiling, and maximum of three proposals per task. Provider retries were disabled. All ten models completed all 72 tasks. The verifier and result aggregation path were shared. Provider-specific sampling parameters are recorded in each trajectory because the providers do not expose identical controls.
+Every model received the same ordered task IDs, initial prompt, deterministic verifier, 4,096-token output ceiling, and maximum of three proposals per task. Provider retries were disabled. All eleven models completed all 72 tasks. The verifier and result aggregation path were shared. Provider-specific sampling parameters are recorded in each trajectory because the providers do not expose identical controls.
 
-The roster is Beam; Claude Fable 5.1, Haiku 5.5, Opus 5.5, and Sonnet 5.5; DeepSeek V4 Flash; GPT-6 Astra and Luna; and GPT-6.1 Sol and Terra. Scores use all 72 task IDs. Per-model pass@1/pass@3, token use, latency, estimated rate-card cost, and spend limits are reported in [the benchmark results](../benchmarks/README.md).
+The roster is Beam; Claude Fable 5.1, Fable 5.2, Haiku 5.5, Opus 5.5, and Sonnet 5.5; DeepSeek V4 Flash; GPT-6 Astra and Luna; and GPT-6.1 Sol and Terra. Scores use all 72 task IDs. Per-model pass@1/pass@3, token use, latency, estimated rate-card cost, and spend limits are reported in [the benchmark results](../benchmarks/README.md).
 
 ## Recorded results and interpretation
 
@@ -16,7 +16,7 @@ The Beam baseline scored 17/72 pass@1 (23.6%) and 47/72 pass@3 (65.3%). Its traj
 
 One frozen task, `py_kolam-as-practised-in-puducherry-easy-35`, requests one loop on a 2×2 D2 Kolam grid. Exhaustive enumeration shows the profile permits zero or two loops, never one. It remains in the shared denominator for every model, has no reference pattern, and was not rerun. The reference set therefore contains 71 verified designs for the other tasks.
 
-The geometric checker measures declared shapes and constraints; it does not measure whether the drawing is visibly legible. Of 470 accepted designs, 44 show little or no visible ink. A geometric pass also does not establish cultural authenticity, physical print behavior, or continuous vector properties. Jaali minimum-web thickness is an approximate raster proxy; other assurance labels are retained in the verifier reports.
+The geometric checker measures declared shapes and constraints; it does not measure whether the drawing is visibly legible. Of 536 accepted designs, 51 show little or no visible ink. A geometric pass also does not establish cultural authenticity, physical print behavior, or continuous vector properties. Jaali minimum-web thickness is an approximate raster proxy; other assurance labels are retained in the verifier reports.
 
 ## Community submissions
 

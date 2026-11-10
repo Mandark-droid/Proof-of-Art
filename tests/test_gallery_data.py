@@ -139,9 +139,9 @@ def test_arm_summary_counts_normalization_actions_and_publishes_denominator():
     }
 
 
-def test_gallery_summary_guard_checks_all_ten_models_and_rejects_count_drift():
+def test_gallery_summary_guard_checks_all_eleven_models_and_rejects_count_drift():
     keys = [
-        "beam-hf", "claude-fable-5-1", "claude-haiku-5-5", "claude-opus-5-5",
+        "beam-hf", "claude-fable-5-1", "claude-fable-5-2", "claude-haiku-5-5", "claude-opus-5-5",
         "claude-sonnet-5-5", "deepseek-v4.1-flash", "gpt-6-astra", "gpt-6-luna",
         "gpt-6.1-sol", "gpt-6.1-terra",
     ]

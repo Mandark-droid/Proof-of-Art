@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import pytest
 
-from benchmarks.run import (AnthropicMessagesClient, BudgetExceeded, CometOpenAICompatibleClient,
+from benchmarks.run import (AUTHORIZED_MODEL_CAPS_USD, AnthropicMessagesClient, BudgetExceeded, CometOpenAICompatibleClient,
                             CostLedger, GuardedCompletionClient, ModelPrice, SecretRedactingClient, load_model_registry,
                             make_client, paid_run_freeze, preflight_cost, preflight_selected_models, run_prompt,
                             save_or_validate_paid_freeze)
@@ -222,7 +222,7 @@ def test_eval_v21_stages_small_leaderboard_and_plain_json_summary(tmp_path):
     root = Path(__file__).parents[1]
     summary = root / "benchmarks/data/eval-v2.1-summary.json"
     rows = _leaderboard_rows(summary)
-    assert len(rows) == 10
+    assert len(rows) == 11
     fable = next(row for row in rows if row["model"] == "claude-fable-5-1")
     assert fable["evaluated"] == 72
     assert fable["cap_usd"] == 22.0
@@ -232,7 +232,7 @@ def test_eval_v21_stages_small_leaderboard_and_plain_json_summary(tmp_path):
 
     compact = tmp_path / "compact.jsonl"
     trajectories = tmp_path / "trajectories.jsonl"
-    model_keys = ["beam-hf", "claude-fable-5-1", "claude-haiku-5-5", "claude-opus-5-5",
+    model_keys = ["beam-hf", "claude-fable-5-1", "claude-fable-5-2", "claude-haiku-5-5", "claude-opus-5-5",
                   "claude-sonnet-5-5", "deepseek-v4.1-flash", "gpt-6-astra", "gpt-6-luna",
                   "gpt-6.1-sol", "gpt-6.1-terra"]
     compact_rows, trajectory_rows = [], []
@@ -253,7 +253,7 @@ def test_eval_v21_stages_small_leaderboard_and_plain_json_summary(tmp_path):
     card = (stage / "README.md").read_text(encoding="utf-8")
     staged_rows = [json.loads(line) for line in
                    (stage / "leaderboard/test.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert len(staged_rows) == 10
+    assert len(staged_rows) == 11
     assert (stage / "summary/eval-v2.1-summary.json").is_file()
     assert not (stage / "summary/test.jsonl").exists()
     assert "config_name: leaderboard" in card
@@ -278,7 +278,7 @@ def test_eval_v21_publish_gate_rejects_beam_only_or_compact_as_trajectories(tmp_
                                            "metadata": {}, "verifier_report": {}}]})
     compact.write_text("".join(json.dumps(row) + "\n" for row in compact_rows), encoding="utf-8")
     trajectories.write_text("".join(json.dumps(row) + "\n" for row in trajectory_rows), encoding="utf-8")
-    with pytest.raises(ValueError, match="720 rows across ten models"):
+    with pytest.raises(ValueError, match="792 rows across 11 models"):
         validate_eval_v21_pair(compact, trajectories)
 
 
@@ -1792,7 +1792,8 @@ def test_paid_models_are_available_only_to_explicit_paid_run_registry():
             "gpt-6-luna", "gpt-6-astra"}.issubset(paid)
     assert paid["claude-fable-5-1"]["model_id"] == "claude-fable-5-1"
     assert all(item["budget_group"] == item["key"] for item in paid.values() if item.get("budget_provider"))
-    assert all(item["budget"]["cap_usd"] == 10.0 for item in paid.values() if item.get("budget_provider"))
+    assert all(item["budget"]["cap_usd"] == 10.0 for key, item in paid.items()
+               if item.get("budget_provider") and key not in AUTHORIZED_MODEL_CAPS_USD)
     assert paid["deepseek-v4.1-flash"]["budget"]["cap_usd"] == 10.0
     from benchmarks.run import output_token_limit
     assert all(output_token_limit(item["request_params"]) == 4096
@@ -2234,8 +2235,8 @@ def test_approved_community_model_set_matches_user_budget_decision():
     from scripts.push_hub_datasets import COMMUNITY_MODEL_PROVIDERS
 
     expected_paid = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5",
-                     "claude-fable-5-1", "deepseek-v4.1-flash", "gpt-6.1-sol", "gpt-6.1-terra",
-                     "gpt-6-luna", "gpt-6-astra"}
+                     "claude-fable-5-1", "claude-fable-5-2", "deepseek-v4.1-flash", "gpt-6.1-sol",
+                     "gpt-6.1-terra", "gpt-6-luna", "gpt-6-astra"}
     expected_community = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5",
                           "claude-fable-5-1", "deepseek-v4.1-flash"}
     assert {item["key"] for item in runner.PAID_MODELS} == expected_paid
@@ -2471,3 +2472,12 @@ def test_paid_resume_accepts_only_a_uniform_input_guard_increase(tmp_path):
     assert manifest["freeze"] == old_freeze
     assert manifest["effective_input_guard_bytes_by_model"] == {"claude-sonnet-5-5": 100_000}
     assert manifest["input_guard_updates"][-1]["from_bytes_by_model"] == {"claude-sonnet-5-5": 16_000}
+
+
+def test_only_user_authorized_arms_exceed_the_default_cap():
+    from benchmarks import run as runner
+
+    caps = {item["key"]: item["budget"]["cap_usd"] for item in runner.PAID_MODELS}
+    raised = {key for key, cap in caps.items() if cap > runner.MODEL_SPEND_CAP_USD}
+    assert raised == {"claude-fable-5-2"} == set(runner.AUTHORIZED_MODEL_CAPS_USD)
+    assert caps["claude-fable-5-2"] == 22.0

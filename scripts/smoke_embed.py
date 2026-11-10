@@ -70,8 +70,8 @@ def validate_visitor_panels(*, proof_step_count: int, repaired_tile_loaded: bool
         raise AssertionError(f"Home Proof Replay must expose seven replay/proof steps; found {proof_step_count}")
     if not repaired_tile_loaded:
         raise AssertionError("Home Proof Replay repaired tile is missing or not loaded")
-    if len(model_keys) != 10 or len(set(model_keys)) != 10:
-        raise AssertionError(f"Models must show ten unique official model rows; found {model_keys!r}")
+    if len(model_keys) != 11 or len(set(model_keys)) != 11:
+        raise AssertionError(f"Models must show eleven unique official model rows; found {model_keys!r}")
     if not fable_cap_visible:
         raise AssertionError("Models must show Claude Fable 5.1 with 72/72 coverage and its authorized USD 22 cap")
     if models_signin_bar_present:

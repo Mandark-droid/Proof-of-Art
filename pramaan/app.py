@@ -913,8 +913,11 @@ def _benchmark_protocol_note(summary: dict | None) -> str:
         exceptions = [(label, cap) for label, cap in paid_caps if cap != common_cap]
         cap_text = f"Each paid model had a USD {common_cap:g} cap"
         if exceptions:
+            labels_by_cap = {}
+            for label, cap in exceptions:
+                labels_by_cap.setdefault(cap, []).append(label)
             exception_text = ", ".join(
-                f"{label} at USD {cap:g}" for label, cap in exceptions
+                f"{' and '.join(labels)} at USD {cap:g}" for cap, labels in labels_by_cap.items()
             )
             cap_text += f", except {exception_text}"
         cap_text += ". "

@@ -124,12 +124,13 @@ The host, not the model, controls palette and constraint profile. Model output i
 
 ## Model benchmark
 
-The completed `eval-v2.1` comparison covers the same 72 task IDs for all ten models. Each run used the same deterministic verifier, a 4,096-token output ceiling, up to three proposals per task, zero provider retries, and the same input-size guard. Provider-specific request settings are recorded with the results; Anthropic, OpenAI-compatible, and Hugging Face endpoints do not expose identical sampling controls. The public evaluation export contains 720 model-task records, plus the leaderboard and certified reference data.
+The completed `eval-v2.1` comparison covers the same 72 task IDs for all eleven models. Each run used the same deterministic verifier, a 4,096-token output ceiling, up to three proposals per task, zero provider retries, and the same input-size guard. Provider-specific request settings are recorded with the results; Anthropic, OpenAI-compatible, and Hugging Face endpoints do not expose identical sampling controls. The public evaluation export contains 792 model-task records, plus the leaderboard and certified reference data.
 
 | Model | Tasks | Pass@1 | Pass@3 | Mean tokens / task | Mean request latency | Rate-card spend | Spend cap |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Beam | 72/72 | 23.6% | 65.3% | 7.9k | 7.8 s | $0.44 | — |
 | Claude Fable 5.1 | 72/72 | 41.7% | 87.5% | 8.8k | 58.7 s | $20.63 | $22 |
+| Claude Fable 5.2 | 72/72 | 59.7% | 91.7% | 6.7k | 31.9 s | $11.46 | $22 |
 | Claude Haiku 5.5 | 72/72 | 22.2% | 54.2% | 12.9k | 36.9 s | $0.34 | $10 |
 | Claude Opus 5.5 | 72/72 | 8.3% | 90.3% | 9.3k | 36.6 s | $8.97 | $10 |
 | Claude Sonnet 5.5 | 72/72 | 8.3% | 69.4% | 9.8k | 26.8 s | $4.49 | $10 |
@@ -141,11 +142,11 @@ The completed `eval-v2.1` comparison covers the same 72 task IDs for all ten mod
 
 Beam's saved first-attempt outcomes were 17 passes, 42 readable designs that broke a rule, and 13 unreadable proposals; 47 of 72 tasks passed within three proposals.
 
-The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink.
+The checker measures drawn shapes, not visibility: 51 of 536 accepted designs show little or no visible ink.
 
-Pass rates use all 72 frozen task IDs. Token and latency columns are per-task means from the recorded runs. Spend is an estimated rate-card ledger amount; provider invoices were unavailable. The table shows Fable's settled estimate ($20.63); its conservative exposure including pending reservations was $21.12 under the $22 cap. Each other paid arm used a $10 cap. These results are one observed run, not a confidence claim about future performance.
+Pass rates use all 72 frozen task IDs. Token and latency columns are per-task means from the recorded runs. Spend is an estimated rate-card ledger amount; provider invoices were unavailable. The table shows settled estimates. Fable 5.1's conservative exposure including pending reservations was $21.12 under its $22 cap; Fable 5.2, added on 10 November 2026 under the same frozen protocol, had a conservative exposure of $11.86 under its $22 cap. Each other paid arm used a $10 cap. These results are one observed run, not a confidence claim about future performance.
 
-**Beam baseline:** 23.6% passed on the first proposal; repair accepted 30 of 55 initial failures (54.5%); 65.3% passed within three proposals. [See how 10 models compare in the Space](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art#/leaderboard).
+**Beam baseline:** 23.6% passed on the first proposal; repair accepted 30 of 55 initial failures (54.5%); 65.3% passed within three proposals. [See how 11 models compare in the Space](https://huggingface.co/spaces/kshitijthakkar/pramaan-proof-of-art#/leaderboard).
 
 **Unsatisfiable task:** `py_kolam-as-practised-in-puducherry-easy-35` requests one loop on a 2×2 D2 Kolam grid. Exhaustive enumeration shows that this frozen profile permits either zero or two loops, never one. The prompt stays in the shared benchmark denominator for every model; it has no reference pattern and the paid results were not rerun. The reference dataset contains 71 verified designs for the other tasks.
 
@@ -225,7 +226,7 @@ def pramaan_reward(completions, task_id, **kwargs):
 
 ## Datasets
 
-The [eval-v2.1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1) contains the 72-task held-out suite across 36 states and Union Territories, with replay-verified results and accepted previews for ten models. Third-party benchmark records are evaluation-only and carry `training_eligible=false`.
+The [eval-v2.1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1) contains the 72-task held-out suite across 36 states and Union Territories, with replay-verified results and accepted previews for eleven models. Third-party benchmark records are evaluation-only and carry `training_eligible=false`.
 
 The published [train-v1 dataset](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-train-v1) has four exports: 339 SFT rows, 195 repair rows, 50 preference rows, and 144 trajectories. It is a historical prompt-suite snapshot and is separate from `eval-v2.1`. The corrected `train-v1.2` suite contains 144 sanitized briefs, including the Garo D2 opposite-edge mirror wording, but has not been evaluated or exported as training records.
 

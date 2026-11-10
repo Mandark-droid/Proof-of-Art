@@ -2426,14 +2426,14 @@ def test_leaderboard_exposes_anchored_sections_and_filterable_sortable_results(m
         assert removed not in models_panel
 
 
-def test_models_panel_uses_final_ten_model_summary_without_partial_rank_text():
+def test_models_panel_uses_final_eleven_model_summary_without_partial_rank_text():
     rendered_report = app.render_model_report(app._benchmark_summary())
     row_keys = __import__("re").findall(
         r'data-testid="model-report-row-([^\"]+)"', rendered_report,
     )
 
-    assert len(row_keys) == 10
-    assert len(set(row_keys)) == 10
+    assert len(row_keys) == 11
+    assert len(set(row_keys)) == 11
     assert "Not ranked" not in rendered_report
     assert "Claude Fable 5.1" in rendered_report
     assert "72 of 72 evaluated" in rendered_report
@@ -2580,10 +2580,10 @@ def test_build_with_it_protocol_note_and_methodology_read_saved_run_caps():
 
     assert note == (
         "Every model ran all 72 tasks with the same verifier, a 4,096-token cap and up to 3 proposals. "
-        "Each paid model had a USD 10 cap, except Claude Fable 5.1 at USD 22. "
+        "Each paid model had a USD 10 cap, except Claude Fable 5.1 and Claude Fable 5.2 at USD 22. "
         "Request settings differ by provider and are listed in Methodology."
     )
-    assert "spend cap USD 22" in methodology
+    assert methodology.count("spend cap USD 22") == 2
     assert methodology.count("spend cap USD 10") == 8
     assert "47 tasks" not in note
 

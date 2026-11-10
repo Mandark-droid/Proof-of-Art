@@ -15,11 +15,11 @@ def test_findings_strip_uses_saved_repairs_grammar_latency_and_visibility():
     assert 'data-testid="finding-repair-origins"' in rendered
     assert "25 of Beam’s 30 came from a readable design that broke a rule" in rendered
     assert "7 of Opus’s 59 did" in rendered
-    assert "Jaali had 9 accepted results out of 50 model-task results" in rendered
+    assert "Jaali had 12 accepted results out of 55 model-task results" in rendered
     assert "Beam averaged 7.8 s per request" in rendered
     assert "next fastest was 20.2 s" in rendered
-    assert "44 of 470 accepted designs show little or no visible ink" in rendered
-    assert "Claude Opus 5.5 61, Claude Fable 5.1 60, GPT-6 Astra 59, GPT-6.1 Sol 59" in rendered
+    assert "51 of 536 accepted designs show little or no visible ink" in rendered
+    assert "Claude Opus 5.5 61, Claude Fable 5.1 60, Claude Fable 5.2 59, GPT-6 Astra 59" in rendered
     assert "Published ranks stay as run" in rendered
 
 

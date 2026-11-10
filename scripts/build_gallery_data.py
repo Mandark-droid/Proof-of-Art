@@ -346,7 +346,7 @@ def _validate_gallery_summary(arms: list[dict[str, Any]], summary: dict[str, Any
     if not isinstance(summary_models, dict):
         raise ValueError("summary has no by_model mapping")
     gallery_models = {arm.get("key"): arm for arm in arms}
-    if len(gallery_models) != 10 or set(gallery_models) != set(summary_models):
+    if len(gallery_models) != 11 or set(gallery_models) != set(summary_models):
         raise ValueError(
             "gallery and summary model keys differ "
             f"(gallery={sorted(gallery_models)}, summary={sorted(summary_models)})"

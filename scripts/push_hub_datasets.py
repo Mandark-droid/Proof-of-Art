@@ -48,6 +48,8 @@ COMMUNITY_API_STYLES = {
 }
 MAX_COMMUNITY_UPLOAD_BYTES = 20_000_000
 OPENENV_REPO = "kshitijthakkar/pramaan-proof-of-art-openenv"
+EVAL_V21_MODEL_COUNT = 11
+EVAL_V21_TASK_COUNT = 72
 COMMUNITY_REPO = "kshitijthakkar/pramaan-community-runs"
 COMMUNITY_WRITE_TOKEN_ENV = "HF_COMMUNITY_WRITE_TOKEN"
 COMMUNITY_PROVIDER_HOSTS = {
@@ -822,7 +824,7 @@ def enforce_data_role(path: Path, repository_kind: str) -> None:
 
 
 def validate_eval_v21_rows(path: Path, *, trajectories: bool) -> dict[str, int]:
-    """Require the complete ten-model release and the correct row shape."""
+    """Require the complete eleven-model release and the correct row shape."""
     rows = read_jsonl(path)
     counts: dict[str, int] = {}
     seen: set[tuple[str, str]] = set()
@@ -852,8 +854,11 @@ def validate_eval_v21_rows(path: Path, *, trajectories: bool) -> dict[str, int]:
                     raise ValueError(f"{path}:{index}: trajectory call lacks request, model metadata, or verifier evidence")
         elif not isinstance(row.get("attempts"), list) or "calls" in row:
             raise ValueError(f"{path}:{index}: expected compact attempts without trajectory calls")
-    if len(rows) != 720 or len(counts) != 10 or any(count != 72 for count in counts.values()):
-        raise ValueError(f"{path}: expected 720 rows across ten models (72 each), got {len(rows)} rows: {counts}")
+    expected_rows = EVAL_V21_MODEL_COUNT * EVAL_V21_TASK_COUNT
+    if (len(rows) != expected_rows or len(counts) != EVAL_V21_MODEL_COUNT
+            or any(count != EVAL_V21_TASK_COUNT for count in counts.values())):
+        raise ValueError(f"{path}: expected {expected_rows} rows across {EVAL_V21_MODEL_COUNT} models "
+                         f"({EVAL_V21_TASK_COUNT} each), got {len(rows)} rows: {counts}")
     return dict(sorted(counts.items()))
 
 
@@ -927,6 +932,8 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
             )
         fable = merged["by_model"].get("claude-fable-5-1")
         fable_ledger = fable.get("cost_ledger") if fable else None
+        fable52 = merged["by_model"].get("claude-fable-5-2")
+        fable52_ledger = fable52.get("cost_ledger") if fable52 else None
         common_sha = merged.get("source_suite_digests", {}).get("eval-v2.1-common47", "unavailable")
         delta_sha = merged.get("source_suite_digests", {}).get("eval-v2.1-delta25", "unavailable")
         evaluation_version_note = (
@@ -936,10 +943,10 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
             "provider-reported billed cost was unavailable.\n\n"
             + (
                 "## Frozen cross-model report\n\n"
-                "Ten model arms were evaluated on the same 72 task records and verifier. The freeze sets a 4,096-token output cap, "
+                "Eleven model arms were evaluated on the same 72 task records and verifier. The freeze sets a 4,096-token output cap, "
                 "up to three proposals per task, and zero provider retries; provider-specific sampling settings are listed per row.\n\n"
                 + "\n".join(model_lines) + "\n\n"
-                "Claude and DeepSeek results were collected in two sittings: the shared common47 subset, then its exact delta25 complement. "
+                "Claude Haiku, Sonnet and Opus and DeepSeek results were collected in two sittings: the shared common47 subset, then its exact delta25 complement. "
                 "Together these subsets equal the canonical ordered 72-task suite. Rows retain their source `prompt_suite_sha256` and also "
                 f"record the canonical suite digest `{suite_digest}`; common47 digest `{common_sha}`, delta25 digest `{delta_sha}`.\n\n"
                 + (
@@ -947,15 +954,21 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
                     f"{fable_ledger['conservative_exposure_usd']:.6f}; provider-billed cost was unavailable.\n\n"
                     if fable_ledger else ""
                 )
+                + (
+                    "Claude Fable 5.2 was added on 2026-11-10 with the same frozen protocol and completed 72/72 under its USD 22 cap. "
+                    f"Conservative rate-card exposure was USD {fable52_ledger['conservative_exposure_usd']:.6f}; "
+                    "provider-billed cost was unavailable.\n\n"
+                    if fable52_ledger else ""
+                )
                 + "Each other paid model arm had an independent USD 10 cap. The full aggregate summary is available as "
                 "[`summary/eval-v2.1-summary.json`](https://huggingface.co/datasets/kshitijthakkar/pramaan-proof-of-art-eval-v2.1/blob/main/summary/eval-v2.1-summary.json).\n\n"
                 + "Third-party model outputs are evaluation-only, carry `data_role=benchmark_evaluation` and "
                 "`training_eligible=false`, and remain governed by their providers' terms. They are not training data.\n\n"
-                if fable_ledger and len(merged["by_model"]) == 10 else ""
+                if fable_ledger and fable52_ledger and len(merged["by_model"]) == EVAL_V21_MODEL_COUNT else ""
             )
         )
         visibility_rows = (
-            ("Beam", 3, 8, 47, 8), ("Claude Fable 5.1", 2, 3, 63, 3),
+            ("Beam", 3, 8, 47, 8), ("Claude Fable 5.1", 2, 3, 63, 3), ("Claude Fable 5.2", 6, 7, 66, 4),
             ("Claude Haiku 5.5", 1, 2, 39, 2), ("Claude Opus 5.5", 1, 4, 65, 3),
             ("Claude Sonnet 5.5", 0, 1, 50, 1), ("DeepSeek V4.1 Flash", 1, 1, 7, 0),
             ("GPT-6 Astra", 8, 8, 67, 7), ("GPT-6 Luna", 2, 4, 9, 3),
@@ -964,7 +977,7 @@ def dataset_card(repository_kind: str, *, include_community: bool = False,
         visibility_note = (
             "## Visibility limitation\n\n"
             "The verifier checks declared geometric rules; it does not require visible ink. A read-only replay audit of saved results found "
-            "44 of 470 verifier-accepted PASS@3 designs have fewer than 2% of the 64-by-64 pixels differing from `background_index`: 37 are one solid colour and 7 have some ink but remain below the threshold. "
+            "51 of 536 verifier-accepted PASS@3 designs have fewer than 2% of the 64-by-64 pixels differing from `background_index`: 41 are one solid colour and 10 have some ink but remain below the threshold. "
             "The figures below disclose a rendering limitation; they do not revise the frozen validity scores or ranking.\n\n"
             "| Model | PASS@1 below 2% (accepted) | PASS@3 below 2% (accepted) | Solid at PASS@3 |\n"
             "|---|---:|---:|---:|\n"
@@ -1034,8 +1047,8 @@ def _leaderboard_rows(summary_path: Path) -> list[dict]:
     """Flatten the merged summary into small viewer-friendly rows."""
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     models = summary.get("by_model")
-    if not isinstance(models, dict) or len(models) != 10:
-        raise ValueError("eval-v2.1 leaderboard export requires all ten model arms")
+    if not isinstance(models, dict) or len(models) != EVAL_V21_MODEL_COUNT:
+        raise ValueError(f"eval-v2.1 leaderboard export requires all {EVAL_V21_MODEL_COUNT} model arms")
     rows = []
     for key, document in sorted(models.items()):
         overall = document.get("overall") or {}

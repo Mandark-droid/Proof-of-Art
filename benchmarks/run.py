@@ -35,6 +35,10 @@ from pramaan.budget import ModelCallBudget
 PALETTE = ["#172F4A", "#A84436", "#F4E5C5", "#262321"]
 BENCHMARK_VERSION = "pramaan-paired-shared-first-v2"
 MODEL_SPEND_CAP_USD = 10.0
+# Per-model cap raises the user authorized directly; every other arm keeps MODEL_SPEND_CAP_USD.
+AUTHORIZED_MODEL_CAPS_USD = {
+    "claude-fable-5-2": 22.0,  # 2026-11-10: user asked to complete all 72 eval-v2.1 tasks
+}
 DEFAULT_INPUT_TOKEN_OVERHEAD = 256
 
 
@@ -604,6 +608,14 @@ PAID_MODELS = [
      "pricing": {"currency": "USD", "per_million_tokens": {"input": 10., "output": 50.},
                  "source": "Anthropic first-party standard pricing",
                  "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-10-29"}},
+    {"key": "claude-fable-5-2", "provider": "Anthropic", "budget_provider": "anthropic",
+     "budget_group": "claude-fable-5-2",
+     "api_style": "anthropic-messages", "model_id": "claude-fable-5-2", "base_url": "https://api.anthropic.com",
+     "api_key_env": "ANTHROPIC_API_KEY", "request_params": {"max_tokens": 4096, "output_config": {"effort": "low"}},
+     "budget": {"cap_usd": AUTHORIZED_MODEL_CAPS_USD["claude-fable-5-2"], "max_input_bytes": 100000, "input_token_overhead": 256},
+     "pricing": {"currency": "USD", "per_million_tokens": {"input": 8., "output": 40.},
+                 "source": "Anthropic first-party standard pricing",
+                 "source_url": "https://platform.claude.com/docs/en/about-claude/pricing", "observed_at": "2026-11-10"}},
     {"key": "deepseek-v4.1-flash", "provider": "CometAPI", "budget_provider": "cometapi",
      "budget_group": "deepseek-v4.1-flash",
      "api_style": "openai-compatible-chat-completions", "model_id": "deepseek-v4.1-flash",
@@ -691,7 +703,7 @@ def load_model_registry(path, *, include_paid=False):
                     or budget["input_token_overhead"] < 0
                     or not isinstance(budget.get("cap_usd"), (int, float))
                     or isinstance(budget["cap_usd"], bool) or budget["cap_usd"] <= 0
-                    or budget["cap_usd"] > MODEL_SPEND_CAP_USD):
+                    or budget["cap_usd"] > AUTHORIZED_MODEL_CAPS_USD.get(key, MODEL_SPEND_CAP_USD)):
                 raise ValueError(f"budget settings are invalid for {key}")
             try:
                 output_limit = output_token_limit(entry["request_params"])

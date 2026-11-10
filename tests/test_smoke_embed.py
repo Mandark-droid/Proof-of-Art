@@ -58,7 +58,7 @@ def test_visitor_panel_smoke_accepts_complete_public_panels():
     validate_visitor_panels(
         proof_step_count=7,
         repaired_tile_loaded=True,
-        model_keys=[f"model-{index}" for index in range(10)],
+        model_keys=[f"model-{index}" for index in range(11)],
         fable_cap_visible=True,
         models_signin_bar_present=False,
         try_state="Gujarat",
@@ -68,7 +68,7 @@ def test_visitor_panel_smoke_accepts_complete_public_panels():
 
 
 def test_visitor_panel_smoke_rejects_partial_models():
-    with pytest.raises(AssertionError, match="ten unique official model rows"):
+    with pytest.raises(AssertionError, match="eleven unique official model rows"):
         validate_visitor_panels(
             proof_step_count=7,
             repaired_tile_loaded=True,
@@ -86,7 +86,7 @@ def test_visitor_panel_smoke_rejects_models_signin_bar():
         validate_visitor_panels(
             proof_step_count=7,
             repaired_tile_loaded=True,
-            model_keys=[f"model-{index}" for index in range(10)],
+            model_keys=[f"model-{index}" for index in range(11)],
             fable_cap_visible=True,
             models_signin_bar_present=True,
             try_state="Gujarat",

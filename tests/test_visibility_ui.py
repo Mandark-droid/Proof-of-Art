@@ -73,7 +73,7 @@ def test_visibility_limitation_is_in_models_and_readme():
     from pramaan.app import (_benchmark_summary, _home_suite_tasks, _load_gallery_arm_documents,
                              _load_gallery_index, render_model_report)
 
-    message = "The checker measures drawn shapes, not visibility: 44 of 470 accepted designs show little or no visible ink."
+    message = "The checker measures drawn shapes, not visibility: 51 of 536 accepted designs show little or no visible ink."
     report = render_model_report(
         _benchmark_summary(), gallery_documents=_load_gallery_arm_documents(_load_gallery_index()),
         task_backgrounds={task["id"]: task["palette"][0] for task in _home_suite_tasks()},
@@ -83,7 +83,7 @@ def test_visibility_limitation_is_in_models_and_readme():
     assert report.index('data-testid="model-report-table"') < report.index(message)
 
 
-def test_model_report_near_invisible_counts_sum_to_saved_44_of_470():
+def test_model_report_near_invisible_counts_sum_to_saved_51_of_536():
     from pramaan.app import (_benchmark_summary, _home_suite_tasks, _load_gallery_arm_documents,
                              _load_gallery_index)
     from pramaan.ui.leaderboard import render_model_report
@@ -97,8 +97,8 @@ def test_model_report_near_invisible_counts_sum_to_saved_44_of_470():
         r'data-near-invisible="(\d+)" data-accepted-designs="(\d+)"', rendered,
     )]
 
-    assert len(documents) == 10
-    assert len(row_counts) == 10
-    assert sum(low for low, _accepted in row_counts) == 44
-    assert sum(accepted for _low, accepted in row_counts) == 470
-    assert "44 of 470 accepted designs show little or no visible ink" in rendered
+    assert len(documents) == 11
+    assert len(row_counts) == 11
+    assert sum(low for low, _accepted in row_counts) == 51
+    assert sum(accepted for _low, accepted in row_counts) == 536
+    assert "51 of 536 accepted designs show little or no visible ink" in rendered

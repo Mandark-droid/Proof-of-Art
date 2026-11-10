@@ -7,7 +7,7 @@
 ## Data roles and reuse
 
 - `benchmark_evaluation` means a frozen, scored evaluation example. It is **not training eligible**. Do not use it for fine-tuning, prompt tuning, or model selection and then report the same score as held-out performance.
-- The checker measures declared geometry, not visual visibility. Of 470 accepted designs, 44 show little or no visible ink; geometric acceptance alone does not guarantee a legible result.
+- The checker measures declared geometry, not visual visibility. Of 536 accepted designs, 51 show little or no visible ink; geometric acceptance alone does not guarantee a legible result.
 - `training` data comes only from the separately versioned `train-v1.2` prompt suite with its own digest. Keep it distinct from the current held-out `eval-v2.1` suite. The older `train-v1` and `train-v1.1` prompts and their Beam trajectories are superseded and must not be reused as current training data.
 - Flatten calls from training trajectories into chat-completion examples as `messages` → `raw_response`, retaining trajectory ID, call index, phase, verifier outcome, and model metadata. Keep repairs linked to the earlier call; avoid treating verifier-provided repair context as an independent user task.
 - Keep provider credentials, authorization headers, and raw provider error bodies out of datasets. Request messages and model responses are included because they are required to reproduce training/evaluation examples.
