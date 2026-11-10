@@ -1,0 +1,97 @@
+/* Home: the wall grid, inspector, kolam draw-on, spot-the-break and the phone layout (Phone.dc.html). */
+
+/* The wall: one anchor per run over the lookup sprite. */
+.hw-grid { position: relative; display: grid; grid-template-columns: repeat(36, minmax(0, 1fr)); }
+.hw-t { position: relative; display: block; aspect-ratio: 1 / 1; min-width: 0; }
+.hw-t::before { content: ''; position: absolute; inset: 4.3%; background-image: var(--hw-sprite);
+  background-size: 3600% calc(var(--rows) * 100%); background-repeat: no-repeat;
+  background-position: calc(var(--c) * 100% / 35) calc(var(--r) * 100% / (var(--rows) - 1));
+  image-rendering: pixelated; image-rendering: crisp-edges; }
+.hw-b::before { opacity: 0.28; }
+.hw-n::before { background: none; outline: 2px solid rgba(244, 239, 230, 0.14); outline-offset: -2px; }
+.hw-t:focus-visible { outline: 2px solid var(--turmeric); outline-offset: 0; z-index: 2; }
+.hw-sel { position: absolute; z-index: 2; pointer-events: none; box-sizing: border-box;
+  left: calc(var(--sc) * 100% / 36); top: calc(var(--sr) * 100% / var(--rows));
+  width: calc(100% / 36); height: calc(100% / var(--rows));
+  border: 2px solid var(--turmeric); box-shadow: 0 0 0 3px rgba(21, 17, 15, 0.85); }
+.hw-hint { display: none; }
+
+/* Inspector: popover on wide screens. */
+.hw-insp { font-size: 14px; line-height: 1.3; display: grid; grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 14px; }
+.hw-tile { grid-row: 1 / span 2; width: 96px; height: 96px; background-color: var(--ground);
+  background-image: var(--hw-sprite); background-size: 3600% calc(var(--rows) * 100%); background-repeat: no-repeat;
+  image-rendering: pixelated; image-rendering: crisp-edges; outline: 1px solid var(--border); }
+.hw-tile.hw-empty { background-image: none; outline: 2px solid rgba(244, 239, 230, 0.14); outline-offset: -2px; }
+.hw-insp .hi-open { grid-column: 2; align-self: end; }
+.hw-insp .hi-open span:first-child { text-decoration: underline; }
+
+/* Links inside headings and open problems keep the chalk text of the board. */
+.hf-link, .hp-link { color: inherit; text-decoration: none; }
+.hf-link:hover, .hp-link:hover { color: var(--turmeric-hover); text-decoration: underline; }
+
+/* Kolam: strokes draw on once (JS adds .hk-pending, then removes it in view). */
+.hk-loop { stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.2s ease-in-out calc(var(--i) * 1.2s); }
+.hk-pending .hk-loop { stroke-dashoffset: 1; transition: none; }
+.hk-chip:hover { border-color: var(--chalk) !important; }
+
+/* Spot the break: overlay cross-fades. */
+.hs-overlay { transition: opacity 150ms ease; }
+.hs-covered .hs-overlay { opacity: 0; }
+.hs-reveal:not(.v2-primary):hover { border-color: var(--turmeric-hover) !important; color: var(--turmeric-hover) !important; }
+.hs-cover:hover { color: var(--chalk) !important; }
+
+/* The board's limits section sits directly on the footer. */
+main:has(.hm) + footer { margin-top: 0 !important; }
+
+/* Phone hero copy is hidden on wide screens. */
+.hh-phone { display: none; }
+
+@media (max-width: 719px) {
+  /* Hero: Phone.dc.html first screen. */
+  .hh { padding: 18px 0 12px !important; }
+  .hh-eyebrow, .hh-side { display: none !important; }
+  .hh-phone { display: block; }
+
+  /* Wall: keeps its aspect, scrolls sideways, cells about 21 px. */
+  .hw { gap: 0 !important; margin: 0 -16px; }
+  .hw-labels, .hw-codes { display: none !important; }
+  .hw-hint { display: flex; flex: 1 1 100%; justify-content: space-between; gap: 8px; padding: 0 16px 6px;
+    font-size: 10px; letter-spacing: 0.06em; color: var(--faint); }
+  .hw-main { flex: 1 1 100% !important; position: static !important; }
+  .hw-scroll { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }
+  .hw-grid { width: 756px; }
+
+  /* Inspector: bottom sheet (fixed while the wall is on screen, when JS runs). */
+  .hw-insp { position: static !important; transform: none !important; width: auto !important; border-radius: 0 !important;
+    box-shadow: none !important; border: 0 !important; border-top: 1px solid var(--border) !important;
+    grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: auto auto; row-gap: 10px;
+    padding: 12px 16px 14px !important; align-items: center; }
+  .hw-js .hw-insp { position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    top: auto !important; z-index: 20; transition: transform 200ms ease, visibility 200ms; }
+  .hw-js:not(.hw-sheet) .hw-insp { transform: translateY(110%) !important; visibility: hidden; }
+  .hw-tile { grid-row: 1; width: 72px; height: 72px; }
+  .hw-info { gap: 2px !important; }
+  .hw-info .hi-model { font-size: 17px !important; }
+  .hw-info .hi-where { display: block !important; }
+  .hw-info .hi-trad::before { content: ' · '; }
+  .hw-info .hi-lv { display: none; }
+  .hw-info .hi-verdict { margin-top: 0 !important; }
+  .hw-insp .hi-open { grid-column: 1 / -1; display: flex !important; justify-content: center; min-height: 48px !important;
+    margin: 0 !important; border-radius: 24px; background: var(--turmeric); color: var(--ground); font-weight: 700 !important;
+    text-decoration: none; }
+  .hw-insp .hi-open span:first-child { text-decoration: none; }
+  .hw-insp .hi-open:hover { background: var(--turmeric-hover); color: var(--ground); }
+  .hw-insp .hi-arrow { display: none; }
+  .hw-legend { padding: 16px 0 0 !important; }
+
+  /* Leaderboard strip (spec 8.10): name and total on one line, the bar full width beneath. */
+  .hl-row { grid-template-columns: 28px minmax(0, 1fr) auto !important; row-gap: 8px !important; padding: 10px 0;
+    grid-template-areas: "n name total" "bar bar bar"; }
+  .hl-n { grid-area: n; } .hl-name { grid-area: name; } .hl-total { grid-area: total; } .hl-bar { grid-area: bar; }
+}
+
+@media (max-width: 719px) {
+  /* Kolam tries stack one per row on phones; keep each drawing at a readable size, not full width. */
+  .hk-tries svg, .hk-tries figure > div[style*="aspect-ratio"] { width: 100% !important; max-width: 220px; margin: 0 auto; }
+}

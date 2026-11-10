@@ -1,0 +1,44 @@
+/* Studio (/studio): Try it and Submit a run inside the Gradio mount.
+   Gradio adds its own chrome around the custom HTML; every rule that touches it is scoped to the page that
+   holds the studio root, so nothing here reaches the other v2 pages or the playground. */
+gradio-app:has([data-studio]), .gradio-container:has([data-studio]) { background: var(--ground) !important; }
+.gradio-container:has([data-studio]) .main { padding: 0 !important; }
+.gradio-container:has([data-studio]) .contain > .column { gap: 0 !important; }
+.gradio-container:has([data-studio]) footer[aria-label="Gradio footer navigation"] { display: none !important; }
+#pramaan-studio, #pramaan-studio .html-container { padding: 0 !important; margin: 0 !important; border: 0 !important;
+  background: transparent !important; box-shadow: none !important; }
+/* The sign-in button stays in the page (its label tells the script who is signed in); the visible control is
+   the header link, as on the board. */
+#pramaan-v2-login-row { display: none !important; }
+
+/* Undo Gradio's form and link resets inside the studio. */
+[data-studio] a { text-decoration: underline; text-underline-offset: 2px; }
+[data-studio] select { appearance: auto; -webkit-appearance: menulist; max-width: 100%; min-width: 0; }
+[data-studio] input, [data-studio] select, [data-studio] textarea, [data-studio] button { box-shadow: none; }
+[data-studio] input[type="checkbox"] { appearance: auto; -webkit-appearance: checkbox; color-scheme: light; }
+[data-studio] textarea::placeholder, [data-studio] input::placeholder { color: var(--faint); opacity: 1; }
+[data-studio] button:disabled { opacity: 0.5; cursor: not-allowed !important; }
+[data-studio] a.v2-primary:hover { color: var(--ground); }
+[data-studio] [role="status"]:empty { display: none; }
+[data-studio] input[type=file]::file-selector-button { min-height: 36px; margin-right: 12px; padding: 0 16px;
+  border: 1px solid var(--chalk); border-radius: 18px; background: transparent; color: var(--chalk);
+  font: 600 15px 'Anek Latin', 'Segoe UI', system-ui, sans-serif; cursor: pointer; }
+[data-studio] summary::-webkit-details-marker { display: none; }
+[data-studio] summary { list-style: none; }
+
+/* Preview: the 3 × 3 repeat, or its centre tile at three times the size. */
+.st-preview { max-width: 640px; overflow: hidden; }
+.st-preview[data-preview="tile"] { aspect-ratio: 1 / 1; outline: 1px solid var(--border); }
+.st-preview[data-preview="tile"] .st-preview-img { width: 300% !important; max-width: none; margin: -100% 0 0 -100%;
+  outline: 0 !important; }
+
+/* Small screens (spec 8.10): the result follows the primary button; one column throughout. */
+@media (max-width: 719px) {
+  .st-layout .st-steps { display: contents !important; }
+  .st-layout > *, .st-step { flex-basis: 100% !important; min-width: 0; }
+  .st-choose { order: 1; } .st-make { order: 2; } .st-result { order: 3; } .st-edit { order: 4; }
+  .cm-steps > svg { transform: rotate(90deg); margin: 0 auto; }
+  .cm-steps > div { flex-basis: 100% !important; }
+  [data-studio] dl { grid-template-columns: minmax(0, 1fr) !important; }
+  [data-studio] dl dd { margin-bottom: 6px !important; }
+}

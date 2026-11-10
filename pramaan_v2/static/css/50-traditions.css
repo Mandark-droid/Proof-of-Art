@@ -1,0 +1,12 @@
+/* Traditions: hover states for the chips; phone spacing (spec 6.5, 8.10). */
+[data-tr-filter] button[aria-pressed="false"]:hover { border-color: var(--chalk) !important; }
+[data-tr-filter] button[aria-pressed="true"]:hover { background: var(--turmeric-hover) !important; border-color: var(--turmeric-hover) !important; }
+.tr-states a:not([aria-current]):hover { border-color: var(--border) !important; color: var(--turmeric-hover) !important; }
+.tr-states a[aria-current]:hover { background: var(--turmeric-hover) !important; border-color: var(--turmeric-hover) !important; color: var(--ground) !important; }
+.tr-tile:hover span { outline-color: var(--turmeric) !important; }
+article[data-tradition] a { overflow-wrap: anywhere; }
+.tr-details summary::-webkit-details-marker { color: var(--faint); }
+@media (max-width: 719px) {
+  .tr-stats > div > div:first-child { font-size: 34px !important; }
+  article[data-tradition] { padding: 20px !important; }
+}

@@ -1,0 +1,23 @@
+/* Build with it: hover, and the step arrows once the three steps stop sitting on one row. */
+.bd-problem { text-decoration-color: var(--border); text-underline-offset: 3px; }
+.bd-problem:hover { color: var(--turmeric-hover) !important; text-decoration-color: currentColor; }
+[data-build] pre { tab-size: 4; }
+@media (max-width: 899px) {
+  .bd-steps .bd-arrow { display: none; }
+}
+@media (max-width: 719px) {
+  [data-build] h2[style*="font-size: 38px"] { font-size: 32px !important; }
+  [data-build] h2[style*="font-size: 26px"] { font-size: 23px !important; }
+}
+@media (max-width: 719px) {
+  table[data-model] th[scope="row"], table[data-model] td { width: auto !important; }
+  table[data-model] th[scope="row"] { padding-right: 10px !important; }
+  table[data-model] td:nth-child(2) { padding-left: 0 !important; padding-right: 10px !important; white-space: nowrap; }
+}
+@media (max-width: 719px) {
+  table[data-model="PramaanObservation"] { min-width: 680px !important; }
+}
+@media (max-width: 719px) {
+  table[data-model="PramaanObservation"] th[scope="row"] { position: sticky; left: 0; z-index: 1; background: var(--ground); }
+  table[data-model="PramaanObservation"] td:nth-child(2) { white-space: normal; min-width: 72px; }
+}

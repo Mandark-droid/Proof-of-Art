@@ -1,0 +1,41 @@
+/* Replays (/replays/{task}) and one run (/replays/{task}/{model}). */
+
+/* Checker view cross-fades in and out. */
+.rv-ov { transition: opacity 150ms ease; }
+.rv-ov.rv-off { opacity: 0; visibility: hidden; }
+
+/* Hover: outlined pills and cards take the hover colour; cards never lift. */
+.rv-actions a:hover, [data-rv-view]:hover { border-color: var(--chalk) !important; }
+.rv-actions a:hover { color: var(--turmeric-hover) !important; }
+.rv-picker a:hover { border-color: var(--muted) !important; }
+.rv-picker a[aria-current="true"]:hover { border-color: var(--chalk) !important; }
+.rv-strip a:hover > span:last-child { color: var(--turmeric-hover); }
+[data-rv-brief] a[aria-current="page"]:hover { background: var(--turmeric-hover) !important; border-color: var(--turmeric-hover) !important; }
+[data-rv-brief] a[style*="border-radius: 22px"]:not([aria-current]):hover { border-color: var(--chalk) !important; }
+
+/* Replays table: below 900 px, one block per model with its tries side by side (spec 8.10). */
+@media (max-width: 900px) {
+  .rv-table { min-width: 0 !important; }
+  .rv-table, .rv-table tbody { display: block; }
+  .rv-table thead { display: none; }
+  .rv-table tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; padding: 14px 0; }
+  .rv-table th[scope="row"] { grid-column: 1 / -1; padding: 0 !important; }
+  .rv-cell { display: block; padding: 0 !important; }
+  .rv-cell::before { content: attr(data-try); display: block; margin-bottom: 6px; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 11px; letter-spacing: 0.1em; color: var(--faint); }
+  .rv-in { flex-wrap: wrap; align-items: flex-start !important; gap: 6px !important; }
+  .rv-in > img, .rv-in > .rv-empty { flex: 0 0 calc(50% - 3px) !important; width: calc(50% - 3px) !important; height: auto !important; aspect-ratio: 1 / 1; }
+  .rv-in > .rv-txt { flex: 1 0 100%; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 719px) {
+  [data-rv-brief] h1, [data-rv-run] h1 { font-size: 39px !important; }
+  .rv-brief { padding: 16px !important; }
+  .rv-controls select { width: 100%; }
+  .rv-controls > div:first-child { flex: 1 1 100%; }
+  .rv-stage.rv-none { padding: 20px !important; }
+  .rv-picker { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 8px !important; }
+  .rv-picker a { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
+  .rv-proof { grid-template-columns: minmax(0, 1fr) !important; gap: 2px 0 !important; }
+  .rv-proof dd + dt { margin-top: 8px; }
+}

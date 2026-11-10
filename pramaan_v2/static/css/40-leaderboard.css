@@ -1,0 +1,55 @@
+/* Leaderboard (/leaderboard): matrix cells, chips, tooltips and the small-screen layouts of spec 8.10. */
+
+/* Results matrix: one link per run. The glyph is drawn by CSS so the link's name comes from its label. */
+.lb-c { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 30 / 40;
+  overflow: hidden; text-decoration: none; font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  font-size: 10px; font-weight: 700; line-height: 1; }
+.lb-c::before { display: block; }
+.lb-c.s1 { background: var(--turmeric); color: var(--ground); } .lb-c.s1::before { content: '1'; }
+.lb-c.s2 { background: var(--try2); color: var(--ground); } .lb-c.s2::before { content: '2'; }
+.lb-c.s3 { background: var(--try3); color: var(--chalk); } .lb-c.s3::before { content: '3'; }
+.lb-c.sx { background: var(--broke-fill); color: var(--chalk); } .lb-c.sx::before { content: '\00D7'; }
+.lb-c.sn { background: var(--never); color: var(--muted); } .lb-c.sn::before { content: '\2013'; }
+.lb-c.ink::after { content: ''; position: absolute; top: 0; right: 0; width: 43%; height: 30%; background: var(--ground);
+  clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.lb-c:hover, .lb-c:focus-visible { outline: 2px solid var(--chalk); outline-offset: 0; z-index: 2; }
+/* No run of this model on this brief: an empty cell that is neither a link nor a mark. */
+.lb-c.lb-gap { background: none; box-shadow: inset 0 0 0 1px #2E2621; pointer-events: none; }
+.lb-mname { position: sticky; left: 0; z-index: 3; background: var(--ground); }
+
+/* Sticky model column inside horizontally scrolling tables. */
+.lb-sticky th[scope="row"] { position: sticky; left: 0; z-index: 1; background: var(--ground); }
+
+/* Compare chips: real toggle buttons; pressed state follows aria-pressed. */
+.lb-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 1px solid var(--border);
+  border-radius: 22px; background: transparent; color: var(--muted); font-family: inherit; font-size: 15px; cursor: pointer; }
+.lb-chip[aria-pressed="true"] { border-color: var(--chalk); background: var(--raised); color: var(--chalk); font-weight: 600; }
+.lb-chip:hover { border-color: var(--chalk); color: var(--chalk); }
+
+/* Marks with a tooltip. */
+.lb-tipmark { cursor: default; }
+svg .lb-tipmark:focus { outline: none; }
+svg .lb-tipmark:focus-visible { stroke: var(--chalk); stroke-width: 3; }
+.lb-tip { position: fixed; z-index: 60; max-width: min(320px, calc(100vw - 24px)); padding: 8px 10px; box-sizing: border-box;
+  background: var(--raised); border: 1px solid var(--border); border-radius: 6px; color: var(--chalk);
+  font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.4; pointer-events: none; }
+
+/* Phones and narrow tablets (spec 8.10). */
+@media (max-width: 719px) {
+  .lb-rank-row { grid-template-columns: 28px minmax(0, 1fr) auto !important; row-gap: 6px !important;
+    padding: 10px 0 12px; }
+  .lb-rank-row .lb-rank-bars { grid-column: 1 / -1; grid-row: 2; }
+  .lb-rank-row .lb-rank-value { grid-column: 3; grid-row: 1; }
+  #failing .lb-fail-row { grid-template-columns: minmax(0, 1fr) 40px !important; row-gap: 4px !important; }
+  #failing .lb-fail-row > span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  #failing .lb-fail-row > span:nth-child(3) { grid-column: 2; grid-row: 1; }
+  .lb-radar-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .lb-mname { flex-basis: 112px !important; }
+  .lb-cost { min-width: 520px; }
+  .lb-sticky thead th:first-child { width: 118px !important; }
+  .lb-sticky th[scope="row"] { font-size: 15px !important; padding-right: 10px !important; }
+}
+
+/* Screen-reader copies of a chart's numbers: clipped out of sight, but laid out within the page width
+   (a 1px overflow-hidden box would report clipped text and a wide table would overflow on phones). */
+.lb-sr { position: absolute; left: 0; right: 0; height: 1px; overflow: visible; clip-path: inset(50%); pointer-events: none; }

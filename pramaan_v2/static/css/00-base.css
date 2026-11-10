@@ -1,0 +1,57 @@
+/* Pramaan v2: tokens and the few rules inline styles cannot express. */
+@font-face { font-family: 'Anek Latin'; src: url('/static/v2/fonts/anek-latin-latin-wdth-normal.woff2') format('woff2-variations');
+  font-weight: 100 800; font-stretch: 75% 125%; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Anek Devanagari'; src: url('/static/v2/fonts/anek-devanagari-devanagari-500-normal.woff2') format('woff2');
+  font-weight: 500; font-display: swap; unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF; }
+@font-face { font-family: 'Anek Devanagari'; src: url('/static/v2/fonts/anek-devanagari-devanagari-600-normal.woff2') format('woff2');
+  font-weight: 600; font-display: swap; unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/static/v2/fonts/jetbrains-mono-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/static/v2/fonts/jetbrains-mono-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/static/v2/fonts/jetbrains-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+:root {
+  --ground: #15110F; --panel: #1D1815; --raised: #262019; --track: #211B18; --hairline: #2E2621;
+  --border: #4A3F38; --border-dashed: #6B625B; --chalk: #F4EFE6; --muted: #B8ADA1; --faint: #948980;
+  --turmeric: #F4B63F; --turmeric-hover: #FFD27A; --evidence: #4FD1C5; --broke-text: #E8613C;
+  --broke-fill: #C8452B; --unreadable: #5E554E; --try2: #9F772D; --try3: #654C20; --never: #3A322D;
+  color-scheme: dark;
+}
+html { background: var(--ground); }
+body { margin: 0; background: var(--ground); color: var(--chalk); -webkit-text-size-adjust: 100%; }
+main { display: block; }
+a { color: var(--turmeric); }
+a:hover { color: var(--turmeric-hover); }
+a[style*="background: #F4B63F"]:hover, button.v2-primary:hover { background: var(--turmeric-hover) !important; }
+:focus-visible { outline: 2px solid var(--turmeric); outline-offset: 2px; }
+img, svg { max-width: 100%; }
+.v2-px { image-rendering: pixelated; image-rendering: crisp-edges; }
+.v2-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+button { font: inherit; }
+
+/* Header: brand + menu button below 720px. */
+.v2-menu { display: none; }
+.v2-navwrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-left: auto; }
+@media (max-width: 719px) {
+  .v2-wrap { padding: 0 16px !important; }
+  .v2-header { flex-wrap: nowrap !important; justify-content: space-between; }
+  .v2-header { padding: 6px 0 !important; min-height: 56px; box-sizing: border-box; }
+  .v2-menu { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+    margin-left: auto; margin-right: -8px; background: transparent; border: 0; color: var(--chalk); cursor: pointer; }
+  .v2-menu span, .v2-menu span::before, .v2-menu span::after { display: block; width: 18px; height: 2px; background: var(--chalk); position: relative; content: ''; }
+  .v2-menu span::before { position: absolute; top: -6px; } .v2-menu span::after { position: absolute; top: 6px; }
+  .v2-navwrap { display: none; position: absolute; left: 0; right: 0; top: 56px; z-index: 30; flex-direction: column;
+    align-items: stretch; padding: 12px 16px 20px; background: var(--raised); border-bottom: 1px solid var(--hairline); }
+  .v2-header { position: relative; }
+  .v2-header.open .v2-navwrap { display: flex; }
+  .v2-navwrap nav { flex-direction: column; margin-left: 0 !important; }
+  .v2-submit { justify-content: center; }
+  h1 { font-size: 39px !important; line-height: 1.02 !important; }
+  .v2-statement { font-size: 32px !important; }
+}
+
+/* Motion: shown in final state when reduced motion is requested. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .v2-draw path { stroke-dashoffset: 0 !important; }
+}

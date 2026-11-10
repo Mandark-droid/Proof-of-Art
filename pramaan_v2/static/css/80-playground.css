@@ -1,0 +1,60 @@
+/* Playground (/web/): the OpenEnv mount. Gradio's own chrome is neutralised only on the page that
+   carries the playground, so the studio and the other pages are untouched. */
+html:has(.pg-root), body:has(.pg-root), body:has(.pg-root) gradio-app {
+  background: var(--ground) !important; margin: 0 !important; padding: 0 !important; min-height: 100vh;
+}
+.gradio-container:has(.pg-root) {
+  max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important;
+  background: var(--ground) !important; color: var(--chalk); font-family: 'Anek Latin', 'Segoe UI', system-ui, sans-serif;
+}
+.gradio-container:has(.pg-root) > footer, .gradio-container:has(.pg-root) footer.svelte-1rjryqp,
+.gradio-container:has(.pg-root) .show-api, .gradio-container:has(.pg-root) .built-with,
+.gradio-container:has(.pg-root) .toast-wrap, .gradio-container:has(.pg-root) .settings { display: none !important; }
+.gradio-container:has(.pg-root) .pg-root footer { display: flex !important; }
+.gradio-container:has(.pg-root) main, .gradio-container:has(.pg-root) .main, .gradio-container:has(.pg-root) .wrap,
+.gradio-container:has(.pg-root) .contain, .gradio-container:has(.pg-root) .column,
+.gradio-container:has(.pg-root) .block, .gradio-container:has(.pg-root) .pg-mount,
+.gradio-container:has(.pg-root) .html-container {
+  padding: 0 !important; margin: 0 !important; gap: 0 !important; border: 0 !important;
+  background: transparent !important; box-shadow: none !important; max-width: none !important;
+}
+.pg-root { min-height: 100vh; text-align: left; }
+/* The board's boxes are content-box (the browser default); Gradio makes everything border-box. */
+.pg-root, .pg-root :where(div, section, header, footer, nav, p, ul, ol, li, dl, dt, dd, pre, code, span, a, h1, h2, h3,
+  details, summary, strong) { box-sizing: content-box; }
+.pg-root a { color: #F4B63F; text-decoration: underline; }
+.pg-root select { appearance: auto; -webkit-appearance: menulist; cursor: pointer; }
+.pg-root a:hover { color: #FFD27A; }
+.pg-root .v2-header a[aria-current="page"] { color: #F4B63F; }
+.pg-root .v2-header nav a:not([aria-current]) { color: #F4EFE6; }
+.pg-root .v2-header .v2-brand { color: #F4EFE6; }
+.pg-root .v2-header nav a:hover { color: #FFD27A; }
+
+/* Controls: chips pressed, buttons hover, the run button greys out once the episode is over. */
+.pg-root [data-pg-example][aria-pressed="true"] { background: #F4EFE6 !important; color: #15110F !important;
+  border-color: #F4EFE6 !important; }
+.pg-root [data-pg-example][aria-pressed="false"]:hover, #pg-reset:hover { border-color: #F4EFE6 !important; color: #FFD27A !important; }
+.pg-root #pg-run:disabled, .pg-root #pg-run:disabled:hover { background: #4A3F38 !important; color: #B8ADA1 !important;
+  cursor: not-allowed; }
+.pg-root select:hover, .pg-root textarea:hover { border-color: #6B625B !important; }
+.pg-root textarea:focus-visible, .pg-root select:focus-visible { outline: 2px solid var(--turmeric); outline-offset: 2px; }
+.pg-root summary::-webkit-details-marker { display: none; }
+.pg-root summary::before { content: "+"; display: inline-block; width: 1em; margin-right: 8px; font-family: 'JetBrains Mono', ui-monospace, monospace; color: #948980; }
+.pg-root details[open] > summary::before { content: "\2212"; }
+.pg-root .pg-tile > img + img { animation: pg-fade 150ms ease; }
+@keyframes pg-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Small screens (spec 8.10): the result panel comes straight after the run button; the editor is shorter. */
+@media (max-width: 1119px) {
+  .pg-work { flex-direction: column; align-items: stretch !important; }
+  .pg-work > div { flex: 1 1 auto !important; width: 100%; }
+}
+@media (max-width: 719px) {
+  .pg-root h1 { font-size: 39px !important; line-height: 1.02 !important; }
+  .pg-bar { padding: 16px !important; }
+  .pg-bar > div, .pg-bar select { width: 100%; flex: 1 1 100% !important; }
+  .pg-bar #pg-status { margin: 0 !important; padding: 0 !important; }
+  #pg-pattern { min-height: 360px !important; }
+  .pg-tile { flex: 1 1 100% !important; max-width: 320px; }
+  .pg-legend span:nth-child(2) { text-align: center; }
+}
